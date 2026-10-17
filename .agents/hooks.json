@@ -1,0 +1,23 @@
+{
+  "qrf-stop-gate": {
+    "Stop": [
+      { "type": "command", "command": "node ../scripts/harness/stop-gate.mjs", "timeout": 300 }
+    ]
+  },
+  "qrf-cmd-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [{ "type": "command", "command": "node ../scripts/harness/cmd-guard.mjs", "timeout": 10 }]
+      }
+    ]
+  },
+  "qrf-tool-log": {
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [{ "type": "command", "command": "node ../scripts/harness/tool-log.mjs", "timeout": 5 }]
+      }
+    ]
+  }
+}
