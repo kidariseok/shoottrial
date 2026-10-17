@@ -9,7 +9,7 @@
 // 하나라도 어기면 {"decision":"continue"}로 에이전트를 되돌려 보낸다.
 // 예외(멈춤 허용): 사용자 취소·오류·한도 초과, 변경 없음, 티켓 ## 질문에 열린 항목("- [ ]")이 있을 때.
 // 같은 티켓에서 3번 막힌 뒤 4번째에는 무한 반복을 막으려고 멈춤을 허용한다.
-// 기준 커밋: .harness/base → 없으면(재설치 후) 티켓의 "기준 커밋: <sha>" → 없으면 HEAD
+// 기준 커밋: .harness/base → 없으면(재설치 후) 티켓의 "기준 커밋: <sha>" → 없으면 이번 자동 저장 직전 커밋
 // 단독 테스트: echo '{"terminationReason":"NO_TOOL_CALL"}' | node scripts/harness/stop-gate.mjs
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
@@ -25,6 +25,8 @@ const out = (o) => { process.stdout.write(JSON.stringify(o)); process.exit(0) }
 const allow = () => out({ decision: 'stop' })
 
 mkdirSync(join(root, '.harness'), { recursive: true })
+let preSave = 'HEAD'
+try { preSave = sh('git rev-parse HEAD').trim() } catch {}
 try { autosave(root) } catch {}
 if (input.terminationReason && input.terminationReason !== 'NO_TOOL_CALL') allow()
 
@@ -32,7 +34,7 @@ const id = read('.harness/active')
 const tname = id ? readdirSync(join(root, 'docs/tickets')).find((f) => f.startsWith(`${id}-`) || f === `${id}.md`) : undefined
 const tpath = tname ? `docs/tickets/${tname}` : ''
 const ticket = tpath ? read(tpath) : ''
-const base = read('.harness/base') || ticket.match(/기준 커밋:\s*`?([0-9a-f]{7,40})/)?.[1] || 'HEAD'
+const base = read('.harness/base') || ticket.match(/기준 커밋:\s*`?([0-9a-f]{7,40})/)?.[1] || preSave
 const lines = (s) => s.split('\n').map((l) => l.trim()).filter(Boolean)
 const changed = [...new Set([
   ...lines(sh(`git -c core.quotepath=off diff --name-only ${base}`)),
