@@ -1,6 +1,7 @@
-# TECH: 기술 구조 v0.1
+# TECH: 기술 구조 v0.2
 
 > 작성: 2026-10-17, Claude(기획). 원칙은 ponytail(가장 짧게 동작하는 구조)이다. 구현 담당은 이 문서를 수정하지 않는다.
+> v0.2(2026-10-17): 세로 360×640 탑다운으로 바꿨고, §11 자동 저장을 추가했다.
 
 ## 1. 스택 (확정)
 
@@ -18,7 +19,7 @@
 ## 2. 폴더 구조 (이 구조 밖에 파일을 만들려면 티켓 허가가 필요하다)
 
 ```
-qrf/
+shoottrial/
 ├─ index.html              # #game(캔버스) + #ui(DOM 오버레이) + Safe Area CSS 변수
 ├─ apps-in-toss.config.ts
 ├─ package.json            # scripts: dev, build, test, typecheck, verify
@@ -73,10 +74,13 @@ qrf/
 
 | 항목 | 내용 |
 |---|---|
-| 내부 해상도 | **640×360** 픽셀아트. `pixelArt: true`, `roundPixels: true` |
-| 스케일 | 높이 360 고정, 너비는 화면 비율로 640~800. Phaser `Scale.FIT` + `pixelArt`(최근접). 세계 좌표는 0~640을 유지하고 남는 폭은 카메라를 가운데로 옮겨 배경으로 채운다. `// ponytail: 비정수 배율이라 픽셀 크기가 미세하게 다를 수 있다. 눈에 띄면 기기 픽셀 기준 정수 배율로 바꾼다` |
-| 게임 영역 | 모든 게임플레이 좌표는 640×360 안. HUD와 패드는 `safeRect()` 안 |
-| 시스템 버튼 금지 구역 | 우측 상단. 정확한 크기는 R-001 실측값(`docs/research/platform-api.md`). 측정 전 임시값: 오른쪽 Safe Area에서 110×52 화면 픽셀 |
+| 방향 | **세로 고정** |
+| 내부 해상도 | **360×640** 픽셀아트. `pixelArt: true`, `roundPixels: true` |
+| 스케일 | 너비 360 고정, 높이는 화면 비율로 640~800. Phaser `Scale.FIT` + `pixelArt`(최근접) |
+| 세계 좌표 | 0~360 × 0~640(아레나는 GDD §4.1)을 유지한다. 화면이 더 길면 카메라를 가운데로 옮기고 남는 위아래는 배경(360×800)으로 채운다. `// ponytail: 비정수 배율이라 픽셀 크기가 미세하게 다를 수 있다. 눈에 띄면 기기 픽셀 기준 정수 배율로 바꾼다` |
+| 카메라 | 고정(한 화면 아레나). 흔들림 연출만 쓴다 |
+| 게임 영역 | 모든 게임플레이 좌표는 360×640 안. HUD와 패드는 `safeRect()` 안. HUD는 화면 고정(`setScrollFactor(0)`) |
+| 시스템 버튼 금지 구역 | 우측 상단. 세로 화면에서는 상태 표시줄·노치 아래에 있다. 정확한 크기는 R-001·T-001 실측값(`docs/research/platform-api.md`). 측정 전 임시값: 오른쪽 위 Safe Area 기준 110×52 화면 픽셀 |
 | `?safe=1` | Safe Area(초록 선)와 금지 구역(붉은 반투명)을 그린다. 모든 화면 티켓의 스크린샷에 포함한다 |
 
 ## 4. 플랫폼 사실 표
@@ -92,7 +96,7 @@ qrf/
 | 실행 Origin: `<appName>.web.tossmini.com`(라이브), `<appName>.private-web.tossmini.com`(QR 테스트) | ✅ | `documentation/sdk/v3` |
 | SDK 3.0 도메인 객체 API(예: `Device.openCamera()`) | ✅ | 위 문서. 2.x 함수형은 deprecated 경고 |
 | 리더보드 | ✅(2.x 함수명) / ❓(3.x 이름) | 문서 예시는 `openGameCenterLeaderboard()`, 최소 버전 5.221.0. 점수 제출 함수와 3.x 이름은 R-001 |
-| **가로 모드 고정** | ❓ | 체크리스트에 "설정한 가로/세로 모드가 정상 작동"만 있다. 방법은 R-001 → T-001에서 실기기로 확인. **실패하면 기획을 세로형으로 바꾼다** |
+| 화면 방향(세로 고정) | ❓ | 체크리스트에 "설정한 가로/세로 모드가 정상 작동"이 있다. 기본값이 세로인지, 기기를 돌렸을 때 회전을 막는 방법이 무엇인지 R-001에서 확인 |
 | 사용자 식별키(게임용) | ❓ | `documentation/common/authentication/hash-key`. 3.x 함수명은 R-001 |
 | Storage(네이티브 저장소) | ❓ | `documentation/common/file-storage/storage`. 기기를 바꾸면 사라질 수 있다(✅) |
 | Safe Area 값 얻기·구독 | ❓ | R-001 |
@@ -195,3 +199,20 @@ show(slot):
 | 새 npm 패키지 | 티켓 `## 허용 의존성`에 있을 때만 |
 | `localStorage`를 진짜 저장소로 쓰기 | SDK Storage(브라우저 폴백에서만 `localStorage`) |
 | `window.location` 변경, 외부 iframe, `eval`, `new Function` | — |
+
+## 11. 자동 저장 (공용 컴퓨터 대비)
+
+작업하던 컴퓨터에서 앱을 지워도 진행이 남도록, **저장은 사람이나 에이전트의 기억이 아니라 훅이 한다.**
+
+| 언제 | 무엇이 | 하는 일 |
+|---|---|---|
+| 에이전트가 턴을 끝낼 때마다 | `stop-gate.mjs` → `autosave.mjs` | 바뀐 파일 전부 커밋(`wip(<티켓>): 자동 저장 <시각>`) → `git push origin HEAD:main`. 검사보다 먼저 실행한다 |
+| 작업 중 5분마다 | `post-tool.mjs` → `autosave.mjs` | 같음. 한 턴이 길어도 최대 5분치만 잃는다 |
+| 티켓 마무리 | `/finish-ticket` → `autosave.mjs -m "<ID>: <제목>"` | 완료 커밋 + push |
+| 사람이 원할 때 | `node scripts/harness/autosave.mjs` | 즉시 저장 |
+
+- **브랜치는 `main` 하나만 쓴다.** 중간 커밋(`wip`)은 미완성일 수 있다. 확실히 동작하는 지점은 게이트 태그(`g0`, `g1`…)와 티켓 완료 커밋(`T-00X: …`)이다.
+- push가 실패하면(인증 만료·오프라인·원격이 앞섬) `.harness/push-failed`에 이유가 남는다. 로컬 커밋은 남아 있다. `/start-ticket`이 시작할 때 이 파일을 확인해 알려준다. 복구는 `docs/SETUP.md` §5.
+- **티켓 파일의 `## 진행 기록`이 작업의 기억이다.** Antigravity 대화 기록은 컴퓨터에만 있어 재설치하면 사라진다.
+- `.harness/`(활성 티켓·기준 커밋)는 컴퓨터마다 따로다. 재설치 후 `/start-ticket <ID>`를 다시 하면 티켓의 `기준 커밋:` 줄로 복원한다.
+- 비밀값(`.env*`)은 `.gitignore`에 있어 올라가지 않는다. 토큰·비밀번호를 코드나 문서에 쓰지 않는다.

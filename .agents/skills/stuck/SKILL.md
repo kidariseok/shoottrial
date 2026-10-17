@@ -2,7 +2,7 @@
 name: stuck
 description: >-
   Use this skill when the same error persists after two different attempts, when the stop-gate hook blocks three times,
-  when the ticket conflicts with GDD/TECH, or when a change outside the owned paths seems necessary. It records a clean handoff and stops.
+  when the ticket conflicts with GDD/TECH, or when a change outside the owned paths seems necessary. It records a clean handoff, saves to GitHub, and stops.
 ---
 
 # 막혔을 때
@@ -23,7 +23,7 @@ description: >-
    - 현재 상태: 무엇이 되고 무엇이 안 되는지
    - 재현 방법: 명령 또는 디버그 URL
    - 지금까지 바꾼 파일
-   - 다음 담당 제안: 기본은 "Antigravity에서 `claude-sonnet-5-5-high`로 새 대화를 열고 `/start-ticket <ID>`". 설계 문제면 "게이트 때 Claude Code 검토"
-3. 작업 내용은 되돌리지 않는다. 커밋도 하지 않는다. 다음 담당이 이어받는다.
+   - 다음 담당 제안: 기본은 "Antigravity에서 `claude-sonnet-5-5-high`로 새 대화를 열고 `/start-ticket <ID>`(이어하기)". 설계 문제면 "게이트 때 Claude Code 검토"
+3. 작업 내용은 되돌리지 않는다. `node scripts/harness/autosave.mjs`로 저장해서 다음 담당이 다른 컴퓨터에서도 이어받을 수 있게 한다.
 4. 사용자에게 막힌 이유를 2줄로 알리고 멈춘다.
    - 열린 질문이 있으면 Stop 훅이 멈춤을 허용한다.

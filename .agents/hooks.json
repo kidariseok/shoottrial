@@ -12,11 +12,11 @@
       }
     ]
   },
-  "qrf-tool-log": {
+  "qrf-post-tool": {
     "PostToolUse": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": "node ../scripts/harness/tool-log.mjs", "timeout": 5 }]
+        "hooks": [{ "type": "command", "command": "node ../scripts/harness/post-tool.mjs", "timeout": 40 }]
       }
     ]
   }

@@ -31,7 +31,7 @@
 ## 참고 문서
 
 - `docs/GDD.md` §3(특수화기 버튼 동작), §4.2(`grenade` 줄, 열기·과열), §4.1(칼각 열기 감소), §8(유탄 폭발 주스)
-- `docs/ART.md` §4(`player_arm_grenade`, `grenade`, `fx_explosion`: H-001이 이미 플레이스홀더로 만들어 두었다)
+- `docs/ART.md` §4(`player_gun_grenade`, `grenade`, `fx_explosion`: H-001이 이미 플레이스홀더로 만들어 두었다)
 
 ## 할 일
 
@@ -46,7 +46,7 @@
    - 특수화기 버튼에 열기 게이지(원형)
    - 과열 중에는 버튼을 회색으로 표시하고 남은 초를 보여준다.
 4. **`fx.ts`**: 폭발(`fx_explosion` 6프레임) + 흔들림 약 + `haptic` 약
-5. 무기 전환 시 팔 스프라이트를 바꾼다(`player_arm_grenade`).
+5. 무기 전환 시 총 스프라이트를 바꾼다(`player_gun_grenade`).
 
 ## 검증 명령
 
@@ -69,6 +69,7 @@
 
 ## 진행 기록
 
+- 기준 커밋: (/start-ticket이 적는다)
 - 세션 시작:
 
 ## 결과 보고

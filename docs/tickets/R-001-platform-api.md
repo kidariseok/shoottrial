@@ -30,7 +30,7 @@
 아래 항목마다 표 한 줄(이름 / import / 시그니처 / 최소 버전 / 주의점 / 출처 URL / 확인일)을 쓴다. 문서에서 찾지 못한 것은 "문서 없음"으로 적는다. **추측으로 채우지 않는다.**
 
 1. **화면**
-   - 가로 모드 고정 방법(설정 파일 옵션 또는 런타임 함수)
+   - 화면 방향: 세로가 기본인지, 기기를 돌려도 세로로 고정하는 방법(설정 파일 옵션 또는 런타임 함수)
    - 풀스크린·투명 내비게이션 바 설정
    - iOS 스와이프 뒤로가기 끄기
    - 화면 꺼짐 방지
@@ -67,7 +67,7 @@
 
 - [ ] 1~12번 항목이 모두 표에 있다("문서 없음" 포함)
 - [ ] 각 줄에 출처 URL과 확인일이 있다
-- [ ] 문서 맨 위에 "구현 티켓에 바로 영향을 주는 사실 5개" 요약이 있다(특히 가로 모드 가능 여부)
+- [ ] 문서 맨 위에 "구현 티켓에 바로 영향을 주는 사실 5개" 요약이 있다(특히 세로 고정 방법과 우측 상단 시스템 버튼 크기)
 - [ ] 기획서(GPT 원안)에 있던 이름 중 실제와 다른 것을 "원안 이름 → 실제 이름" 표로 정리했다. 원안의 이름 예: `User.getAnonymousKey`, `Game.setLeaderboardScore`, `Screen.setOrientation`, `SafeArea.subscribe`, `Device.triggerHaptic`, `graniteEvent.addEventListener('backEvent')`, `loadFullScreenAd`, `showFullScreenAd`, `ait-ad-test-rewarded-id`
 
 ## 작업 계획
@@ -76,6 +76,7 @@
 
 ## 진행 기록
 
+- 기준 커밋: (/start-ticket이 적는다)
 - 세션 시작:
 
 ## 결과 보고

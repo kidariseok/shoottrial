@@ -1,13 +1,20 @@
 #!/usr/bin/env node
-// Antigravity Stop 훅. 에이전트가 턴을 끝내려 할 때 아래를 확인하고, 어기면 {"decision":"continue"}로 되돌려 보낸다.
-//   ① 활성 티켓이 있는가  ② 소유 경로 밖·보호 파일을 바꾸지 않았는가  ③ 허용 안 된 새 의존성이 없는가
-//   ④ 티켓 진행 기록을 갱신했는가  ⑤ 코드가 바뀌었으면 npm run verify 통과
-// 예외: 사용자 취소·오류·한도 초과, 변경 없음, 티켓 ## 질문에 열린 항목("- [ ]")이 있을 때는 멈춤을 허용한다.
-// 같은 티켓에서 3번 막힌 뒤 4번째에는 무한 반복을 막기 위해 멈춤을 허용한다.
+// Antigravity Stop 훅. 에이전트가 턴을 끝낼 때마다 실행된다.
+//   0. 무조건 먼저 자동 저장(커밋 + push)한다. 검사에 걸려도 작업은 GitHub에 남는다.
+//   1. 활성 티켓이 있는가
+//   2. 소유 경로 밖·보호 파일을 바꾸지 않았는가
+//   3. 허용 안 된 새 의존성이 없는가
+//   4. 티켓 진행 기록을 갱신했는가
+//   5. 코드가 바뀌었으면 npm run verify를 통과하는가
+// 하나라도 어기면 {"decision":"continue"}로 에이전트를 되돌려 보낸다.
+// 예외(멈춤 허용): 사용자 취소·오류·한도 초과, 변경 없음, 티켓 ## 질문에 열린 항목("- [ ]")이 있을 때.
+// 같은 티켓에서 3번 막힌 뒤 4번째에는 무한 반복을 막으려고 멈춤을 허용한다.
+// 기준 커밋: .harness/base → 없으면(재설치 후) 티켓의 "기준 커밋: <sha>" → 없으면 HEAD
 // 단독 테스트: echo '{"terminationReason":"NO_TOOL_CALL"}' | node scripts/harness/stop-gate.mjs
 import { execSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { autosave } from './autosave.mjs'
 
 let input = {}
 try { input = JSON.parse(readFileSync(0, 'utf8') || '{}') } catch {}
@@ -17,11 +24,15 @@ const read = (p) => (existsSync(join(root, p)) ? readFileSync(join(root, p), 'ut
 const out = (o) => { process.stdout.write(JSON.stringify(o)); process.exit(0) }
 const allow = () => out({ decision: 'stop' })
 
+mkdirSync(join(root, '.harness'), { recursive: true })
+try { autosave(root) } catch {}
 if (input.terminationReason && input.terminationReason !== 'NO_TOOL_CALL') allow()
 
-mkdirSync(join(root, '.harness'), { recursive: true })
 const id = read('.harness/active')
-const base = read('.harness/base') || 'HEAD'
+const tname = id ? readdirSync(join(root, 'docs/tickets')).find((f) => f.startsWith(`${id}-`) || f === `${id}.md`) : undefined
+const tpath = tname ? `docs/tickets/${tname}` : ''
+const ticket = tpath ? read(tpath) : ''
+const base = read('.harness/base') || ticket.match(/기준 커밋:\s*`?([0-9a-f]{7,40})/)?.[1] || 'HEAD'
 const lines = (s) => s.split('\n').map((l) => l.trim()).filter(Boolean)
 const changed = [...new Set([
   ...lines(sh(`git -c core.quotepath=off diff --name-only ${base}`)),
@@ -39,10 +50,7 @@ function block(reason) {
 }
 
 if (!id) block(`활성 티켓 없이 파일을 바꿨다: ${changed.join(', ')}. /start-ticket <ID>로 시작하거나 변경을 되돌려라.`)
-const tname = readdirSync(join(root, 'docs/tickets')).find((f) => f.startsWith(`${id}-`) || f === `${id}.md`)
 if (!tname) block(`활성 티켓 ${id}의 파일이 docs/tickets/에 없다.`)
-const tpath = `docs/tickets/${tname}`
-const ticket = readFileSync(join(root, tpath), 'utf8')
 const section = (title) => (ticket.split(/^## /m).find((s) => s.startsWith(title)) ?? '').split('\n').slice(1).join('\n')
 const bullets = (title) => lines(section(title)).map((l) => l.match(/^-\s+`?([^`\s]+)`?/)?.[1]).filter(Boolean)
 
@@ -51,7 +59,7 @@ if (/^\s*-\s*\[ \]/m.test(section('질문'))) allow()
 const glob = (g) => new RegExp('^' + (g.endsWith('/') ? `${g}**` : g)
   .replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\/?/g, '\0').replace(/\*/g, '[^/]*').replace(/\0/g, '.*') + '$')
 const owned = [...bullets('소유 경로'), tpath, `docs/shots/${id}*`].map(glob)
-const PROTECTED = /^(AGENTS\.md|docs\/(GDD|TECH|ART|ROADMAP)\.md|docs\/tickets\/_TEMPLATE\.md|\.agents\/|scripts\/harness\/)/
+const PROTECTED = /^(AGENTS\.md|docs\/(GDD|TECH|ART|ROADMAP|SETUP)\.md|docs\/tickets\/_TEMPLATE\.md|\.agents\/|scripts\/harness\/)/
 const bad = changed.filter((f) => PROTECTED.test(f) || !owned.some((r) => r.test(f)))
 if (bad.length) block(`소유 경로 밖 변경: ${bad.join(', ')}. 되돌려라(수정: git checkout ${base} -- <파일>, 새 파일: 삭제). 꼭 필요하면 티켓 ## 질문에 "- [ ] <이유>"를 적고 멈춰라.`)
 

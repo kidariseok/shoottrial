@@ -1,11 +1,14 @@
 # 출동! 5분대기조 (QRF)
 
-토스 미니앱(앱인토스)용 가로형 픽셀아트 런앤건. 해킹으로 폭주한 도시 로봇을 상대로 육군 5분대기조 신병이 2분짜리 출동을 반복한다.
+토스 미니앱(앱인토스)용 세로형 탑다운 픽셀아트 슈터. 해킹으로 폭주한 도시 로봇을 상대로 육군 5분대기조 신병이 2분짜리 출동을 반복한다.
+
+> **새 컴퓨터이거나 앱을 다시 설치했다면 먼저 `docs/SETUP.md`를 따라 한다.** 작업은 자동으로 GitHub에 저장된다.
 
 ## 먼저 읽을 것
 
 | 문서 | 내용 |
 |---|---|
+| `docs/SETUP.md` | **설치·재설치 복구·이어하기·작업 끝낼 때** |
 | `docs/ROADMAP.md` | 단계·게이트·티켓 순서·**하루 루틴(§5)** |
 | `docs/GDD.md` | 게임 기획(세계관, 조작, 수치, 화면) |
 | `docs/TECH.md` | 기술 구조, 플랫폼 확인 사실, 금지 목록 |
@@ -23,12 +26,13 @@
   - 허용 안 된 의존성
   - 진행 기록 누락
   - `npm run verify` 실패
+- 저장: 매 턴 끝 + 작업 중 5분마다 자동 커밋·push(`scripts/harness/autosave.mjs`). 직접 저장하려면 `node scripts/harness/autosave.mjs`.
 - 게이트(G0~G4)마다 Claude Code에서 "G○ 리뷰해줘" → `docs/reviews/`에 리뷰가 생기고 다음 티켓이 발행된다.
 
 ## 하네스 단독 점검
 
 ```sh
-# Stop 훅: 변경이 없으면 {"decision":"stop"}
+# Stop 훅: 변경이 없으면 {"decision":"stop"} (주의: 먼저 자동 저장, 즉 커밋 + push를 한다)
 echo '{"terminationReason":"NO_TOOL_CALL"}' | node scripts/harness/stop-gate.mjs
 # 명령 가드: git push는 deny
 echo '{"toolCall":{"name":"run_command","args":{"CommandLine":"git push"}}}' | node scripts/harness/cmd-guard.mjs

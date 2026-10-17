@@ -30,7 +30,8 @@
 
 - `docs/GDD.md` §4.2(무기 표: `rifle` 줄, 자동 조준 규칙)
 - `docs/TECH.md` §2.1(Group으로 풀링), §10
-- `docs/ART.md` §4(`player_arm_rifle` 앵커, `bullet_ally`, `fx_muzzle`)
+- `docs/ART.md` §4(`player_gun_rifle` 손잡이 앵커, `bullet_ally`, `fx_muzzle`)
+- `docs/GDD.md` §3(캐릭터 방향: 몸은 조준 대상 쪽, 총은 360도 회전)
 
 ## 할 일
 
@@ -43,7 +44,8 @@
    - `tests/rules.test.ts`에서 4가지 경우를 검사한다: 가장 가까운 것, 락 유지, 락 해제, 없음
 3. **`weapons.ts`**
    - 아군 탄: `physics.add.group({ maxSize: 60 })` + `get()` / 화면 밖·명중 시 비활성
-   - `player_arm_rifle`을 어깨 앵커 기준으로 표적 방향으로 회전한다.
+   - `player_gun_rifle`을 손잡이 앵커 기준으로 표적 방향으로 360도 회전한다(왼쪽을 볼 때는 위아래 반전).
+   - 몸 방향(아래·위·옆)을 조준 대상 쪽으로 바꾼다. 대상이 없으면 이동 방향(`player.ts`의 방향 결정 함수만 고친다).
    - 총구 섬광(2프레임), 연사 간격 타이머
    - **새 객체를 매 발사마다 만들지 않는다.**
 4. **`?targets=N`**: 더미 표적 N개(HP 30, 회색 상자)를 바닥 영역의 고정 위치에 놓는다. 피격 60ms 흰색 번쩍. `debug.ts`에 추가.
@@ -69,6 +71,7 @@
 
 ## 진행 기록
 
+- 기준 커밋: (/start-ticket이 적는다)
 - 세션 시작:
 
 ## 결과 보고

@@ -10,7 +10,7 @@ const args = input.toolCall?.args ?? {}
 const cmd = String(args.CommandLine ?? args.commandLine ?? args.command ?? Object.values(args).find((v) => typeof v === 'string') ?? '')
 
 const DENY = [
-  [/\bgit\s+push\b/, 'push는 사용자만 한다.'],
+  [/\bgit\s+push\b/, 'git push는 직접 쓰지 않는다. 저장은 훅이 자동으로 한다. 지금 바로 저장하려면: node scripts/harness/autosave.mjs'],
   [/\bgit\s+reset\s+--hard\b|\bgit\s+clean\s+-\w*f/, '작업 내용을 지우는 git 명령은 금지다.'],
   [/\brm\s+(-\w*r\w*f|-\w*f\w*r)/i, 'rm -rf는 금지다. 지울 파일을 하나씩 지정해라.'],
   [/\b(curl|wget)\b[^|]*\|\s*(sh|bash|zsh)\b/, '내려받은 스크립트를 바로 실행하지 않는다.'],
