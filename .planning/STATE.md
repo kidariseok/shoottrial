@@ -85,3 +85,10 @@ Resume file: None
 - `?scene=log`: main.ts(B)가 battle 씬으로 시작, BattleScene(A)이 기록 화면을 그린다(H-101 반영)
 - 해금 저장: A가 B의 `save.ts` load/save를 호출(TECH §8)
 - 남은 것(phase discuss에서): OQ-5 대기석 띠 높이, OQ-10, OQ-3 보스 HP 스케일, 병장 지뢰 토큰 6, OQ-4 M2의 askRevive
+
+## 2026-10-20 Phase 1 실행 완료 (사람 확인 대기)
+
+- 계획 3/3 실행. `npm run verify` 통과(테스트 41). 레인 B 파일 변경 없음.
+- 브랜치 `kidariseok/m2-core-phase1`. 스크린샷 docs/shots/M2-01-02.png, M2-01-03.png, M2-01-03-drag.png.
+- 사람 확인(사용자): `/?scene=battle&deck=rifle:4,sniper:2&supply=99`에서 드래그·합성·판매·보정. 통과하면 Phase 2(전투).
+- 확인 못 한 것: 실제 터치 기기, 높이 1280(dy=0) 화면, 진급 확대 애니메이션 자체.
