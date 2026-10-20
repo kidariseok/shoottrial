@@ -107,8 +107,6 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       place()
       continue
     }
-    // 4. 보스: 배치 구역에 들어서는 순간
-    if (e.type === 'boss' && !e.shocked && e.y >= BOSS.shockY) shockwave(ctx, e)
     // 5. 군견: 배치 구역 앞에서 한 번 열 변경
     if (e.type === 'dog' && !e.dogMoved && e.y >= GRID.deployTop - DOG.triggerGap) {
       e.dogMoved = true
@@ -131,6 +129,8 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       e.ready = 0
       e.y += ENEMIES[e.type].speed * dt
     }
+    // 4(뒤로 옮김). 보스: 걸어서 배치 구역에 들어선 그 틱에 충격파(밀려나거나 기절 중에는 걷지 않으므로 여기서만 판정해도 같다)
+    if (e.type === 'boss' && e.y >= BOSS.shockY) shockwave(ctx, e)
     // 8. 뷰 갱신, 방어선 도달
     place()
     if (e.y >= GRID.lineY) reached.push(e)
