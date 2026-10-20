@@ -122,7 +122,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
     const iv = interval(card, rank, counts[card], ctx.defcon1)
     const mx = a.view.x
     const my = a.view.y - UI.fx.muzzleDy
-    switch (card) {
+    switch (a.unit.card) {
       case 'rifle':
       case 'miner': {
         const target = ahead(enemies, a, CARDS[card].range)[0]
