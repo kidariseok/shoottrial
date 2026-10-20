@@ -1,6 +1,6 @@
 # H-102 에셋 정리·검사 스크립트: 마젠타 제거 → 128 캔버스 정렬 → public/assets + 계약 검사
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -71,13 +71,38 @@
 
 ## 작업 계획
 
+1. **의존성 설치 및 사용자 안내 문서 작성** (`package.json`, `package-lock.json`, `art/source/README.md`)
+   - 허용 의존성 `pngjs` 설치 및 `package.json`에 `"assets:check": "node scripts/assets-check.mjs"` 추가, `"verify"`를 `"npm run typecheck && npm run test && npm run assets:check && npm run build"`로 변경
+   - `art/source/README.md`에 사용자가 따라 할 3단계 에셋 넣기·변환·검사 사용법(`01.png`… 또는 `sheet.png`, 선택적 `meta.json`, 명령 실행 및 갤러리 확인) 작성
+2. **에셋 정리 스크립트 구현** (`scripts/assets.mjs`)
+   - `src/assets.ts`의 계약 표(캔버스 크기 `w`, `h`, 최소 프레임 수)와 `docs/ART.md` §4의 최대 프레임 범위·피벗 기준(유닛은 발끝 `y=116` + 가로 중앙, 보스·이펙트·카드·아이콘·배경·타일·계급장은 정중앙 정렬)을 읽어 처리
+   - 마젠타(`#FF00FF` ± 허용 오차) 투명화 및 불투명 픽셀 인접 경계의 마젠타 번짐(1px 분홍 테두리) 제거
+   - 프레임별 불투명 내용 경계(bounding box) 추출 후 계약 캔버스 배치, 내용이 캔버스보다 크면 최근접 축소 없이 이유와 실제 크기를 출력하고 즉시 실패 처리
+   - 가로 한 줄 시트로 이어 붙여 `public/assets/<키>.png` 저장 및 `public/assets/index.json`·`art/LEDGER.json`(`id`, `file`, `source`, `tool`, `prompt`, `license`, `edited`, `checked`) 갱신
+3. **에셋 계약 검사 스크립트 구현** (`scripts/assets-check.mjs`)
+   - `public/assets/index.json`의 모든 키에 대해 PNG 파일 존재 여부, 높이 = 계약 `h`, 너비 = 계약 `w × n`(`n`이 계약 프레임 범위 안), 알파 채널(colorType 4 또는 6) 여부, `art/LEDGER.json` 장부 항목 존재 여부 검사
+   - 장부에만 있고 실제 파일이 없는 항목, 계약 표(`src/assets.ts`)에 없는 키 검출 시 0이 아닌 종료 코드 반환
+4. **테스트 Fixtures 및 파이프라인 단위 테스트 작성** (`scripts/fixtures/`, `tests/assets-pipeline.test.ts`)
+   - `scripts/fixtures/`에 마젠타 배경·테두리 번짐·발끝 기준선·크기 초과 검증용 테스트 fixture 구성
+   - `tests/assets-pipeline.test.ts`에서 마젠타 제거(1px 번짐 정리 포함), 발끝 `y=116` 및 가로 중앙 정렬, 캔버스 크기 초과 시 실패, `assets-check` 검증 로직을 테스트
+5. **실데이터/Fixture 갤러리 검증 및 스크린샷 캡처** (`docs/shots/H-102.png`, `docs/tickets/H-102-asset-pipeline.md`)
+   - 변환된 에셋을 `?scene=gallery`에서 로드하여 빨간 테두리(계약 위반) 없이 표시되는 화면을 `docs/shots/H-102.png`로 캡처(캡처 후 소유 경로 밖인 `public/assets/index.json`·`art/LEDGER.json` 등은 초기 빈 상태로 유지)하고 `npm run verify`·`npm run assets:check` 통과 확인
+
+- **결과 확인 디버그 URL**: `http://localhost:5173/?scene=gallery`
+- **검증 명령**:
+  - `npm run verify`
+  - `npm run assets:check`
+- **플랫폼 API**: 없음
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 4b7d27fec183
+- 브랜치: kidariseok/h-102-ticket-start
+- 세션 시작: Gemini 4 Argon (High), 2026-10-21 08:26
 
 ## 결과 보고
 
