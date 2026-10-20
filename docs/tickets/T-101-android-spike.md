@@ -130,7 +130,7 @@ R-101에서 확인한 버전으로 고정한다.
 
 ## 질문
 
-- [ ] 설치 필요: Java JDK 21 (예: `brew install --cask temurin@21`), Android Studio (Ladybug/Otter 이상) 및 Android SDK (Android 15/16 · API 35/36, platform-tools, build-tools), 환경변수 `ANDROID_HOME=$HOME/Library/Android/sdk` 설정 (현재 이 맥에서 `java -version` 미설치 및 `ANDROID_HOME`·`~/Library/Android/sdk` 미발견 상태입니다)
+- [x] 설치 필요: Android Studio 내장 JBR(`/Applications/Android Studio.app/Contents/jbr/Contents/Home`) 및 Android SDK(`~/Library/Android/sdk`, build-tools 36.0.0, platform-tools, licenses) 설치 확인 완료 — 중복 설치 없이 내장 JBR과 SDK를 그대로 사용합니다.
 - [ ] 패키지 이름(`appId`): `U-101`이 아직 대기 상태여서 티켓 지침대로 기본값 `io.github.kidariseok.defcon2`를 사용할 예정입니다. 다른 패키지 이름을 원하시면 알려주세요.
 - [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
@@ -139,7 +139,7 @@ R-101에서 확인한 버전으로 고정한다.
 - 기준 커밋: 4b7d27fec183
 - 브랜치: kidariseok/start-ticket-t-101
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21 08:26 KST
-- [x] 0단계 빌드 환경 점검 완료 (`java` 및 `ANDROID_HOME`/Android SDK 미설치 확인 → `## 질문`에 기록)
+- [x] 0단계 빌드 환경 점검 완료 (Android Studio 내장 JDK 및 `~/Library/Android/sdk` 설치 확인 완료)
 
 ## 결과 보고
 
