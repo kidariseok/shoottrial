@@ -1,6 +1,6 @@
 # H-101 스캐폴드: Vite + Phaser 4 + verify + 디버그 파라미터 + 에셋 플레이스홀더·갤러리 + UI 경계 빈 함수
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표

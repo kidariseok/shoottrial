@@ -1,4 +1,4 @@
-import { Game, Scale, type Types } from 'phaser'
+import { Game, Scale, AUTO, type Types } from 'phaser'
 import { BattleScene } from './battle/BattleScene'
 import { GalleryScene } from './gallery'
 import { debug, initDebugOverlays } from './debug'
@@ -16,7 +16,7 @@ const isGallery = debug.scene === 'gallery'
 const scenes = isGallery ? [GalleryScene, BattleScene] : [BattleScene, GalleryScene]
 
 const config: Types.Core.GameConfig = {
-  type: Phaser.AUTO,
+  type: AUTO,
   parent: 'game',
   width: 720,
   height,

@@ -1,4 +1,4 @@
-import { Scene } from 'phaser'
+import { Scene, Math as PMath } from 'phaser'
 import { ASSET_CONTRACTS, loadOrGenerateAssets, invalidTextures } from './assets'
 
 export class GalleryScene extends Scene {
@@ -50,7 +50,7 @@ export class GalleryScene extends Scene {
       const cardBg = this.add.rectangle(0, 0, colWidth - 12, rowHeight - 12, 0x1e293b)
       cardBg.setStrokeStyle(isInvalid ? 3 : 1, strokeColor)
 
-      // 스프라이트 또는 이미지 미리보기 (최대 110x110 박스에 맞춤)
+      // 스프라이트 또는 이미지 미리보기 (최대 100x100 박스에 맞춤)
       const maxBox = 100
       const scale = Math.min(maxBox / contract.w, maxBox / contract.h, 1)
       const preview = this.add.sprite(0, -25, contract.key, 0)
@@ -82,17 +82,17 @@ export class GalleryScene extends Scene {
     this.minY = Math.min(this.maxY, height - totalHeight)
 
     // 세로 드래그 스크롤
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    this.input.on('pointerdown', (pointer: { y: number }) => {
       this.isDragging = true
       this.startY = pointer.y
       this.containerStartY = this.container.y
     })
 
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+    this.input.on('pointermove', (pointer: { y: number }) => {
       if (!this.isDragging) return
       const diffY = pointer.y - this.startY
       const targetY = this.containerStartY + diffY
-      this.container.y = Phaser.Math.Clamp(targetY, this.minY, this.maxY)
+      this.container.y = PMath.Clamp(targetY, this.minY, this.maxY)
     })
 
     this.input.on('pointerup', () => {
@@ -102,7 +102,7 @@ export class GalleryScene extends Scene {
     // 마우스 휠 스크롤
     this.input.on('wheel', (_pointer: unknown, _gameObjects: unknown, _deltaX: number, deltaY: number) => {
       const targetY = this.container.y - deltaY * 0.5
-      this.container.y = Phaser.Math.Clamp(targetY, this.minY, this.maxY)
+      this.container.y = PMath.Clamp(targetY, this.minY, this.maxY)
     })
   }
 }
