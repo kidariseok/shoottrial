@@ -1,8 +1,9 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, CARDS, LAYOUT, UI } from '../data'
-import { allyY, stats, withinReach } from '../rules'
+import { ABILITY, CARDS, CARD_KEYS, LAYOUT, UI, type CardKey } from '../data'
+import { allyY, inRange, interval, sniperDamage, stats, synergyTier, withinReach } from '../rules'
 import type { Board, Unit } from './board'
-import { dmgText, hitFlash } from './fx'
+import { hurtEnemy, type Enemy } from './enemies'
+import { dmgText, hitFlash, muzzle, shake, snipeLine, tracer } from './fx'
 
 // 배치 카드의 전투 상태. Unit 객체가 키라 이동·교환은 상태가 따라간다
 export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number; revived: boolean }
@@ -89,5 +90,73 @@ export function endWave(allies: Ally[]): void {
     c.revived = false
     a.view.setAlpha(1)
     drawBar(a)
+  }
+}
+
+// 배치 구역 인원(쓰러졌든 아니든, 계급 무관). 시너지 기준(GDD §5.4)
+export function synergyCounts(allies: Ally[]): Record<CardKey, number> {
+  const counts = { rifle: 0, sniper: 0, blower: 0, cook: 0, miner: 0 }
+  for (const a of allies) counts[a.unit.card] += 1
+  return counts
+}
+
+// 같은 열에서 사거리 안의 살아 있는 적, 가까운(y가 큰) 순. 다른 열은 보지 않는다(LANE-01)
+function ahead(enemies: Enemy[], a: Ally, range: number): Enemy[] {
+  return enemies.filter((e) => e.hp > 0 && !e.gone && e.col === a.col && inRange(a.y, e.y, range)).sort((p, q) => q.y - p.y)
+}
+
+// 아군 한 틱. allies는 이번 틱에 한 번 모은 배열(ally.alive는 사본이라 combat.alive를 읽는다)
+export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean }, dt: number): void {
+  const { scene, enemies, allies } = ctx
+  const counts = synergyCounts(allies)
+  for (const a of allies) {
+    const c = a.combat
+    if (!c.alive) continue
+    if (c.stun > 0) {
+      c.stun -= dt
+      continue
+    }
+    c.cd = Math.max(0, c.cd - dt)
+    if (c.cd > 0) continue
+    const { card, rank } = a.unit
+    const iv = interval(card, rank, counts[card], ctx.defcon1)
+    const mx = a.view.x
+    const my = a.view.y - UI.fx.muzzleDy
+    switch (card) {
+      case 'rifle':
+      case 'miner': {
+        const target = ahead(enemies, a, CARDS[card].range)[0]
+        if (!target) break
+        const atk = stats(card, rank).atk
+        const shots = card === 'rifle' && rank >= ABILITY.corporal ? ABILITY.burstCount : 1
+        muzzle(scene, mx, my)
+        // ponytail: 점사 피해를 한 틱에 적용, 연출만 시차
+        for (let i = 0; i < shots; i++) {
+          if (target.hp <= 0) break
+          hurtEnemy(scene, target, atk)
+          tracer(scene, mx, my, target.view.x, target.view.y, i * ABILITY.burstGap)
+        }
+        c.cd = iv
+        break
+      }
+      case 'sniper': {
+        const targets = ahead(enemies, a, CARDS.sniper.range)
+        if (targets.length === 0) break
+        const tier = synergyTier('sniper', counts.sniper)
+        const atk = stats('sniper', rank).atk
+        targets.forEach((e, k) => {
+          const dmg = sniperDamage(atk, k, rank, tier)
+          if (dmg > 0) hurtEnemy(scene, e, dmg)
+        })
+        const first = targets[0]
+        if (first && rank >= ABILITY.sergeant) first.stun = Math.max(first.stun, ABILITY.sniperStun)
+        snipeLine(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
+        shake(scene, 'light')
+        c.cd = iv
+        break
+      }
+      default:
+        break
+    }
   }
 }

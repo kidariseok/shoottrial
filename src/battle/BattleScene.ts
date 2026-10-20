@@ -6,7 +6,7 @@ import { WAVES } from '../stages'
 import { createBoard, deployIndex, type Board } from './board'
 import { removeEnemy, spawnEnemy, tickEnemies, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
-import { collectAllies, endWave, startWave } from './units'
+import { collectAllies, endWave, startWave, tickAllies } from './units'
 
 export class BattleScene extends Scene {
   // 헤드리스 검증이 읽으므로 모두 public
@@ -133,7 +133,7 @@ export class BattleScene extends Scene {
     this.showHud()
   }
 
-  // 02-05·02-06이 3과 4 사이에 아군 행동·지뢰 호출을 끼운다
+  // 02-06이 지뢰 호출을 아군 행동(3)과 정리(4) 사이에 끼운다
   private fightTick(dt: number) {
     // 1. 출현
     this.clock += dt
@@ -147,6 +147,7 @@ export class BattleScene extends Scene {
     // 3. 적 행동, 방어선 도달 처리
     const reached = tickEnemies({ scene: this, board: this.board, enemies: this.enemies, allies, dogRand: this.dogRand }, dt)
     for (const e of reached) this.reachLine(e)
+    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1 }, dt)
     // 4. 정리
     this.enemies = this.enemies.filter((e) => {
       if (e.gone) {

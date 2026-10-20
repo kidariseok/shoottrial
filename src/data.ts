@@ -101,6 +101,11 @@ export const UI = {
     laneFlash: 0xbfe6ff, // 최후 저지선 열 섬광(밝은 청백색)
     lineUsed: 0x5a5a4a, // 쓴 최후 저지선 표시(방어선 띠 위, 노란 띠보다 어두운 회황색)
     go: 0x3a8a5a, // 임시 출동! 버튼
+    muzzle: 0xfff3b0, // 총구 섬광(노랑, 붉은색·주황 금지)
+    tracer: 0xffe066, // 아군 탄 궤적
+    snipe: 0xffffff, // 저격 흰 선
+    wind: 0xbfe6ff, // 송풍 파동(청백색)
+    revive: 0xd8ffd0, // 부활 번쩍임(흰색·연두)
   },
   fx: {
     snapMs: 120,
@@ -129,6 +134,23 @@ export const UI = {
     resultPx: 96, // 승리·패배 글자 크기
     lineUsedPx: 22, // 소진 표시 글자 크기
     lineUsedInset: 8, // 소진 표시 사각형 좌우 여백(한쪽)
+    msPerSec: 1000, // 초 -> 밀리초(연출 시차 변환)
+    muzzleR: 10, // 총구 섬광 반지름
+    muzzleDy: 56, // 총구 위치: 카드 중심에서 위로
+    muzzleMs: 100,
+    tracerW: 4, // 탄 궤적 굵기
+    tracerMs: 120,
+    snipeW: 10, // 저격 흰 선 굵기
+    snipeMs: 250,
+    windW: 96, // 송풍 파동 폭
+    windH: 24, // 송풍 파동 두께
+    windAlpha: 0.6,
+    windMs: 400,
+    healRise: 30, // 회복 숫자가 떠오르는 높이
+    healMs: 600,
+    reviveScale: 1.4, // 부활 번쩍임이 커지는 배율
+    reviveAlpha: 0.9,
+    reviveMs: 400,
   },
   text: {
     promote: '진급!',
@@ -139,6 +161,7 @@ export const UI = {
     fontFamily: 'sans-serif',
     color: '#ffffff',
     popupColor: '#ffe066',
+    healColor: '#66ff99', // 회복 숫자(초록)
     labelColor: '#cfd8dc',
     lineLabelColor: '#2b2b2b', // 노란 방어선 띠 위 라벨(밝은 라벨색은 안 읽힌다)
     lineUsed: '저지선 소진',

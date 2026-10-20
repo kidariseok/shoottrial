@@ -35,3 +35,28 @@ export function shake(scene: Scene, kind: 'light' | 'heavy'): void {
   const { ms, intensity } = UI.shake[kind]
   scene.cameras.main.shake(ms, intensity)
 }
+
+// 총구 섬광: 노란 작은 원이 번쩍였다 사라진다
+export function muzzle(scene: Scene, x: number, y: number): void {
+  const c = scene.add.circle(x, y, UI.fx.muzzleR, UI.colors.muzzle).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: c, alpha: 0, duration: UI.fx.muzzleMs, onComplete: () => c.destroy() })
+}
+
+// 탄 궤적: 노랑 가는 선이 delaySec 뒤 나타나 짧게 사라진다
+export function tracer(scene: Scene, x0: number, y0: number, x1: number, y1: number, delaySec: number): void {
+  const l = scene.add.line(0, 0, x0, y0, x1, y1, UI.colors.tracer).setOrigin(0, 0).setLineWidth(UI.fx.tracerW).setDepth(UI.fx.fxDepth).setVisible(false)
+  scene.tweens.add({
+    targets: l,
+    alpha: 0,
+    delay: delaySec * UI.fx.msPerSec,
+    duration: UI.fx.tracerMs,
+    onStart: () => l.setVisible(true),
+    onComplete: () => l.destroy(),
+  })
+}
+
+// 저격 흰 선: 저격수에서 열 맨 위까지 굵은 세로 선
+export function snipeLine(scene: Scene, x: number, y0: number, y1: number): void {
+  const r = scene.add.rectangle(x, (y0 + y1) / 2, UI.fx.snipeW, Math.abs(y0 - y1), UI.colors.snipe).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: r, alpha: 0, duration: UI.fx.snipeMs, onComplete: () => r.destroy() })
+}
