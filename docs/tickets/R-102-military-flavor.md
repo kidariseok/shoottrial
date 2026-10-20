@@ -1,6 +1,6 @@
 # R-102 한국군 고증·은어·짬 문화·대드론·화생방·포병 → 카드 데이터 후보
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-3.8-flash-medium (역할 카드: `docs/agents/antigravity-research.md`)
 
 ## 목표
