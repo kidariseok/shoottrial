@@ -1,6 +1,6 @@
 # H-101 스캐폴드: Vite + Phaser 4 + verify + 디버그 파라미터 + 에셋 플레이스홀더·갤러리 + UI 경계 빈 함수
 
-상태: 대기
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -100,31 +100,95 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] 갤러리 스크린샷 `docs/shots/H-101.png`(`/?scene=gallery&fps=1&safe=1`, 390×844)
-- [ ] 전투 스텁 스크린샷 `docs/shots/H-101-battle.png`(`/?scene=battle&safe=1`)
-- [ ] 갤러리 키 개수 = ART §4 키 개수(결과 보고에 숫자)
-- [ ] 하네스 확인 4가지를 진행 기록에 적었다
+- [x] `npm run verify` 통과
+- [x] 갤러리 스크린샷 `docs/shots/H-101.png`(`/?scene=gallery&fps=1&safe=1`, 390×844)
+- [x] 전투 스텁 스크린샷 `docs/shots/H-101-battle.png`(`/?scene=battle&safe=1`)
+- [x] 갤러리 키 개수 = ART §4 키 개수(결과 보고에 숫자: 63개)
+- [x] 하네스 확인 4가지를 진행 기록에 적었다
 
 디버그 URL: `http://localhost:5173/?scene=gallery&fps=1&safe=1`
 
 ## 작업 계획
 
+1. **프로젝트 설정 및 의존성 설치** (`package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`)
+   - `phaser@4.2.1` 고정 및 개발 의존성(`typescript`, `vite`, `vitest`) 설치, `dev`·`build`·`typecheck`·`test`·`verify` 스크립트 설정
+   - `tsconfig.json`(`strict: true`, `noUncheckedIndexedAccess: true`, `moduleResolution: "bundler"`, `esModuleInterop: true`) 및 `vite.config.ts` 작성
+2. **HTML·CSS·UI 경계 스텁 및 디버그 모듈 구현** (`index.html`, `src/ui/style.css`, `src/ui/screens.ts`, `src/debug.ts`)
+   - `#game` + `#ui` DOM 오버레이 구조와 Safe Area CSS 변수(`--sa-top/right/bottom/left`) 설정
+   - `docs/TECH.md` §8 고정 시그니처 그대로 `src/ui/screens.ts` 빈 함수 작성(`// T-102에서 구현`)
+   - `docs/TECH.md` §9 URL 파라미터 파싱(`debug`), 시드 기반 결정적 난수 `rand()`(mulberry32), `?fps=1`·`?safe=1` DOM 표시 구현
+3. **에셋 계약 표·런타임 플레이스홀더 및 갤러리·부팅 씬 구현** (`public/assets/index.json`, `src/assets.ts`, `src/gallery.ts`, `src/main.ts`)
+   - `docs/ART.md` §4의 모든 키(아군 6종×6키=36, 적 11키, 이펙트·판·UI 16키, 총 63개 키)를 계약 표로 정의하고 `public/assets/index.json`(`[]`) 기반 로드 및 단색 사각형+이름표+1px 프레임 경계선 플레이스홀더 텍스처 생성 구현
+   - 격자 표시·세로 드래그 스크롤·크기/프레임 수/계약 불일치 빨간 테두리를 지원하는 `GalleryScene` 및 720×(1280~1560) `Scale.FIT` + `pixelArt: true` 설정의 `src/main.ts` 작성
+4. **단위 테스트 작성 및 검증** (`tests/debug.test.ts`, `tests/assets.test.ts`)
+   - URL 파라미터 파싱(`deck=rifle:4,sniper:2` 등)과 동일 시드 난수열 테스트, 에셋 계약 표 전수·중복 없음 테스트 작성 후 `npm run verify` 실행
+5. **하네스 동작 확인 및 기록** (`docs/tickets/H-101-scaffold.md`)
+   - Stop 훅 동작, 현재 브랜치(`kidariseok/h101-gallery-scaffold`) 자동 저장 push 여부, `docs/GDD.md` 임시 수정 후 소유 경로 밖 차단 확인 및 원복, `git push` cmd-guard 차단 확인을 수행하고 `## 진행 기록`에 기록
+
+- **결과 확인 디버그 URL**:
+  - `http://localhost:5173/?scene=gallery&fps=1&safe=1`
+  - `http://localhost:5173/?scene=battle&safe=1`
+- **검증 명령**: `npm run verify`
+- **플랫폼 API**: 없음 (Capacitor는 T-101에서 도입)
+
 ## 질문
+
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 294b3331124f
+- 브랜치: kidariseok/h101-gallery-scaffold
+- 세션 시작: Gemini 4 Argon (High), 2026-10-20 17:05
+- [x] 단계 1: 프로젝트 설정 및 의존성 설치 (phaser@4.2.1, typescript, vite, vitest, tsconfig.json, vite.config.ts)
+- [x] 단계 2: HTML·CSS·UI 경계 스텁 및 디버그 모듈 구현 (index.html, src/ui/style.css, src/ui/screens.ts, src/debug.ts)
+- [x] 단계 3: 에셋 계약 표·런타임 플레이스홀더 및 갤러리·부팅 씬 구현 (public/assets/index.json, src/assets.ts, src/gallery.ts, src/main.ts)
+- [x] 단계 4: 단위 테스트 작성 및 검증 (tests/debug.test.ts, tests/assets.test.ts, npm run verify 통과)
+- [x] 단계 5: 하네스 확인 4가지 실측 및 스크린샷 캡처
+  - 하네스 1 (Stop 훅 실행): 매 턴 및 완료 전 Stop 훅 자동 실행 정상 확인
+  - 하네스 2 (자동 저장 push): `git log origin/kidariseok/h101-gallery-scaffold -1` 확인 결과 작업 브랜치로 자동 저장 커밋 및 push 확인
+  - 하네스 3 (소유 경로 밖 차단): `docs/GDD.md` 임시 수정 시 `[stop-gate 1/3] 소유 경로 밖 변경: docs/GDD.md`로 Stop 훅이 정상 차단함을 확인 후 원복
+  - 하네스 4 (cmd-guard 차단): `git push` 실행 시 PreToolUse `[cmd-guard] git push는 직접 쓰지 않는다`로 정상 차단됨을 확인
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `package.json`, `package-lock.json`: phaser 4.2.1 및 개발 의존성(typescript, vite, vitest) 추가, 스크립트(dev, build, typecheck, test, verify) 구성
+  - `tsconfig.json`: strict, bundler 해상도, ESNext 설정
+  - `vite.config.ts`: 호스트 노출 및 esnext 타깃 설정
+  - `index.html`: #game, #ui, Safe Area CSS 변수 기본값 적용
+  - `src/ui/style.css`: Safe Area, flex 캔버스 정렬, 터치 제어 방지 스타일
+  - `src/ui/screens.ts`: docs/TECH.md §8 레인 A·B 경계 고정 시그니처 스텁
+  - `src/debug.ts`: URL 디버그 파라미터 파싱, 시드 기반 rand()(mulberry32), ?fps=1, ?safe=1 오버레이
+  - `public/assets/index.json`: 기본 에셋 목록 파일([])
+  - `src/assets.ts`: docs/ART.md §4 에셋 계약 표(63개 키) 및 런타임 단색 플레이스홀더 생성기, 규격 검증
+  - `src/gallery.ts`: 에셋 2열 격자 목록 표시 및 드래그 스크롤 GalleryScene
+  - `src/main.ts`: 720×(1280~1560) Scale.FIT + pixelArt 설정, debug.scene에 따른 시작 씬 선택
+  - `tests/debug.test.ts`: 파라미터 파싱 및 rand() 결정적 난수열 테스트
+  - `tests/assets.test.ts`: 계약 표 중복 없음, 키 63개 전수 검증
+  - `docs/shots/H-101.png`, `docs/shots/H-101-battle.png`: 390×844 세로 스크린샷
 - 검증 결과:
+  ```
+  > shoottrial@0.1.0 verify
+  > npm run typecheck && npm run test && npm run build
+  > tsc --noEmit
+  > vitest run --passWithNoTests
+  ✓ tests/debug.test.ts (5 tests)
+  ✓ tests/assets.test.ts (5 tests)
+  Test Files 2 passed (2) | Tests 10 passed (10)
+  > vite build
+  ✓ built in 1.13s
+  ```
 - 스크린샷:
+  - 갤러리: `docs/shots/H-101.png` (키 63개, FPS/OBJ 표시, Safe Area 초록 테두리)
+  - 전투 스텁: `docs/shots/H-101-battle.png` (BattleScene 스텁 텍스트 표시)
 - 사용자 확인 방법:
+  - `npm run dev` 실행 후 브라우저에서 `http://localhost:5173/?scene=gallery&fps=1&safe=1` 접속 (에셋 갤러리 및 드래그 스크롤 확인)
+  - `http://localhost:5173/?scene=battle&safe=1` 접속 (전투 스텁 화면 확인)
 - 확인하지 못한 점:
+  - 실기기(안드로이드) 패키징은 T-101(Capacitor)에서 검증 예정.
 - 다음 제안:
+  - T-101에서 Capacitor 안드로이드 스파이크 및 실기기 Safe Area 실측 진행.
+  - H-102에서 assets-check 스크립트 추가 예정.
 
 ## 인계 메모
