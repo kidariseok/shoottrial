@@ -99,6 +99,8 @@ export const UI = {
     hlHover: 0xffffff, // 손가락 아래 칸 윤곽
     hitFlash: 0xffffff, // 피격 번쩍임(붉은색 금지)
     laneFlash: 0xbfe6ff, // 최후 저지선 열 섬광(밝은 청백색)
+    lineUsed: 0x5a5a4a, // 쓴 최후 저지선 표시(방어선 띠 위, 노란 띠보다 어두운 회황색)
+    go: 0x3a8a5a, // 임시 출동! 버튼
   },
   fx: {
     snapMs: 120,
@@ -122,6 +124,11 @@ export const UI = {
     laneFlashMs: 200,
     laneFlashAlpha: 0.7,
     fallenAlpha: 0.35, // 쓰러진 아군 카드 알파
+    enemyDepth: 10, // 카드(0)보다 위, fx(fxDepth)보다 아래
+    spawnFadeMs: 300, // 적이 나타날 때 알파 0 -> 1
+    resultPx: 96, // 승리·패배 글자 크기
+    lineUsedPx: 22, // 소진 표시 글자 크기
+    lineUsedInset: 8, // 소진 표시 사각형 좌우 여백(한쪽)
   },
   text: {
     promote: '진급!',
@@ -134,6 +141,18 @@ export const UI = {
     popupColor: '#ffe066',
     labelColor: '#cfd8dc',
     lineLabelColor: '#2b2b2b', // 노란 방어선 띠 위 라벨(밝은 라벨색은 안 읽힌다)
+    lineUsed: '저지선 소진',
+    go: '출동!',
+    win: '승리',
+    lose: '패배',
+    hudWave: '웨이브',
+    hudDefcon: '데프콘',
+    hudPrep: '준비',
+    hudFight: '전투',
+    hudSettle: '정산',
+    hudBase: '위병소',
+    hudSec: '초',
+    hudSep: ' · ',
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
@@ -145,6 +164,12 @@ export const UI = {
   stroke: 2,
   // 1단계 보급 텍스트 위치. HUD 띠 안, 좌상단 일시정지 버튼 오른쪽(우상단 시스템 버튼 자리는 비운다)
   supply: { x: 168, y: 32 },
+  // 2단계 임시 HUD 두 줄. y는 HUD 띠 안 첫 줄 윗변, rightLimit 안에 들어와야 한다(우상단 시스템 버튼 자리 비움)
+  hud: { y: 12, px: 24, gap: 8, rightLimit: 560 },
+  // 2단계 임시 출동! 버튼. yOff는 shopY 아래 오프셋(버튼 중심)
+  go: { w: 280, h: 72, yOff: 60, px: 36 },
+  // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
+  enemyBar: { h: 8, gap: 6 },
 } as const
 
 // ---- 2단계 전투 수치 (추가분) ----
