@@ -1,199 +1,184 @@
-# ART: 아트 바이블 + AI 생성 파이프라인 + 에셋 계약 v0.2
+# ART: 아트 바이블 + 에셋 계약 + 요청 목록 v1.0
 
-> 작성: 2026-10-17, Claude(기획). 사용자 결정: **픽셀아트 + 생성형 AI 위주**.
-> v0.2(2026-10-17): **세로 탑다운(3/4 시점)**으로 바꿨다. 옆모습·패럴랙스 규격은 없앴다.
-> 상태: 규격(§2)과 에셋 계약(§4)은 확정이다. 팔레트(§2.2)와 스타일 타깃(§3.1)은 A-001에서 사용자가 승인하면 확정된다.
-> Antigravity는 그림을 지어내지 않는다. §4 표의 키와 크기로 플레이스홀더를 쓰고, 진짜 그림이 오면 같은 이름으로 교체한다.
+> 작성: 2026-10-20, Claude(기획). 이전 판(픽셀 탑다운 슈터)은 `docs/_archive/qrf-ART.md`.
+> 그림은 **사용자가 Gemini Argon 이미지와 Figma로** 만든다. 코드는 그림을 지어내지 않는다. §4 계약의 키·크기로 **플레이스홀더**를 쓰고, 진짜 그림이 오면 같은 이름으로 교체한다.
+> 상태: 계약 구조(§2·§4)는 확정이다. **결은 Figma 기존 에셋에 맞춰 "치비 비율 픽셀풍 + 마젠타 원본"으로 확정**했다(2026-10-20, `docs/research/figma-inventory.md`). 해상도 720×1280은 A-101 목업으로 최종 확인한다.
 
 ---
 
-## 1. 한 줄 방향
+## 0. 지난번에 그림이 게임에 제대로 안 들어간 이유와 대책
 
-**위에서 내려다본 밝은 낮의 한국 도시, 회색 기계 군단, 원색 아군.** 16비트 액션 게임처럼 위에서 비스듬히 본 시점(3/4 탑다운)이다. 작은 화면에서도 읽기 쉽고, 무섭지 않고 귀엽게 위험하다.
+| 원인(추정) | 대책 |
+|---|---|
+| 그림마다 캔버스 크기와 캐릭터 크기가 달랐다 | 모든 유닛을 **같은 캔버스(128×128)**에, **발끝을 같은 기준선(y=116)**에 맞춘다(§2) |
+| 프레임 수·순서가 정해져 있지 않았다 | 상태별 프레임 수를 계약 표로 고정한다(§4). 다르면 검사 스크립트가 실패한다 |
+| 배경이 투명하지 않거나 테두리가 지저분했다 | 원본은 **마젠타 #FF00FF 단색 배경**으로 생성 → 스크립트가 투명 처리 |
+| 코드가 그림을 임의로 늘리고 줄였다 | 코드는 계약 크기 그대로 그린다. 배율은 `data.ts`의 `SPRITE_SCALE` 하나 |
+| "그림을 줬는데 안 쓰였다"를 확인할 방법이 없었다 | `?scene=gallery`에서 모든 키를 한눈에 확인하고, `npm run assets:check`가 계약·장부·파일을 대조한다 |
+| Figma와 화면이 달랐다 | UI는 Figma가 정답이다. UI 티켓은 Figma 프레임 스크린샷과 나란히 비교한 사진을 결과 보고에 붙인다 |
+
+## 1. 방향
+
+**Figma "군대 디자인 에셋"의 결을 그대로 따른다: 치비 비율 픽셀풍 캐릭터 + 9:16 탑다운 픽셀 맵.** 진지한 가상 전쟁극의 긴장은 그림체가 아니라 연출(붉은 경보등, 사이렌 테두리, 무전)로 만든다. 아군은 디지털 위장복·정글모, 적은 회갈색 군복으로 색을 갈라 한눈에 구분되게 한다.
 
 | 가져올 것 | 가져오지 않을 것 |
 |---|---|
-| 16비트 탑다운 액션의 읽기 쉬운 실루엣, 큼직한 폭발 | 특정 게임(탕탕특공대·Cat Gunner·메탈슬러그 등)의 캐릭터·UI·로고·이름 |
-| 위에서 본 한국 거리 디테일(차선, 주차선, 차단기, 버스 지붕, 화단) | 실존 상호·로고·브랜드 색 조합(배달 앱 민트색 등) |
-| 군복의 실루엣(전투모, 방탄조끼, 전투화) | 실제 육군 마크·부대 마크·계급장 원본 이미지 |
+| 한국군 전투복(디지털 위장 느낌), 방탄헬멧, K2·K14 실루엣 | 실제 부대 마크·계급장 원본 이미지, 제조사 로고 |
+| 위병소·연병장·철책·초소 같은 부대 풍경 | 실존 부대 정문의 글자·표지판 문구 |
+| 북한군 보병의 실루엣(전투모, 보총) | 실존 지도자, 국기 훼손, 견장 원본, 우상화 그림 |
+| 레퍼런스 게임의 읽기 쉬운 배치 화면 구성 | 특정 게임(클래시 로얄·PvZ 등)의 캐릭터·UI·이름 |
+| 쓰러짐 + 페이드, 파편·연기 | 피, 시체, 고통 표현 |
 
----
-
-## 2. 기술 규격 (확정)
-
-### 2.1 크기
+## 2. 기술 규격
 
 | 항목 | 규격 |
 |---|---|
-| 내부 해상도 | **360×640 세로**. 화면이 더 길면 위아래로 배경을 보여준다(최대 360×800). 최근접 확대, 안티에일리어싱 없음 |
-| 시점 | 3/4 탑다운. 바닥은 위에서, 캐릭터·로봇은 위에서 비스듬히 앞모습이 보이게 그린다 |
-| 주인공 | 프레임 32×32, 실제 몸 약 24×28. **몸(3방향: 아래·위·옆) + 총(360도 회전용) 분리**. 옆은 오른쪽만 그리고 좌우 반전 |
-| 잡졸 | 28×28 ~ 32×32. 방향이 중요한 부품(청소 로봇 브러시)은 따로 그려 코드가 회전시킨다 |
-| 보스 | 96~128px, **부품 PNG 여러 장**(몸통·포탑·다리)으로 나눠 코드가 조립·회전·움직인다 |
-| 배경 | 스테이지마다 **360×800 한 장**. 가운데 360×640이 아레나다. 아레나 안쪽은 바닥만 두고, 장식은 가장자리 약 12~60px에만 둔다 |
-| 그림자 | 캐릭터·로봇 발밑 그림자는 코드로 그린다(반투명 타원). 그림에 넣지 않는다 |
-| UI | 9-slice 프레임 16px 모서리, 아이콘 24×24, 폰트 Galmuri11 / Galmuri7 |
-| 포맷 | PNG(가능하면 인덱스 컬러), 시트는 가로 한 줄, 프레임 사이 여백 0 |
-| 금지 | 반투명 픽셀(그림자 제외), 비정수 축소, 그라데이션, 사진 질감 |
+| 논리 해상도 | **720×1280 세로**. 배경은 720×1560까지. 픽셀풍이라 **최근접(nearest) 확대**를 쓴다(Phaser `pixelArt: true`) |
+| 시점 | 3/4 탑다운. 아군은 **등이 보이게 위를 향하고**(적이 위에서 온다), 적은 **앞모습이 보이게 아래를 향한다** |
+| 유닛 캔버스 | **128×128 고정**. 몸 높이 약 96px. **피벗 = 발 중앙(64, 116)** |
+| 보스 | 256×256. 부품으로 나눌 수 있으면 나눈다(차체·포탑) |
+| 카드 일러스트 | 256×320(얼굴이 보이는 상반신). 카드 틀은 UI가 따로 그린다 |
+| 시트 | **가로 한 줄**, 프레임 사이 여백 0, 프레임 크기 = 캔버스 크기 |
+| 배경 | 원본은 마젠타 #FF00FF 단색. 최종 PNG는 투명 |
+| 그림자 | 발밑 그림자는 코드가 그린다(반투명 타원). 그림에 넣지 않는다 |
+| 계급장 | 따로 그린다(§4 `rank_*`). 코드가 유닛 머리 위·카드 모서리에 얹는다 |
+| 포맷 | PNG, sRGB. 한 장 512KB 이하 |
+| 빛 | 왼쪽 위에서 온다. 외곽선은 짙은 남색(`#1b1d26`) 1~2px |
 
-### 2.2 팔레트 (A-001에서 확정, 32색 이내)
+**가독성 규칙**
+- **붉은색·주황은 적의 공격·경보·예고에만** 쓴다. 아군 탄은 노랑·흰색.
+- 바닥은 어둡고 채도를 낮게, 유닛은 밝고 외곽선을 뚜렷하게 한다.
+- 화면을 흑백으로 바꿔도 아군·적·탄·지뢰 표식이 바닥과 구분되어야 한다(G2 검사).
 
-| 묶음 | 색 | 용도 |
-|---|---|---|
-| 아군 | 시안 `#2ec5e8`, 녹색 `#3fbf6f`, 군복 올리브 3단계 | 플레이어, 아군 탄, 아군 UI |
-| **적·위험** | 크림슨 `#e8344a`, 주황 `#ff8a2a`, 흰 심 `#fff4e0` | 적 눈, **모든 예고(띠·선·원)**, 적 탄 |
-| 기계 | 회색 4단계(`#2b2d36` ~ `#c9cdd6`) | 로봇 몸체 |
-| 도시 | 채도 낮은 아스팔트·콘크리트·차선 흰색·나무·물 8색 | 바닥과 가장자리 장식 |
-| 빛 | 노랑 `#ffd23f`, 흰 `#ffffff` | 총구 섬광, 스파크, 건빵 |
-
-**가독성 규칙(필수)**
-- 붉은색·주황은 **적의 공격과 예고에만** 쓴다. 배경에 넣지 않는다(데이터센터의 경고등도 가장자리에 작게만).
-- 아군 탄은 시안, 적 탄은 크림슨에 흰 심을 넣는다.
-- 바닥은 어둡고 채도를 낮게, 캐릭터·로봇은 밝고 외곽선을 뚜렷하게 한다.
-- 화면을 흑백으로 바꿔도 플레이어·적 탄·예고가 바닥과 구분되어야 한다(G2 검사).
-
-### 2.3 빛·외곽선
-
-- 빛은 왼쪽 위에서 온다.
-- 외곽선은 1px 바깥선만 쓴다. 색은 순검정 대신 `#1b1d26`.
-- 적의 '눈'(GRAY 표식)은 모두 같은 크림슨 원 + 흰 점이다. 같은 적 편이라는 신호다.
-
----
-
-## 3. AI 생성 파이프라인
+## 3. 제작 파이프라인
 
 ```
-① 스타일 타깃 1장(A-001) ─ 사용자 승인
-② 기준 시트(캐릭터·로봇별 앞/뒤/옆) ─ ①을 참조 이미지로 생성
-③ 방향·프레임 ─ ②를 참조 이미지로 넣고 한 줄씩 생성
-④ 정리: scripts/pixelize ─ 축소(최근접) + 팔레트 강제 + 배경 제거 + 외곽선
-⑤ 사람 손질: Aseprite / Pixelorama(무료) ─ 깨진 픽셀, 프레임 정렬
-⑥ 장부 기록: art/LEDGER.json ─ 생성 도구, 프롬프트 파일, 원본 경로, 손질 여부
-⑦ public/assets/ 같은 이름으로 교체 → npm run assets:check
+① 스타일 타깃 1장(A-101) ─ 사용자 승인. 이 그림이 이후 모든 생성의 참조 이미지다
+② 캐릭터 기준 시트(앞·뒤·옆) ─ ①을 첨부해 생성
+③ 상태별 프레임 시트 ─ ②를 첨부해 한 상태씩 생성
+④ 정리: 마젠타 제거·128 캔버스 정렬·발 기준선 맞춤 (H-102 스크립트 또는 수작업)
+⑤ 장부 기록: art/LEDGER.json
+⑥ public/assets/<키>.png로 넣기 → npm run assets:check → ?scene=gallery 확인
 ```
 
 | 단계 | 담당 | 도구 |
 |---|---|---|
-| ①②③ | 사용자 | Gemini 앱(Pro) 이미지 생성. 걷기 프레임이 계속 깨지면 R-003에서 픽셀 특화 AI 도구 평가 |
-| ④ | Antigravity(H-002에서 스크립트 이식) | Node 스크립트 |
-| ⑤ | 사용자 | Aseprite 또는 Pixelorama |
-| ⑥⑦ | Antigravity(A 티켓 연결 작업) | `assets:check` |
+| ①②③ | 사용자 | Gemini Argon 이미지, Figma(UI·카드 틀) |
+| ④ | Antigravity(H-102) + 사용자 손질 | Node 스크립트 |
+| ⑤⑥ | Antigravity(에셋 연결 티켓) | `assets:check`, 갤러리 |
 
-### 3.1 스타일 타깃 (A-001)
+### 3.1 일관성 요령
 
-전투 화면 한 장을 **세로 9:16**으로 만든다. 구성은 다음과 같다.
+1. 항상 **기준 시트를 참조 이미지로 첨부**하고, 프롬프트 맨 앞에 "same character"를 둔다.
+2. 한 묶음(예: 아군 5종의 대기 프레임)은 같은 날, 같은 대화, 같은 프롬프트 골격으로 만든다.
+3. 프레임이 계속 어긋나면 **프레임 수를 줄이고 코드 트윈**(들썩임·반동)으로 메운다. 계약 표의 "최소" 열이 그 하한이다.
+4. 무기 섬광·바람·화염은 이펙트 시트로 따로 그린다. 몸 그림에 넣지 않는다.
 
-| 위치 | 구성 |
-|---|---|
-| 바닥 | 위병소 연병장: 어두운 아스팔트, 흰 주차선 |
-| 위쪽 가장자리 | 부대 정문 차단기, 초소, 입간판 |
-| 좌우 가장자리 | 화단, 철책 |
-| 가운데 | 플레이어(위에서 본 군인)가 소총으로 위쪽 적을 쏘는 중 |
-| 주변 | 배달 로봇 3기(사방에서 접근) + 방범 드론 1기(플레이어 쪽으로 붉은 조준선) |
-| 한쪽 | 유탄 폭발 1개 |
-| 맨 위 | 좌상단 HUD만 대충 표시(우상단은 비움) |
-| 맨 아래 | 오른쪽 아래에 둥근 버튼 2개 자리(구르기·특수화기) |
+### 3.2 프롬프트 골격 (영어가 더 안정적)
 
-이 한 장이 이후 모든 생성의 **참조 이미지**가 된다. 승인 전에는 다른 에셋을 생성하지 않는다.
-
-### 3.2 프롬프트 팩 (Gemini 이미지용 시작점, 영어가 더 안정적)
-
-공통 접미사(모든 프롬프트 끝에 붙인다)
+공통 접미사
 ```
-16-bit pixel art, top-down three-quarter view like classic 16-bit action games, clean 1px dark outline (#1b1d26),
-flat shading with 3 tones, light from top-left, limited palette, no anti-aliasing, no gradients, no text, no logos,
-plain flat magenta (#ff00ff) background
+chibi pixel art 2D mobile game sprite (same style as the attached reference), top-down three-quarter view, clean dark outline,
+light from top-left, no text, no logos, no blood, plain flat magenta (#FF00FF) background,
+character centered with feet on the same baseline
 ```
-- 배경(바닥) 프롬프트에서는 마지막 줄의 magenta background를 뺀다.
 
-| 대상 | 프롬프트 본문 |
+| 대상 | 본문 예 |
 |---|---|
-| 스타일 타깃 | `vertical 9:16 mobile game screenshot, top-down arcade shooter, a young Korean army private in olive uniform and helmet in the middle firing a rifle upward, three box-shaped six-wheeled delivery robots and a police quadcopter drone with a red laser sight closing in from all sides, dark asphalt parade ground with white parking lines, military base front gate with a boom barrier and guard post along the top edge, flower beds and fence on the left and right edges, bright daytime, cute but dangerous robots with one red glowing eye, small grenade explosion` |
-| 주인공 기준 시트 | `character reference sheet for a 4-direction top-down sprite, young Korean army private, olive combat uniform, helmet with cover, bulletproof vest, cheerful determined face, chibi-ish proportions, front view, back view and right side view, no weapon` |
-| 주인공 걷기(아래) | (기준 시트를 참조 이미지로 첨부) `same soldier, walking toward the camera (facing down), 4 frames in one horizontal row, no weapon` |
-| 주인공 걷기(위) | (첨부) `same soldier, walking away from the camera (facing up), 4 frames in one horizontal row, no weapon` |
-| 주인공 걷기(옆) | (첨부) `same soldier, walking to the right, 4 frames in one horizontal row, no weapon` |
-| 구르기 | (첨부) `same soldier, combat roll seen from above, curled up, 4 frames horizontal row` |
-| 총 | `compact assault rifle seen from above, isolated, pointing right, tiny, game item sprite` |
-| 배달 로봇 | `cute boxy six-wheeled sidewalk delivery robot seen from above at an angle, lid with one red glowing eye, small flag antenna, hacked and angry, 2 frames wheels moving` |
-| 방범 드론 | `small police security quadcopter drone seen from above, blue and white with a red warning light, one red glowing eye, 2 frames propeller blur` |
-| 청소 로봇 몸통 | `cylindrical street cleaning robot seen from above at an angle, one red eye, without the brush` |
-| 청소 로봇 브러시 | `wide rotating street cleaning brush seen from above, isolated, facing right` |
-| 보스1 부품 | `unmanned armored patrol vehicle seen from above, one big red eye, separate parts on one sheet: hull, rotating turret` |
-| 위병소 바닥 | `top-down view of a Korean military base parade ground at the front gate, dark asphalt, white parking lines, boom barrier and guard post along the top edge, flower beds and fence on the left and right edges, empty center, no characters, vertical 360x800` |
-| 한강 다리 바닥 | `top-down view of a four-lane road on a Seoul river bridge, lane markings, railings on both sides with river water beyond, stopped buses and taxis at the top and bottom edges, empty center, no characters, no logos, vertical 360x800` |
-| 데이터센터 바닥 | `top-down view of a data center floor, dark grid floor tiles, cable covers, rows of server racks along the left and right edges, cooling pipes along the top edge, small warning lights, empty center, no characters, vertical 360x800` |
-| UI 프레임 | `pixel art UI panel frame, military olive and khaki, 9-slice friendly, rounded corners, no text` |
-
-- 배경을 마젠타 단색으로 생성하면 ④에서 배경 제거가 쉽다.
-- 결과물 안의 글자·로고는 생성되더라도 ⑤에서 지운다.
-
-### 3.3 일관성 요령
-
-1. 항상 **기준 시트를 참조 이미지로 첨부**하고, "same character"를 문장 맨 앞에 둔다.
-2. 방향은 3개(아래·위·옆)만 그린다. 옆은 좌우 반전으로 왼쪽을 만든다.
-3. 걷기 4프레임이 맞지 않으면 **2프레임 + 몸 들썩임 트윈**으로 줄인다. 작은 탑다운 캐릭터는 2프레임으로도 충분히 읽힌다.
-4. 총은 따로 그려서 코드가 돌린다. 그래서 몸 그림에는 무기를 넣지 않는다.
-5. 로봇은 프레임 애니메이션 대신 **부품을 트윈으로** 움직인다. 바퀴 2프레임, 몸통 위아래 1px, 눈 깜빡임 정도면 된다.
-6. 같은 날, 같은 대화, 같은 프롬프트 골격으로 한 묶음(예: 잡졸 3종)을 한 번에 만든다.
-7. ④의 팔레트 강제가 마지막 안전장치다. 팔레트 밖 색은 자동으로 가장 가까운 팔레트 색으로 바뀐다.
-
-### 3.4 AI 표시 의무
-
-| 항목 | 내용 |
-|---|---|
-| 근거 | AI기본법 §31(2026-01-22 시행). 생성형 AI 결과물 표시와 사전 고지. 과태료는 유예 중이고 하위 법령은 확정되지 않았다 |
-| 대응 | 타이틀 하단 한 줄("일부 그래픽은 생성형 AI로 제작되었습니다") + 설정 > 크레딧 + `art/LEDGER.json`의 `tool` 필드 |
-| 확인 | 출시 전 R-002 결과와 법률 확인(사용자) |
-
----
+| 스타일 타깃(A-101) | `vertical 9:16 mobile defense game screenshot at night, Korean army base front gate under red alarm lights, five vertical lanes on a dark parade ground, Korean soldiers in digital camouflage seen from behind at the bottom holding the line, North Korean infantry in brown uniforms advancing from the top, one sniper tracer line, small explosion, serious tone` |
+| 아군 기준 시트 | `character reference sheet, young Korean army private, digital camouflage uniform, ballistic helmet, K2 rifle, front view, back view, right side view` |
+| 아군 상태 | (기준 시트 첨부) `same character, seen from behind at three-quarter top-down angle, firing the rifle upward, 4 frames in one horizontal row` |
+| 적 기준 시트 | `character reference sheet, North Korean infantry soldier, brown-olive uniform, soft cap, rifle, front view, back view, right side view` |
+| 생체개조 군견 | `military dog with mechanical implants and one glowing red eye, running toward the camera, top-down three-quarter view, 4 frames in one horizontal row` |
 
 ## 4. 에셋 계약 (코드가 쓰는 이름·크기)
 
-**교체 방식**
-- H-001이 이 표를 `src/assets.ts`로 옮기고, 파일이 없는 키는 **런타임에 단색 플레이스홀더**(같은 크기, 같은 프레임 수)로 만든다.
-- 실제 그림은 `public/assets/<키>.png`로 넣고 `public/assets/index.json`에 키를 추가하면 바로 교체된다.
-- 새 단계의 키는 그 단계 첫 티켓이 `src/assets.ts`에 추가한다.
-- `/?scene=gallery`에서 모든 키를 한눈에 확인한다.
+- H-101이 이 표를 `src/assets.ts`로 옮긴다. 파일이 없는 키는 **런타임에 같은 크기·같은 프레임 수의 단색 플레이스홀더**로 만든다.
+- 진짜 그림은 `public/assets/<키>.png`로 넣으면 바로 교체된다.
+- 프레임 수가 "최소~권장"이면 그 범위 안 아무 수나 된다. 코드는 프레임 수를 이미지 너비로 계산한다(**이미지 너비 ÷ 그 키의 캔버스 너비**).
 
-| 키(`public/assets/…png`) | 크기(프레임) | 프레임 | 앵커 | 플레이스홀더 색 | 단계 |
+### 4.1 아군 (카드 하나에 아래 6개 키)
+
+`<카드>`는 `rifle`, `sniper`, `blower`, `cook`, `miner`, `chem`(M3)이다.
+
+| 키 | 캔버스 | 프레임(최소~권장) | 피벗 | 플레이스홀더 | 단계 |
 |---|---|---|---|---|---|
-| `player_walk_down` | 32×32 | 4 | 발 중앙(16,28) | 올리브 | P2 |
-| `player_walk_up` | 32×32 | 4 | 발 중앙(16,28) | 올리브 어둡게 | P2 |
-| `player_walk_side` | 32×32 | 4(오른쪽 보기) | 발 중앙(16,28) | 올리브 밝게 | P2 |
-| `player_roll` | 32×32 | 4 | 중앙 | 올리브 | P2 |
-| `player_gun_rifle` | 24×8 | 1(오른쪽 보기) | 손잡이(6,4) | 시안 | P2 |
-| `player_gun_grenade` | 24×10 | 1(오른쪽 보기) | 손잡이(6,5) | 시안 | P2 |
-| `player_gun_jammer` | 24×10 | 1 | 손잡이(6,5) | 시안 | P4 |
-| `enemy_rusher` | 32×32 | 2 | 중앙 | 회색 + 붉은 점 | P2 |
-| `enemy_shooter` | 28×28 | 2 | 중앙 | 회색 + 붉은 점 | P2 |
-| `enemy_shield` | 32×32 | 2 | 중앙 | 진회색 + 붉은 점 | P3 |
-| `enemy_shield_brush` | 32×12 | 2(회전) | 왼쪽 중앙(0,6) | 진회색 | P3 |
-| `boss1_hull` / `boss1_turret` | 96×96 / 48×32 | 1 / 1 | 중앙 / 회전축(14,16) | 회색 | P3 |
-| `boss2_*`, `boss3_*` | P4에서 확정 | | | | P4 |
-| `bullet_ally` | 8×4 | 1 | 중앙 | 시안 | P2 |
-| `bullet_enemy` | 8×8 | 1 | 중앙 | 크림슨 + 흰 심 | P2 |
-| `grenade` | 8×8 | 1 | 중앙 | 시안 | P2 |
-| `fx_spark` | 16×16 | 4 | 중앙 | 노랑 | P2 |
-| `fx_bolt` | 6×6 | 3(나사·너트·톱니) | 중앙 | 회색 | P2 |
-| `fx_explosion` | 48×48 | 6 | 중앙 | 주황→노랑 | P2 |
-| `fx_muzzle` | 12×12 | 2 | 왼쪽 중앙 | 노랑 | P2 |
-| `pickup_bread` | 12×12 | 1 | 중앙 | 노랑 | P2 |
-| `pickup_chicken` | 16×16 | 1 | 중앙 | 갈색 | P3 |
-| `bg1` | 360×800 | 1 | 중앙 | 어두운 아스팔트 + 가장자리 회색 띠 | P3 |
-| `bg2`, `bg3` | 360×800 | 1 | 중앙 | | P4 |
-| `ui_frame` | 48×48(9-slice, 모서리 16) | 1 | — | 카키 | P3 |
-| `ui_icons` | 24×24 | 16(카드 12 + PX 3 + 훈장) | 중앙 | 단색 | P4 |
-| `portrait_kim` / `portrait_park` | 48×48 | 2(보통·놀람) | — | 단색 | P4 |
-| `rank_insignia` | 16×16 | 5 | 중앙 | 단색 | P4 |
+| `ally_<카드>_idle` | 128×128 | 1~2 | 발 중앙(64,116) | 올리브 사각형 + 카드 머리글자 | M2 |
+| `ally_<카드>_attack` | 128×128 | 2~4 | 발 중앙 | 올리브 밝게 | M3 |
+| `ally_<카드>_hit` | 128×128 | 1 | 발 중앙 | 흰색 | M3 |
+| `ally_<카드>_down` | 128×128 | 1~2 | 발 중앙 | 회색 | M3 |
+| `card_<카드>` | 256×320 | 1 | 중앙 | 카드 색 + 이름 | M3 |
+| `icon_<카드>` | 64×64 | 1 | 중앙 | 카드 색 원 | M3 |
 
-- P2 키는 17개다(H-001 갤러리 확인 대상).
+- 제설병은 `blower`의 `attack`을 **송풍**으로 그린다. 상병 이상의 화염은 이펙트(`fx_flame`)로 덧입힌다.
+- 지뢰설치병의 `attack`은 소총 사격이다. 매설 동작은 M3에서 `ally_miner_plant`(2~3프레임)를 추가한다.
 
-**오디오** (`public/assets/sfx_*.m4a`, 30KB 이하. BGM은 `bgm_*.m4a`, 500KB 이하 루프)
-- 효과음: `sfx_rifle`, `sfx_hit`, `sfx_break`, `sfx_boom`, `sfx_kalgak`, `sfx_hurt`, `sfx_siren`, `sfx_pickup`, `sfx_click`, `sfx_rankup`
-- BGM: `bgm_lobby`, `bgm_battle`, `bgm_boss`
-- 효과음은 jsfxr로 만든다(결과물은 자유 이용). BGM은 무료 라이선스 칩튠 또는 AI 음악을 쓰고 장부에 기록한다.
+### 4.2 적
 
-**장부(`art/LEDGER.json`) 항목**
-- 필드: `id`, `file`, `source`(원본 경로 또는 URL), `tool`(예: `gemini-image`, `jsfxr`, `hand`), `prompt`(파일 경로), `license`, `edited`(true/false), `checked`(날짜)
-- 런타임 플레이스홀더는 장부에 적지 않는다. 출시 전 `index.json`에 §4의 모든 키가 있어야 한다(P5 release-check가 검사).
+| 키 | 캔버스 | 프레임 | 피벗 | 단계 |
+|---|---|---|---|---|
+| `enemy_inf_walk` / `_attack` / `_down` | 128×128 | 2~4 / 2~3 / 1~3 | 발 중앙 | M3(M2는 플레이스홀더) |
+| `enemy_dog_run` / `_bite` / `_down` | 128×128 | 2~4 / 2 / 1~3 | 발 중앙 | M3 |
+| `enemy_rpg_walk` / `_fire` / `_down` | 128×128 | 2~4 / 2~3 / 1~3 | 발 중앙 | M3 |
+| `boss_apc_hull` / `boss_apc_turret` | 256×256 / 128×128 | 1~2 / 1 | 중앙 / 회전축은 A-101 뒤 정함 | M3 |
+
+### 4.3 이펙트·판·UI
+
+| 키 | 캔버스 | 프레임 | 단계 |
+|---|---|---|---|
+| `fx_muzzle` | 32×32 | 2 | M3 |
+| `fx_wind` | 128×256 | 4 | M3 |
+| `fx_flame` | 128×256 | 4 | M3 |
+| `fx_explosion` | 256×256 | 6 | M3 |
+| `fx_heal` | 128×128 | 4 | M3 |
+| `fx_gas` | 256×256 | 4(반복) | M3 |
+| `mine` / `mine_at` | 64×64 | 1 | M3 |
+| `rank_1` ~ `rank_4` | 48×48 | 1(이등병 작대기 1 ~ 병장 4, 가상 디자인) | M3 |
+| `bg_gate` | 720×1560 | 1 | M3 |
+| `tile_deploy` / `tile_mine` / `tile_hover` | 128×128 | 1 | M3 |
+| `ui_*` | Figma 프레임 기준 | — | M3 |
+
+- 저격 궤적, 데미지 숫자, 사이렌 테두리, 그림자는 코드가 그린다.
+
+### 4.4 오디오 (`public/assets/sfx_*.m4a` 30KB 이하, `bgm_*.m4a` 500KB 이하 루프)
+
+- 효과음: `sfx_rifle`, `sfx_sniper`, `sfx_wind`, `sfx_boom`, `sfx_heal`, `sfx_merge`, `sfx_siren`, `sfx_radio`, `sfx_hit`, `sfx_click`, `sfx_buy`
+- BGM: `bgm_lobby`, `bgm_defcon2`, `bgm_defcon1`
+- 출처와 라이선스를 장부에 적는다.
+
+### 4.5 장부(`art/LEDGER.json`)
+
+- 필드: `id`, `file`, `source`(원본 경로 또는 Figma 노드 URL), `tool`(`gemini-argon`, `figma`, `hand` 등), `prompt`(파일 경로), `license`, `edited`(true/false), `checked`(날짜)
+- 플레이스홀더는 장부에 적지 않는다. 출시 전에는 §4의 모든 M2·M3 키가 있어야 한다.
+
+## 5. 사용자에게 드리는 에셋 요청 (체크리스트)
+
+**지금(M1) 필요한 것: A-101 하나뿐이다.** M2는 도형(그레이박스)으로 재미를 먼저 확인한다. 그림은 G1 통과 뒤에 대량 생산한다. 그래야 기획이 바뀌어도 그림을 버리지 않는다.
+
+이미 있는 것(Figma, `docs/research/figma-inventory.md`): 위병소 배경, 소총수 동작 시트, 제설병(송풍기) 시트, 말년병장, UI 패널·버튼·카드 틀, 폭발 이펙트, 보급 드론, 총기·차량 아이템. **아래는 없는 것만 요청한다.**
+
+### A-101 스타일 타깃 (지금)
+- [x] Figma 연결(2026-10-20 완료, 인벤토리 작성)
+- [ ] **전투 화면 목업 1장**(Figma, 세로 9:16): 위병소 배경(`6:36`) 위에 5열×3행 배치 칸, 기존 소총수 2명, 상점 패널·HUD(기존 UI 패널 조합). 새로 그리지 말고 있는 그림을 배치만 한다
+- [ ] **북한군 보병 기준 시트**(앞·뒤·옆, 마젠타 배경): 북한군 물자 시트(`7:53`)를 참조 이미지로, 견장은 변형
+- [ ] **소총수 뒷모습 사격** 2~4프레임(위쪽을 향해 쏘는 자세): 전투 모션 시트(`5:18`)를 참조 이미지로
+- [ ] 계급장 4종을 **한국군 가로 작대기** 1~4개로(기존 V자 대체)
+
+### M3 묶음 (G1 통과 뒤, 장수 = 상태별 권장 프레임)
+- [ ] **적 3종**(보병·RPG병·생체개조 군견) × (걷기 4, 공격 3, 쓰러짐 3) = 30프레임 ← 가장 먼저(지금 하나도 없다)
+- [ ] **새 아군 3종 기준 시트 + 프레임**: 저격수(K14, `7:59` 참조), 취사병, 지뢰설치병. 각 (뒷모습 대기 2, 공격 4, 피격 1, 쓰러짐 2)
+- [ ] 기존 소총수·제설병을 뒷모습 기준으로 보충: 대기·공격·피격·쓰러짐(제설병은 송풍 연속 2~4프레임)
+- [ ] 카드 일러스트 5장(기존 큰 캐릭터 `6:21` 결로) + 아이콘 5
+- [ ] 화학병 1종(같은 구성, 방독면 착용) — M3 후반
+- [ ] 보스 장갑차 탑다운 차체·포탑 분리(`6:42`·`8:70` 참조)
+- [ ] 이펙트 보충: 바람·화염·회복·가스(폭발·섬광은 `6:39`에 있다)
+- [ ] `bg_gate`: `6:36`을 720×1560 비율로 위아래 확장(정문 위 숲, 아래 연병장)
+- [ ] UI(Figma): 세로 HUD, 상점 패널, 카드 틀(계급별 테두리 색), 결과 화면, 모달, 로비 — 기존 패널(`6:33`) 결로
+- [ ] 도입 4컷 일러스트(선택): 생활관 → 경보 → 폭격 → 위병소
+
+## 6. AI 표시
+
+| 항목 | 내용 |
+|---|---|
+| 근거 | AI기본법 §31(2026-01-22 시행). 생성형 AI 결과물 표시. 하위 법령과 과태료는 R-101에서 다시 확인한다 |
+| 대응 | 첫 실행 화면 한 줄("일부 그래픽은 생성형 AI로 제작되었습니다") + 설정 > 크레딧 + 장부의 `tool` 필드 |

@@ -31,9 +31,19 @@ description: >-
    ```sh
    node scripts/harness/autosave.mjs -m "<ID>: <티켓 제목>"
    ```
-   - 출력이 `push 실패`면 사용자에게 알린다(`docs/SETUP.md` §5). 로컬 커밋은 남아 있다.
-7. **비활성화**: 다음 티켓이 깨끗하게 시작하도록 기준점을 옮긴다.
+   - 출력이 `push 실패`면 사용자에게 알리고 7단계를 건너뛴다(`docs/SETUP.md` §5). 로컬 커밋은 남아 있다.
+7. **PR 만들기**(지금 브랜치가 `main`이 아닐 때만)
+   ```sh
+   gh pr create --base main --head "$(git branch --show-current)" --title "<ID>: <티켓 제목>" --body "티켓: docs/tickets/<파일명>
+   스크린샷: docs/shots/<ID>.png
+   검증: npm run verify 통과"
+   ```
+   - 이미 PR이 있으면 그대로 둔다(`gh pr view`로 주소만 확인).
+   - `gh`가 없거나 로그인이 안 되어 실패하면, 아래 주소를 사용자에게 주고 "이 주소에서 Create pull request를 눌러 주세요"라고 안내한다.
+     `https://github.com/kidariseok/shoottrial/compare/main...<브랜치>`
+   - **병합(merge)은 하지 않는다.** 사용자가 GitHub에서 한다.
+8. **비활성화**: 다음 티켓이 깨끗하게 시작하도록 기준점을 옮긴다.
    ```sh
    git rev-parse HEAD > .harness/base && : > .harness/active
    ```
-8. 사용자에게 3줄 이내로 보고한다: 한 일, 확인 URL, 남은 점.
+9. 사용자에게 3줄 이내로 보고한다: 한 일, 확인 URL, PR 주소.

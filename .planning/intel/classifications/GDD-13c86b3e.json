@@ -1,0 +1,40 @@
+{
+  "source_path": "/Users/jinseokoh/orca/workspaces/shoottrial/moonfish/docs/GDD.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "GDD: 《데프콘 2: 화스트 페이스》(가제) v1.0",
+  "summary": "Game design for a portrait card-defense game where players place military-role cards, merge duplicates to promote rank, and defend a guard post across 10 waves.",
+  "scope": [
+    "card defense core loop (prep / battle / wave settlement)",
+    "720x1280 portrait screen layout (5 columns, deploy zone 5x3, mine zone 5x2, bench)",
+    "DEFCON 2/1 stage rules",
+    "guard post HP and per-column last line of defense",
+    "lane-isolated targeting",
+    "ally cards (rifleman, sniper, snow-blower, cook, mine layer, chemical)",
+    "rank merge system (private to sergeant)",
+    "role synergies by headcount",
+    "mines",
+    "enemies (infantry, bio-modified dog, RPG, armored vehicle boss, chemical shelling)",
+    "stage 1 wave table",
+    "supply economy (shop, reroll, interest, sell)",
+    "meta progression (unlocks, local save)",
+    "screen specs (first run, lobby, briefing, HUD, shop, results, modals)",
+    "juice/feedback list",
+    "rewarded-ad monetization",
+    "analytics events",
+    "scope triage vs original requirements (M2-M5+)"
+  ],
+  "cross_refs": [
+    "docs/references/",
+    "docs/_archive/qrf-GDD.md",
+    "docs/ROADMAP.md",
+    "docs/references/osint.md",
+    "docs/references/requirements.md",
+    "src/data.ts",
+    "src/stages.ts"
+  ],
+  "locked": false,
+  "precedence": 2,
+  "notes": ""
+}

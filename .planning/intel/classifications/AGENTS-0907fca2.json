@@ -1,0 +1,35 @@
+{
+  "source_path": "/Users/jinseokoh/orca/workspaces/shoottrial/moonfish/AGENTS.md",
+  "type": "ADR",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "《데프콘 2: 화스트 페이스》(가제) 작업 규칙",
+  "summary": "Top-priority agent rules for a Google Play (Capacitor Android) portrait card-defense game: doc hierarchy, Orca per-ticket worktree/branch autosave + PR flow, absolute rules incl. lane-A file protection, ponytail code principles, content/real-name policy, screen rules, debug URLs, roles.",
+  "scope": [
+    "Google Play portrait card defense (5 lanes, card merge 짬, 10 waves)",
+    "doc hierarchy AGENTS > GDD > TECH > ART > tickets > references",
+    "ticket = conversation = Orca worktree; autosave pushes current branch; main via /finish-ticket PR",
+    "read-only: AGENTS, GDD/TECH/ART/ROADMAP/SETUP, docs/references, docs/agents, docs/_archive, .agents, scripts/harness",
+    "dependency allowlist",
+    "platform API (Capacitor/AdMob/Play) only after verification; Capacitor imports only in src/platform.ts",
+    "lane A files (src/battle, rules.ts, data.ts, stages.ts) edited only by Claude Code; ui/screens.ts signatures fixed by TECH §8",
+    "ponytail: no React/Vue, ECS, Manager/Service, custom pools/state machines; numbers only in data.ts/stages.ts; pure logic in rules.ts tested",
+    "content: serious fictional war drama, no blood, ROK equipment real names, fictional units, North Korean army named without real leaders/flags/insignia, no operational military info",
+    "screen: portrait 720x1280, Safe Area, pause top-left, back-button confirm modal, mute on background/ads, rewarded ads only",
+    "roles: Claude lane A + G; Antigravity H/T (Argon High), R (Flash); user A/U/P; ChatGPT→Claude C"
+  ],
+  "cross_refs": [
+    "docs/GDD.md",
+    "docs/TECH.md",
+    "docs/ART.md",
+    "docs/ROADMAP.md",
+    "docs/SETUP.md",
+    "docs/tickets/",
+    "docs/references/",
+    "docs/agents/antigravity-research.md",
+    "docs/research/play-launch.md"
+  ],
+  "locked": true,
+  "precedence": 1,
+  "notes": "Re-written by orchestrator from the on-disk v1 file (classifier had read a stale pre-pivot copy from session context). Locked: manifest ADR precedence 1, self-declared top of hierarchy."
+}

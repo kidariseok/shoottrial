@@ -1,0 +1,17 @@
+# GSD ingest 입력 목록(레인 A가 .planning/을 다시 만들 때 쓴다). 문서 위계(AGENTS.md)를 우선순위로 쓴다. 숫자가 작을수록 우선.
+docs:
+  - path: AGENTS.md
+    type: ADR
+    precedence: 1
+  - path: docs/GDD.md
+    type: PRD
+    precedence: 2
+  - path: docs/TECH.md
+    type: SPEC
+    precedence: 3
+  - path: docs/ART.md
+    type: SPEC
+    precedence: 4
+  - path: docs/ROADMAP.md
+    type: DOC
+    precedence: 5
