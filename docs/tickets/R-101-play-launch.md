@@ -1,6 +1,6 @@
 # R-101 구글 플레이 출시 요건·정책·등급·행정·Capacitor 플러그인 확인표
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-3.8-flash-medium (역할 카드: `docs/agents/antigravity-research.md`)
 
 ## 목표
@@ -70,10 +70,10 @@
 
 ## 완료 조건
 
-- [ ] `docs/research/play-launch.md`가 역할 카드의 형식(요약·확인 표·게임에 쓰는 제안·빈칸)을 따른다
-- [ ] 할 일 1~7의 모든 항목에 답 또는 "빈칸" 표시가 있다
-- [ ] `docs/TECH.md` §4의 ❓ 항목마다 대응하는 행이 있다(표에 "TECH §4" 열)
-- [ ] 등급 C만 있는 사실에는 "추가 확인 필요" 표시
+- [x] `docs/research/play-launch.md`가 역할 카드의 형식(요약·확인 표·게임에 쓰는 제안·빈칸)을 따른다
+- [x] 할 일 1~7의 모든 항목에 답 또는 "빈칸" 표시가 있다
+- [x] `docs/TECH.md` §4의 ❓ 항목마다 대응하는 행이 있다(표에 "TECH §4" 열)
+- [x] 등급 C만 있는 사실에는 "추가 확인 필요" 표시
 
 ## 작업 계획
 
@@ -109,14 +109,19 @@
 - 기준 커밋: 294b3331124f
 - 브랜치: kidariseok/fix-r101-play-launch
 - 세션 시작: gemini-3.8-flash-medium, 2026-10-20T17:06:40+09:00
+- 1단계 완료: Play Console 개인 계정 요건(12명/14일, 신원확인, 등록비 $25) 조사 완료
+- 2단계 완료: 기술 요건(Target SDK 35/36, AAB, 64비트) 및 콘텐츠/광고/가족 정책 조사 완료
+- 3단계 완료: 등급분류(IARC 연동 12세) 및 행정(제작업/사업자등록/세무/AI기본법) 조사 완료
+- 4단계 완료: Capacitor 최신 사양, App/Preferences API, Android 15 Edge-to-Edge, AdMob 이벤트/테스트 ID 조사 완료
+- 5단계 완료: docs/research/play-launch.md 작성 및 완료 조건 자체 검증 완료
 
 ## 결과 보고
 
-- 바뀐 파일:
-- 검증 결과:
-- 스크린샷: 해당 없음
+- 바뀐 파일: `docs/research/play-launch.md`, `docs/tickets/R-101-play-launch.md`
+- 검증 결과: 모든 조사 항목(1~7) 및 `docs/TECH.md` §4 ❓ 항목 1:1 매핑 확인 완료, 공식 URL 및 확인일 기재 확인
+- 스크린샷: 해당 없음 (조사 티켓)
 - 사용자 확인 방법: `docs/research/play-launch.md`의 요약 5줄
-- 확인하지 못한 점:
-- 다음 제안:
+- 확인하지 못한 점: Android 15+ 일부 제조사/구형 웹뷰 기기에서의 safe-area-inset 실측 px값 (T-101 실측에서 확인)
+- 다음 제안: 안드로이드 스캐폴드(T-101) 진행 시 `@capacitor-community/admob` 및 `@capacitor/app`, `@capacitor/preferences` 패키지 구성 및 Safe Area 폴백 로직 적용
 
 ## 인계 메모
