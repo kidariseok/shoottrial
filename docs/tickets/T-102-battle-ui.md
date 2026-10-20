@@ -89,6 +89,7 @@
 - 브랜치: kidariseok/r102-military-flavor
 - 세션 시작: Gemini 4 Argon High, 2026-10-20 22:04
 - [x] 티켓 활성화 및 작업 계획 작성 (`docs/tickets/T-102-battle-ui.md`)
+- [x] 1단계: 올리브·카키 군용 패널 스타일시트 및 CSS 변수 작성 (`src/ui/style.css`)
 
 ## 결과 보고
 
