@@ -16,12 +16,14 @@ import {
 describe('allyY', () => {
   it('배치 행 중심 y', () => {
     expect([0, 1, 2].map(allyY)).toEqual([4.5, 5.5, 6.5])
+    expect(allyY(2)).toBe(6.5)
   })
 })
 
 describe('blockY', () => {
   it('맨 앞 아군 위쪽 경계 0.5칸 앞에서 멈춘다', () => {
     expect([0, 1, 2].map(blockY)).toEqual([3.5, 4.5, 5.5])
+    expect(blockY(0)).toBe(3.5)
   })
 })
 

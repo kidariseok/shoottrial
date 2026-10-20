@@ -1,5 +1,5 @@
 // 순수 계산. phaser·DOM·debug를 import하지 않는다(vitest가 node에서 돌린다). 수치는 data.ts에서만 읽는다.
-import { BATTLE, CARDS, CARD_KEYS, ECONOMY, LAYOUT, RANKS, SYNERGY, type CardKey, type EnemyType } from './data'
+import { BATTLE, CARDS, CARD_KEYS, ECONOMY, GRID, LAYOUT, RANKS, SYNERGY, type CardKey, type EnemyType } from './data'
 import { STAGE1, WAVES } from './stages'
 
 export type Unit = { card: CardKey; rank: number }
@@ -114,4 +114,51 @@ export function spawnPlan(wave: number, rand: () => number, defcon1: boolean): S
     }
   }
   return out
+}
+
+// board.ts(phaser)를 import할 수 없어 여기서 정의한다. board.ts의 Zone과 같은 모양이다
+export type FlowPhase = 'prep' | 'fight' | 'settle'
+export type ZoneName = 'deploy' | 'bench' | 'sell'
+
+// 데프콘 1은 웨이브 defcon1From부터(GDD §4.1)
+export function defconOf(wave: number): 1 | 2 {
+  return wave >= BATTLE.defcon1From ? 1 : 2
+}
+
+// 드래그 시작 허용: 준비는 모두, 전투는 대기석만, 정산은 없음
+export function canDrag(phase: FlowPhase, from: ZoneName): boolean {
+  return phase === 'prep' || (phase === 'fight' && from === 'bench')
+}
+
+// 놓기 허용: 전투 중에는 대기석 -> 배치 구역의 빈 칸 투입(move)과 합성(merge)만
+export function dropAllowed(phase: FlowPhase, from: ZoneName, to: ZoneName, outcome: Outcome): boolean {
+  if (phase === 'prep') return true
+  return phase === 'fight' && from === 'bench' && to === 'deploy' && outcome !== 'swap'
+}
+
+// 배치 행 중심 y(칸 단위)
+export function allyY(row: number): number {
+  return GRID.deployTop + row + 0.5
+}
+
+// 그 행 아군이 맨 앞일 때 적 중심이 멈추는 y(행 위쪽 경계 blockGap 앞)
+export function blockY(row: number): number {
+  return GRID.deployTop + row - BATTLE.blockGap
+}
+
+// 같은 열에서 살아 있는 가장 위(행 번호 가장 작은) 아군
+export function frontAlly<T extends { col: number; row: number; alive: boolean }>(allies: T[], col: number): T | null {
+  let best: T | null = null
+  for (const a of allies) if (a.alive && a.col === col && (!best || a.row < best.row)) best = a
+  return best
+}
+
+// 적이 아군과 같거나 위에 있고 거리가 사거리 이내(Infinity면 위쪽 전부)
+export function inRange(allyY: number, enemyY: number, range: number): boolean {
+  return enemyY <= allyY && allyY - enemyY <= range
+}
+
+// 열·행 차이 중 큰 쪽이 범위 이내(인접 8칸 = 1)
+export function withinReach(dc: number, dr: number, reach: number): boolean {
+  return Math.max(Math.abs(dc), Math.abs(dr)) <= reach
 }
