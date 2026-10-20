@@ -50,6 +50,7 @@ interface UiRefs {
   pauseBackdrop: HTMLElement
   reviveBackdrop: HTMLElement
   resultBackdrop: HTMLElement
+  exitBackdrop: HTMLElement
 }
 
 let refs: UiRefs | null = null
@@ -221,6 +222,10 @@ function ensureRefs(): UiRefs | null {
   const resultBackdrop = document.createElement('div')
   resultBackdrop.className = 'ui-modal-backdrop hidden'
 
+  // 종료 확인 모달 (레인 B 전용)
+  const exitBackdrop = document.createElement('div')
+  exitBackdrop.className = 'ui-modal-backdrop hidden'
+
   root.append(
     hudEl,
     synergyRail,
@@ -229,7 +234,8 @@ function ensureRefs(): UiRefs | null {
     bannerEl,
     pauseBackdrop,
     reviveBackdrop,
-    resultBackdrop
+    resultBackdrop,
+    exitBackdrop
   )
 
   refs = {
@@ -254,6 +260,7 @@ function ensureRefs(): UiRefs | null {
     pauseBackdrop,
     reviveBackdrop,
     resultBackdrop,
+    exitBackdrop,
   }
 
   syncCtlButtons()
@@ -633,4 +640,61 @@ export function bindBattle(ctl: BattleCtl | null): void {
   currentCtl = ctl
   ensureRefs()
   syncCtlButtons()
+}
+
+// 레인 B 전용: 안드로이드 뒤로가기 종료 확인 모달 (T-101 할 일 6)
+export function confirmExit(onYes: () => void, onNo: () => void): void {
+  const r = ensureRefs()
+  if (!r) return
+
+  r.exitBackdrop.innerHTML = ''
+  const card = document.createElement('div')
+  card.className = 'ui-modal-card'
+
+  const header = document.createElement('div')
+  header.className = 'modal-header'
+  header.textContent = '종료 확인'
+
+  const body = document.createElement('div')
+  body.className = 'modal-body'
+
+  const note = document.createElement('div')
+  note.className = 'modal-note'
+  note.textContent = '데프콘 2 작전을 종료하시겠습니까?'
+  body.appendChild(note)
+
+  const actions = document.createElement('div')
+  actions.className = 'modal-actions'
+
+  const noBtn = document.createElement('button')
+  noBtn.type = 'button'
+  noBtn.className = 'mil-btn action-go'
+  noBtn.textContent = '계속'
+  noBtn.addEventListener('click', () => {
+    r.exitBackdrop.classList.add('hidden')
+    onNo()
+  })
+
+  const yesBtn = document.createElement('button')
+  yesBtn.type = 'button'
+  yesBtn.className = 'mil-btn'
+  yesBtn.textContent = '나가기'
+  yesBtn.addEventListener('click', () => {
+    r.exitBackdrop.classList.add('hidden')
+    onYes()
+  })
+
+  actions.append(noBtn, yesBtn)
+  card.append(header, body, actions)
+  r.exitBackdrop.appendChild(card)
+  r.exitBackdrop.classList.remove('hidden')
+}
+
+export function handleBack(onExit: () => void): void {
+  if (currentCtl) {
+    currentCtl.pause()
+    openPauseModal()
+    return
+  }
+  confirmExit(onExit, () => {})
 }

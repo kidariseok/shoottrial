@@ -142,6 +142,9 @@ R-101에서 확인한 버전으로 고정한다.
 - [x] 0단계 빌드 환경 점검 완료 (Android Studio 내장 JDK 및 `~/Library/Android/sdk` 설치 확인 완료)
 - [x] 1단계 Capacitor 패키지 고정 설치(`@capacitor/core@8.5.3` 등), `capacitor.config.ts` 작성, `npx cap add android` 및 `AndroidManifest.xml` 세로 고정(`portrait`) 적용 완료
 - [x] 2단계 `src/platform.ts` 단일 플랫폼 래퍼(`init`, `safeRect`, `onBack`, `onPause`, `onResume`, `exitApp`, `prefsGet`, `prefsSet`) 및 CSS Safe Area 변수 연동 완료
+- [x] 3단계 `src/save.ts`(`d2_save_v1` `load`/`save`, 파싱 실패 시 `save_corrupt` 로그 및 기본값 반환) 및 `tests/save.test.ts` 단위 테스트 완료
+- [x] 4단계 `src/audio.ts`(음소거 OR 규칙, 백그라운드 자동 정지·복귀 재개, `sfx_click` 및 반복음 제어) 및 `public/assets/sfx_click.m4a` 생성 완료
+- [x] 5단계 `src/ui/screens.ts`(`confirmExit`, `handleBack`), `src/device.ts`(`?scene=device` G0 검증 화면), `src/ui/style.css`, `src/main.ts` 연동 완료
 
 ## 결과 보고
 
