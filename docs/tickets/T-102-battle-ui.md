@@ -1,6 +1,6 @@
 # T-102 전투 UI(DOM): HUD·상점 패널·카드 정보·배너·결과·부활·일시정지 모달 + UI 데모
 
-상태: 대기
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -59,31 +59,77 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] `docs/shots/T-102-hud.png`(`/?scene=ui&safe=1`, 390×844, HUD + 상점 열림)
-- [ ] `docs/shots/T-102-result.png`(결과 화면), `docs/shots/T-102-pause.png`(일시정지 모달)
-- [ ] Figma `6:33`과 나란히 놓은 비교 사진 `docs/shots/T-102-compare.png`(Figma 접근이 안 되면 결과 보고에 그 사실을 적는다)
-- [ ] `screens.ts`의 export 시그니처가 TECH §8과 글자 그대로 같다(결과 보고에 `git diff origin/main -- src/ui/screens.ts`의 export 줄 변화 없음 확인)
+- [x] `npm run verify` 통과
+- [x] `docs/shots/T-102-hud.png`(`/?scene=ui&safe=1`, 390×844, HUD + 상점 열림)
+- [x] `docs/shots/T-102-result.png`(결과 화면), `docs/shots/T-102-pause.png`(일시정지 모달)
+- [x] Figma `6:33`과 나란히 놓은 비교 사진 `docs/shots/T-102-compare.png`(Figma 접근이 안 되면 결과 보고에 그 사실을 적는다)
+- [x] `screens.ts`의 export 시그니처가 TECH §8과 글자 그대로 같다(결과 보고에 `git diff origin/main -- src/ui/screens.ts`의 export 줄 변화 없음 확인)
 
 디버그 URL: `http://localhost:5173/?scene=ui&safe=1`
 
 ## 작업 계획
 
+1. **군용 패널 스타일시트 작성 (`src/ui/style.css`)**: Figma `6:33`(올리브·카키 군용 패널) 및 `docs/ART.md` §1·§2(외곽선 `#1b1d26`, 붉은색·주황은 적·경보 전용)를 반영하여 Safe Area 기준 레이아웃 변수, HUD, 하단 상점 패널(논리 좌표 y=1160~1280 비율 높이 제한 CSS 변수), 배너, 카드 정보 시트, 모달(일시정지·부활·결과) 스타일을 작성한다.
+2. **전투 UI DOM 및 순수 헬퍼 구현 (`src/ui/screens.ts`)**: `docs/TECH.md` §8의 고정 export 시그니처를 글자 그대로 유지하면서, HUD 동일 값 갱신 판정 순수 함수(`isSameHud` 등)와 `hud(h)`, `shop(open, ...)`, `cardInfo(card, rank)`, `banner(text, kind)`, `result(r, ...)`, `askRevive(onYes, onNo)`, `bindBattle(ctl)`을 구현한다.
+3. **UI 데모 및 디버그 파라미터 연결 (`src/ui/demo.ts`, `src/main.ts`, `src/debug.ts`)**: `?scene=ui`일 때 Phaser를 띄우지 않고 `src/ui/demo.ts`가 3초 간격으로 모든 화면 상태를 가짜 값으로 차례로 호출하도록 연결한다(개별 화면 캡처 편의를 위해 `&uiStep=hud|pause|revive|result` 디버그 파라미터도 지원).
+4. **순수 로직 단위 테스트 작성 (`tests/ui.test.ts`)**: DOM 없이 검사 가능한 `isSameHud` 판정, 시너지 정렬, 카드·계급 라벨 포맷 함수를 `tests/ui.test.ts`에서 검증하고 `npm run verify`를 실행한다.
+5. **스크린샷 캡처 및 시그니처 검증 (`docs/tickets/T-102-battle-ui.md`)**: `http://localhost:5173/?scene=ui&safe=1`(390×844)에서 `docs/shots/T-102-hud.png`, `docs/shots/T-102-result.png`, `docs/shots/T-102-pause.png`를 캡처하고 `git diff origin/main -- src/ui/screens.ts`로 export 시그니처 불변을 확인한다(Figma MCP 미연결 시 결과 보고에 명시).
+
+- 디버그 URL: `http://localhost:5173/?scene=ui&safe=1`
+- 검증 명령: `npm run verify`
+- 플랫폼 API: 해당 없음 (순수 DOM/CSS 구현)
+
 ## 질문
+
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 18b77739cec5
+- 브랜치: kidariseok/r102-military-flavor
+- 세션 시작: Gemini 4 Argon High, 2026-10-20 22:04
+- [x] 티켓 활성화 및 작업 계획 작성 (`docs/tickets/T-102-battle-ui.md`)
+- [x] 1단계: 올리브·카키 군용 패널 스타일시트 및 CSS 변수 작성 (`src/ui/style.css`)
+- [x] 2단계: 전투 UI DOM(`src/ui/screens.ts`) 및 순수 헬퍼(`src/ui/helpers.ts`) 구현 (export 시그니처 불변 확인)
+- [x] 3단계: UI 데모(`src/ui/demo.ts`) 및 디버그 진입점(`src/main.ts`, `src/debug.ts`) 연결
+- [x] 4단계: 단위 테스트(`tests/ui.test.ts`) 작성 및 `npm run verify` 통과
+- [x] 5단계: 390×844 모바일 뷰포트 스크린샷 캡처(`T-102-hud.png`, `T-102-pause.png`, `T-102-result.png`) 및 `screens.ts` export 시그니처 불변 검증
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `src/ui/style.css`: Figma `6:33` 올리브·카키 군용 패널 팔레트, 외곽선(`#1b1d26`), 적·경보 전용 붉은색/주황색 규칙, Safe Area 및 상점 최대 높이(`--shop-max-height: calc(100% * 120 / 1280)`) CSS 변수, HUD·시너지·상점·배너·카드 시트·모달 스타일 구현
+  - `src/ui/helpers.ts`: `isSameHud`, `cloneHud`, `sortSynergies`, `getCardName`, `getCardInitial`, `getRankName`, `getRankBars` 순수 함수 분리
+  - `src/ui/screens.ts`: `docs/TECH.md` §8 고정 export 시그니처를 글자 그대로 유지하며 `hud`, `shop`, `cardInfo`, `banner`, `result`, `askRevive`, `bindBattle` DOM 구현
+  - `src/ui/demo.ts`: `?scene=ui`에서 가짜 `BattleCtl`(`console.log`)과 함께 3초 간격으로 모든 UI 화면을 순환 호출하는 데모 및 `&uiStep=hud|card|pause|revive|result` 지원
+  - `src/main.ts`, `src/debug.ts`: `scene=ui`일 때 Phaser 없이 `startUiDemo()` 실행 및 `uiStep` 파라미터 파싱
+  - `tests/ui.test.ts`: `isSameHud` 동일 값 갱신 생략 판정, 시너지 정렬, 카드·계급 포맷 단위 테스트
+  - `docs/shots/T-102-hud.png`, `docs/shots/T-102-pause.png`, `docs/shots/T-102-result.png`, `docs/shots/T-102.png`: 390×844 세로 스크린샷
 - 검증 결과:
+  ```
+  > shoottrial@0.1.0 verify
+  > npm run typecheck && npm run test && npm run build
+  > tsc --noEmit
+  > vitest run --passWithNoTests
+  ✓ tests/debug.test.ts (5 tests)
+  ✓ tests/assets.test.ts (5 tests)
+  ✓ tests/ui.test.ts (3 tests)
+  Test Files 3 passed (3) | Tests 13 passed (13)
+  > vite build
+  ✓ built in 1.15s
+  ```
+  - `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-].*export '` 결과: 출력 없음(`export` 줄 변화 0줄, TECH §8 시그니처와 글자 그대로 동일 확인)
 - 스크린샷:
+  - HUD + 상점 열림: `docs/shots/T-102-hud.png` (`docs/shots/T-102.png`)
+  - 일시정지 모달 + 경고 배너: `docs/shots/T-102-pause.png`
+  - 결과 화면: `docs/shots/T-102-result.png`
 - 사용자 확인 방법:
+  - `npm run dev` 실행 후 `http://localhost:5173/?scene=ui&safe=1` 접속 (3초 간격으로 HUD+상점 → 카드 정보+데프콘1 → 일시정지 모달 → 부활 모달 → 결과 모달 자동 순환 확인)
+  - 특정 화면 고정 확인: `http://localhost:5173/?scene=ui&safe=1&uiStep=hud` (`pause`, `revive`, `result`, `card`)
 - 확인하지 못한 점:
+  - 현재 Antigravity 세션에 Figma MCP 도구가 연결되어 있지 않고 저장소에 Figma 원본 이미지가 없어 Figma `6:33` 노드에 직접 접근하지 못했습니다(`docs/shots/T-102-compare.png` 미생성). 티켓 지시에 따라 `docs/research/figma-inventory.md`의 `6:33` 설명과 `docs/ART.md` §1·§2 색 규칙을 기준으로 구현했습니다.
 - 다음 제안:
+  - 레인 A(`BattleScene`)와 `screens.ts`를 연결할 때 카드별 실제 공격·HP·사거리·고유 능력·시너지 설명을 `cardInfo`에 표시하도록 확장할 수 있습니다.
+  - M4에서 `askRevive`, `adReroll`, `adSupply` 버튼을 실제 보상형 광고(`ads.ts`)와 연결합니다.
 
 ## 인계 메모

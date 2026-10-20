@@ -16,6 +16,7 @@ export interface DebugConfig {
   speed?: 1 | 2
   fps?: boolean
   safe?: boolean
+  uiStep?: string
 }
 
 export function parseDeck(val: string): DeckItem[] {
@@ -66,6 +67,7 @@ export function parseDebugParams(search: string): DebugConfig {
 
   const fps = params.get('fps') === '1'
   const safe = params.get('safe') === '1'
+  const uiStep = params.get('uiStep') ?? undefined
 
   return {
     scene,
@@ -78,6 +80,7 @@ export function parseDebugParams(search: string): DebugConfig {
     speed,
     fps,
     safe,
+    uiStep,
   }
 }
 

@@ -2,6 +2,7 @@ import { Game, Scale, AUTO, type Types } from 'phaser'
 import { BattleScene } from './battle/BattleScene'
 import { GalleryScene } from './gallery'
 import { debug, initDebugOverlays } from './debug'
+import { startUiDemo } from './ui/demo'
 
 function calculateLogicalHeight(): number {
   const targetWidth = 720
@@ -12,6 +13,7 @@ function calculateLogicalHeight(): number {
 }
 
 const height = calculateLogicalHeight()
+const isUiDemo = debug.scene === 'ui'
 const isGallery = debug.scene === 'gallery'
 const scenes = isGallery ? [GalleryScene, BattleScene] : [BattleScene, GalleryScene]
 
@@ -31,9 +33,14 @@ const config: Types.Core.GameConfig = {
   scene: scenes,
 }
 
-export const game = new Game(config)
+export const game: Game | null = isUiDemo ? null : new Game(config)
+
+if (isUiDemo) {
+  startUiDemo()
+}
 
 initDebugOverlays(debug, () => {
+  if (!game) return 0
   const activeScenes = game.scene.getScenes(true)
   let count = 0
   for (const s of activeScenes) {

@@ -1,0 +1,211 @@
+import { debug } from '../debug'
+import {
+  askRevive,
+  banner,
+  bindBattle,
+  cardInfo,
+  hud,
+  result,
+  shop,
+  type BattleCtl,
+  type Offer,
+} from './screens'
+
+const mockCtl: BattleCtl = {
+  pause: () => console.log('[BattleCtl] pause()'),
+  resume: () => console.log('[BattleCtl] resume()'),
+  setSpeed: (s) => console.log('[BattleCtl] setSpeed(%d)', s),
+  quit: () => console.log('[BattleCtl] quit()'),
+  adReroll: () => console.log('[BattleCtl] adReroll()'),
+  adSupply: () => console.log('[BattleCtl] adSupply()'),
+}
+
+const DEMO_OFFERS: Offer[] = [
+  { card: 'rifle', cost: 1 },
+  { card: 'sniper', cost: 3 },
+  { card: 'blower', cost: 2 },
+  { card: 'cook', cost: 2 },
+  { card: 'miner', cost: 2 },
+]
+
+function hideAllModals(): void {
+  cardInfo(null)
+  if (typeof document === 'undefined') return
+  const modals = document.querySelectorAll('.ui-modal-backdrop')
+  modals.forEach((el) => el.classList.add('hidden'))
+}
+
+function runStep(stepName: string): void {
+  hideAllModals()
+  bindBattle(mockCtl)
+
+  switch (stepName) {
+    case 'hud': {
+      hud({
+        wave: 3,
+        waves: 10,
+        defcon: 2,
+        supply: 2,
+        baseHp: 18,
+        phase: 'prep',
+        prepLeft: 19,
+        speed: 1,
+        synergies: [
+          { card: 'rifle', count: 2, on: true },
+          { card: 'blower', count: 1, on: false },
+          { card: 'cook', count: 1, on: false },
+        ],
+      })
+      shop(
+        true,
+        DEMO_OFFERS,
+        2,
+        (i) => console.log('[shop] onBuy(%d)', i),
+        () => console.log('[shop] onReroll()'),
+        () => console.log('[shop] onGo()')
+      )
+      banner('준비 단계 — 전방 차선에 병력을 배치하십시오', 'info')
+      break
+    }
+
+    case 'card': {
+      hud({
+        wave: 7,
+        waves: 10,
+        defcon: 1,
+        supply: 5,
+        baseHp: 14,
+        phase: 'fight',
+        prepLeft: 0,
+        speed: 2,
+        synergies: [
+          { card: 'rifle', count: 4, on: true },
+          { card: 'blower', count: 2, on: true },
+          { card: 'sniper', count: 1, on: false },
+        ],
+      })
+      shop(
+        false,
+        DEMO_OFFERS,
+        5,
+        (i) => console.log('[shop] onBuy(%d)', i),
+        () => console.log('[shop] onReroll()'),
+        () => console.log('[shop] onGo()')
+      )
+      cardInfo('rifle', 3)
+      banner('데프콘 1 발령 — 전 장병 실탄 지급!', 'defcon')
+      break
+    }
+
+    case 'pause': {
+      hud({
+        wave: 5,
+        waves: 10,
+        defcon: 2,
+        supply: 4,
+        baseHp: 15,
+        phase: 'fight',
+        prepLeft: 0,
+        speed: 1,
+        synergies: [
+          { card: 'rifle', count: 2, on: true },
+          { card: 'sniper', count: 2, on: true },
+        ],
+      })
+      shop(
+        false,
+        DEMO_OFFERS,
+        4,
+        (i) => console.log('[shop] onBuy(%d)', i),
+        () => console.log('[shop] onReroll()'),
+        () => console.log('[shop] onGo()')
+      )
+      banner('경고: 대규모 적 접근!', 'flag')
+      const pauseBtn = document.querySelector<HTMLButtonElement>('.hud-pause-btn')
+      pauseBtn?.click()
+      break
+    }
+
+    case 'revive': {
+      hud({
+        wave: 8,
+        waves: 10,
+        defcon: 1,
+        supply: 1,
+        baseHp: 0,
+        phase: 'fight',
+        prepLeft: 0,
+        speed: 1,
+        synergies: [{ card: 'rifle', count: 2, on: true }],
+      })
+      shop(
+        false,
+        DEMO_OFFERS,
+        1,
+        (i) => console.log('[shop] onBuy(%d)', i),
+        () => console.log('[shop] onReroll()'),
+        () => console.log('[shop] onGo()')
+      )
+      askRevive(
+        () => console.log('[askRevive] onYes()'),
+        () => console.log('[askRevive] onNo()')
+      )
+      break
+    }
+
+    case 'result': {
+      hud({
+        wave: 10,
+        waves: 10,
+        defcon: 1,
+        supply: 8,
+        baseHp: 12,
+        phase: 'settle',
+        prepLeft: 0,
+        speed: 1,
+        synergies: [
+          { card: 'rifle', count: 4, on: true },
+          { card: 'cook', count: 2, on: true },
+        ],
+      })
+      shop(
+        false,
+        DEMO_OFFERS,
+        8,
+        (i) => console.log('[shop] onBuy(%d)', i),
+        () => console.log('[shop] onReroll()'),
+        () => console.log('[shop] onGo()')
+      )
+      result(
+        { win: true, wave: 10, kills: 142, unlocked: 'miner' },
+        () => console.log('[result] onAgain()'),
+        () => console.log('[result] onLobby()')
+      )
+      break
+    }
+  }
+}
+
+export function startUiDemo(): void {
+  if (typeof document !== 'undefined') {
+    const gameEl = document.getElementById('game')
+    if (gameEl) {
+      const bg = document.createElement('div')
+      bg.className = 'ui-demo-backdrop'
+      gameEl.appendChild(bg)
+    }
+  }
+
+  const steps = ['hud', 'card', 'pause', 'revive', 'result'] as const
+  if (debug.uiStep && steps.includes(debug.uiStep as (typeof steps)[number])) {
+    runStep(debug.uiStep)
+    return
+  }
+
+  let idx = 0
+  runStep(steps[idx]!)
+  setInterval(() => {
+    idx = (idx + 1) % steps.length
+    runStep(steps[idx]!)
+  }, 3000)
+}
