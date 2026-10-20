@@ -119,6 +119,10 @@ export const UI = {
     popupColor: '#ffe066',
     labelColor: '#cfd8dc',
   },
+  // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
+  card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
+  // 구역 격자선 굵기
+  stroke: 2,
   // 1단계 보급 텍스트 위치. HUD 띠 안, 좌상단 일시정지 버튼 오른쪽(우상단 시스템 버튼 자리는 비운다)
   supply: { x: 168, y: 32 },
 } as const
