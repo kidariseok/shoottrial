@@ -97,6 +97,8 @@ export const UI = {
     hlOk: 0x66ff99, // 놓을 수 있는 칸 윤곽
     hlMerge: 0xffe066, // 합성 가능 칸 윤곽
     hlHover: 0xffffff, // 손가락 아래 칸 윤곽
+    hitFlash: 0xffffff, // 피격 번쩍임(붉은색 금지)
+    laneFlash: 0xbfe6ff, // 최후 저지선 열 섬광(밝은 청백색)
   },
   fx: {
     snapMs: 120,
@@ -110,6 +112,16 @@ export const UI = {
     hlWidth: 4, // 놓을 수 있는 칸 윤곽 굵기
     hlHoverWidth: 8, // 손 아래 칸 윤곽 굵기
     flashAlpha: 0.2, // 합성 대상 계급 표시 반짝임의 낮은 알파
+    fxDepth: 50, // 카드(0)보다 위, 드래그 카드(dragDepth)보다 아래
+    hitMs: 120, // 피격 흰 번쩍임 시간
+    hitAlpha: 0.8,
+    dmgRise: 40, // 데미지 숫자가 떠오르는 높이
+    dmgMs: 600,
+    fallMs: 300, // 적 쓰러짐 페이드
+    fallSink: 12, // 쓰러지며 가라앉는 높이
+    laneFlashMs: 200,
+    laneFlashAlpha: 0.7,
+    fallenAlpha: 0.35, // 쓰러진 아군 카드 알파
   },
   text: {
     promote: '진급!',
@@ -125,6 +137,10 @@ export const UI = {
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
+  // 카드 위 체력바. 카드 중심 기준 좌표, lowRatio 이하면 low 색
+  bar: { w: 80, h: 10, y: -56, bg: 0x141c26, ok: 0x66ff99, low: 0xffe066, lowRatio: 0.4 },
+  // 카메라 흔들림(ms, 세기)
+  shake: { light: { ms: 80, intensity: 0.004 }, heavy: { ms: 200, intensity: 0.012 } },
   // 구역 격자선 굵기
   stroke: 2,
   // 1단계 보급 텍스트 위치. HUD 띠 안, 좌상단 일시정지 버튼 오른쪽(우상단 시스템 버튼 자리는 비운다)
