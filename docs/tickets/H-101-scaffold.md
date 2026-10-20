@@ -1,6 +1,6 @@
 # H-101 스캐폴드: Vite + Phaser 4 + verify + 디버그 파라미터 + 에셋 플레이스홀더·갤러리 + UI 경계 빈 함수
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -110,13 +110,36 @@
 
 ## 작업 계획
 
+1. **프로젝트 설정 및 의존성 설치** (`package.json`, `package-lock.json`, `tsconfig.json`, `vite.config.ts`)
+   - `phaser@4.2.1` 고정 및 개발 의존성(`typescript`, `vite`, `vitest`) 설치, `dev`·`build`·`typecheck`·`test`·`verify` 스크립트 설정
+   - `tsconfig.json`(`strict: true`, `noUncheckedIndexedAccess: true`, `moduleResolution: "bundler"`, `esModuleInterop: true`) 및 `vite.config.ts` 작성
+2. **HTML·CSS·UI 경계 스텁 및 디버그 모듈 구현** (`index.html`, `src/ui/style.css`, `src/ui/screens.ts`, `src/debug.ts`)
+   - `#game` + `#ui` DOM 오버레이 구조와 Safe Area CSS 변수(`--sa-top/right/bottom/left`) 설정
+   - `docs/TECH.md` §8 고정 시그니처 그대로 `src/ui/screens.ts` 빈 함수 작성(`// T-102에서 구현`)
+   - `docs/TECH.md` §9 URL 파라미터 파싱(`debug`), 시드 기반 결정적 난수 `rand()`(mulberry32), `?fps=1`·`?safe=1` DOM 표시 구현
+3. **에셋 계약 표·런타임 플레이스홀더 및 갤러리·부팅 씬 구현** (`public/assets/index.json`, `src/assets.ts`, `src/gallery.ts`, `src/main.ts`)
+   - `docs/ART.md` §4의 모든 키(아군 6종×6키=36, 적 11키, 이펙트·판·UI 16키, 총 63개 키)를 계약 표로 정의하고 `public/assets/index.json`(`[]`) 기반 로드 및 단색 사각형+이름표+1px 프레임 경계선 플레이스홀더 텍스처 생성 구현
+   - 격자 표시·세로 드래그 스크롤·크기/프레임 수/계약 불일치 빨간 테두리를 지원하는 `GalleryScene` 및 720×(1280~1560) `Scale.FIT` + `pixelArt: true` 설정의 `src/main.ts` 작성
+4. **단위 테스트 작성 및 검증** (`tests/debug.test.ts`, `tests/assets.test.ts`)
+   - URL 파라미터 파싱(`deck=rifle:4,sniper:2` 등)과 동일 시드 난수열 테스트, 에셋 계약 표 전수·중복 없음 테스트 작성 후 `npm run verify` 실행
+5. **하네스 동작 확인 및 기록** (`docs/tickets/H-101-scaffold.md`)
+   - Stop 훅 동작, 현재 브랜치(`kidariseok/h101-gallery-scaffold`) 자동 저장 push 여부, `docs/GDD.md` 임시 수정 후 소유 경로 밖 차단 확인 및 원복, `git push` cmd-guard 차단 확인을 수행하고 `## 진행 기록`에 기록
+
+- **결과 확인 디버그 URL**:
+  - `http://localhost:5173/?scene=gallery&fps=1&safe=1`
+  - `http://localhost:5173/?scene=battle&safe=1`
+- **검증 명령**: `npm run verify`
+- **플랫폼 API**: 없음 (Capacitor는 T-101에서 도입)
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 294b3331124f
+- 브랜치: kidariseok/h101-gallery-scaffold
+- 세션 시작: Gemini 4 Argon (High), 2026-10-20 17:05
 
 ## 결과 보고
 
