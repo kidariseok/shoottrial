@@ -1,7 +1,7 @@
 # R-101 구글 플레이 출시 요건·정책·등급·행정·Capacitor 플러그인 확인표
 
-상태: 대기
-담당: Antigravity · gemini-3.8-flash-high (역할 카드: `docs/agents/antigravity-research.md`)
+상태: 진행 중
+담당: Antigravity · gemini-3.8-flash-medium (역할 카드: `docs/agents/antigravity-research.md`)
 
 ## 목표
 
@@ -77,13 +77,38 @@
 
 ## 작업 계획
 
+1. **1단계: Play Console 개인 계정 요건 조사**
+   - 개발자 계정 등록비, 신원 확인 절차, 소요 기간, 비공개 테스트 규정(12명/14일 기준 및 적용 대상), 프로덕션 신청 질문 항목
+   - 바꿀 파일: 없음 (조사)
+2. **2단계: 기술 요건 및 스토어 정책 조사**
+   - 타깃 API 레벨 및 마감일, 64비트, AAB, Play 서명, 앱 크기 제한
+   - 북한군/전쟁 소재 허용 한도(부적절한 콘텐츠/민감한 사건), 보상형 광고 정책, 대상 연령(가족 정책 회피 기준), 데이터 보안(AdMob 수집 항목), 개인정보처리방침 요건
+   - 바꿀 파일: 없음 (조사)
+3. **3단계: 등급분류 및 국내 행정 요건 조사**
+   - IARC 설문 및 한국 자체등급분류 효력, 예상 등급
+   - 게임제작업/배급업 등록 의무 여부, 사업자등록 시점, AdMob 수익 세무 처리, AI기본법 생성형 AI 표시 의무 현황
+   - 바꿀 파일: 없음 (조사)
+4. **4단계: Capacitor 및 플러그인 사양 조사**
+   - Capacitor 최신 안정 버전 및 Android SDK/Studio 요구사항
+   - `@capacitor/app` 생명주기/뒤로가기 이벤트 API
+   - `@capacitor/preferences` get/set API
+   - 세로 고정 설정 및 Android 15+ Safe Area WebView 호환성
+   - `@capacitor-community/admob` API, 이벤트명, 테스트 광고 단위 ID, UMP 동의 요건
+   - 바꿀 파일: 없음 (조사)
+5. **5단계: 결과 문서 작성 및 검증**
+   - `docs/research/play-launch.md`에 역할 카드 형식(요약, TECH §4 대응 포함 확인표, 게임 제안, 빈칸, G3 체크리스트) 작성
+   - 바꿀 파일: `docs/research/play-launch.md`
+   - 검증 명령: 결과 문서 내 모든 행의 URL, 확인일, TECH §4 대응 누락 여부 자체 점검
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 294b3331124f
+- 브랜치: kidariseok/fix-r101-play-launch
+- 세션 시작: gemini-3.8-flash-medium, 2026-10-20T17:06:40+09:00
 
 ## 결과 보고
 
