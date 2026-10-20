@@ -105,6 +105,8 @@
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21 08:26
 - [x] 단계 1: `pngjs` 설치, `package.json`에 `assets:check` 및 `verify` 스크립트 갱신, `art/source/README.md` 3단계 사용법 작성
 - [x] 단계 2: `scripts/assets.mjs` 에셋 정리 스크립트 구현 (계약 표 파싱, 마젠타·1px 번짐 제거, 발끝 y=116/중앙 정렬, 크기 초과 실패, 시트 병합 및 장부 갱신)
+- [x] 단계 3: `scripts/assets-check.mjs` 에셋 계약 검사 스크립트 구현 (파일·높이·너비·프레임 범위·알파 채널·장부 대조 검사)
+- [x] 단계 4: `scripts/fixtures/` 테스트 마젠타 이미지 생성 및 `tests/assets-pipeline.test.ts` 단위 테스트 작성 (`npm run verify` 통과)
 
 ## 결과 보고
 

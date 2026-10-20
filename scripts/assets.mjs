@@ -46,6 +46,8 @@ export function loadAssetContracts(rootDir = process.cwd()) {
     : ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem']
 
   const contracts = []
+  const templateRows = []
+  const staticRows = []
   const rowRegex = /\{\s*key:\s*(`[^`]+`|'[^']+')\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*,\s*frames:\s*(\d+)/g
 
   for (const match of content.matchAll(rowRegex)) {
@@ -55,29 +57,37 @@ export function loadAssetContracts(rootDir = process.cwd()) {
     const minFrames = Number(match[4])
 
     if (rawKey.includes('${c}')) {
-      for (const c of cards) {
-        const key = rawKey.replace('${c}', c)
-        contracts.push({
-          key,
-          w,
-          h,
-          frames: minFrames,
-          minFrames,
-          maxFrames: getMaxFrames(key, minFrames),
-          pivot: getPivotMode(key),
-        })
-      }
+      templateRows.push({ rawKey, w, h, minFrames })
     } else {
+      staticRows.push({ key: rawKey, w, h, minFrames })
+    }
+  }
+
+  for (const c of cards) {
+    for (const tpl of templateRows) {
+      const key = tpl.rawKey.replace('${c}', c)
       contracts.push({
-        key: rawKey,
-        w,
-        h,
-        frames: minFrames,
-        minFrames,
-        maxFrames: getMaxFrames(rawKey, minFrames),
-        pivot: getPivotMode(rawKey),
+        key,
+        w: tpl.w,
+        h: tpl.h,
+        frames: tpl.minFrames,
+        minFrames: tpl.minFrames,
+        maxFrames: getMaxFrames(key, tpl.minFrames),
+        pivot: getPivotMode(key),
       })
     }
+  }
+
+  for (const item of staticRows) {
+    contracts.push({
+      key: item.key,
+      w: item.w,
+      h: item.h,
+      frames: item.minFrames,
+      minFrames: item.minFrames,
+      maxFrames: getMaxFrames(item.key, item.minFrames),
+      pivot: getPivotMode(item.key),
+    })
   }
 
   return contracts
