@@ -1,6 +1,6 @@
 # T-102 전투 UI(DOM): HUD·상점 패널·카드 정보·배너·결과·부활·일시정지 모달 + UI 데모
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -69,13 +69,26 @@
 
 ## 작업 계획
 
+1. **군용 패널 스타일시트 작성 (`src/ui/style.css`)**: Figma `6:33`(올리브·카키 군용 패널) 및 `docs/ART.md` §1·§2(외곽선 `#1b1d26`, 붉은색·주황은 적·경보 전용)를 반영하여 Safe Area 기준 레이아웃 변수, HUD, 하단 상점 패널(논리 좌표 y=1160~1280 비율 높이 제한 CSS 변수), 배너, 카드 정보 시트, 모달(일시정지·부활·결과) 스타일을 작성한다.
+2. **전투 UI DOM 및 순수 헬퍼 구현 (`src/ui/screens.ts`)**: `docs/TECH.md` §8의 고정 export 시그니처를 글자 그대로 유지하면서, HUD 동일 값 갱신 판정 순수 함수(`isSameHud` 등)와 `hud(h)`, `shop(open, ...)`, `cardInfo(card, rank)`, `banner(text, kind)`, `result(r, ...)`, `askRevive(onYes, onNo)`, `bindBattle(ctl)`을 구현한다.
+3. **UI 데모 및 디버그 파라미터 연결 (`src/ui/demo.ts`, `src/main.ts`, `src/debug.ts`)**: `?scene=ui`일 때 Phaser를 띄우지 않고 `src/ui/demo.ts`가 3초 간격으로 모든 화면 상태를 가짜 값으로 차례로 호출하도록 연결한다(개별 화면 캡처 편의를 위해 `&uiStep=hud|pause|revive|result` 디버그 파라미터도 지원).
+4. **순수 로직 단위 테스트 작성 (`tests/ui.test.ts`)**: DOM 없이 검사 가능한 `isSameHud` 판정, 시너지 정렬, 카드·계급 라벨 포맷 함수를 `tests/ui.test.ts`에서 검증하고 `npm run verify`를 실행한다.
+5. **스크린샷 캡처 및 시그니처 검증 (`docs/tickets/T-102-battle-ui.md`)**: `http://localhost:5173/?scene=ui&safe=1`(390×844)에서 `docs/shots/T-102-hud.png`, `docs/shots/T-102-result.png`, `docs/shots/T-102-pause.png`를 캡처하고 `git diff origin/main -- src/ui/screens.ts`로 export 시그니처 불변을 확인한다(Figma MCP 미연결 시 결과 보고에 명시).
+
+- 디버그 URL: `http://localhost:5173/?scene=ui&safe=1`
+- 검증 명령: `npm run verify`
+- 플랫폼 API: 해당 없음 (순수 DOM/CSS 구현)
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 18b77739cec5
+- 브랜치: kidariseok/r102-military-flavor
+- 세션 시작: Gemini 4 Argon High, 2026-10-20 22:04
+- [x] 티켓 활성화 및 작업 계획 작성 (`docs/tickets/T-102-battle-ui.md`)
 
 ## 결과 보고
 
