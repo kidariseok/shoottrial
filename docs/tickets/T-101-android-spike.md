@@ -1,6 +1,6 @@
 # T-101 Capacitor 안드로이드 스파이크: 세로·Safe Area·뒤로가기 모달·저장·백그라운드 음소거
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -97,13 +97,49 @@ R-101에서 확인한 버전으로 고정한다.
 
 ## 작업 계획
 
+1. **Capacitor 패키지 설치 및 안드로이드 프로젝트 생성** (`package.json`, `package-lock.json`, `capacitor.config.ts`, `android/`)
+   - R-101 기준 허용 의존성 고정 버전 설치: `@capacitor/core@8.5.3`, `@capacitor/cli@8.5.3`, `@capacitor/android@8.5.3`, `@capacitor/app@8.1.2`, `@capacitor/preferences@8.0.1`
+   - `capacitor.config.ts` 작성 (`appId: 'io.github.kidariseok.defcon2'`, `appName: '데프콘 2'`, `webDir: 'dist'`)
+   - `npx cap add android` 실행 및 `android/app/src/main/AndroidManifest.xml`의 `MainActivity`에 `android:screenOrientation="portrait"` 설정
+2. **플랫폼 단일 래퍼 구현** (`src/platform.ts`, `index.html`, `src/ui/style.css`)
+   - `@capacitor/*`를 유일하게 import하는 `src/platform.ts` 작성: `init()`, `safeRect()`, `onBack(cb)`, `onPause(cb)`, `onResume(cb)`, `exitApp()`, `prefsGet(key)`, `prefsSet(key, value)`
+   - 브라우저 환경에서는 `localStorage`, `visibilitychange` 이벤트, `window.history`/키 이벤트로 동일 동작 폴백
+3. **세이브 모듈 및 단위 테스트 구현** (`src/save.ts`, `tests/save.test.ts`)
+   - `docs/TECH.md` §5의 `Save` 스키마 및 `d2_save_v1` 키로 `load()`/`save()` 구현 (파싱 실패 시 기본값 반환 + `save_corrupt` 로그)
+   - `tests/save.test.ts` 작성: 깨진 JSON일 때 기본값 복구, 저장 후 다시 불러오면 동일한 값 반환 검증
+4. **오디오 모듈 및 효과음 에셋 추가** (`src/audio.ts`, `public/assets/sfx_click.m4a`)
+   - `docs/TECH.md` §6의 음소거 OR 규칙(사용자 설정 `bgm`/`sfx`와 시스템 정지 플래그 `hidden`/`ad` 결합) 구현
+   - `public/assets/sfx_click.m4a` 효과음 1개와 테스트용 반복음(톤 루프) 재생/정지 구현, 백그라운드 전환 시 자동 정지·복귀 시 재개 및 첫 `pointerdown`에서 `AudioContext.resume()` 호출
+5. **뒤로가기 종료 모달 및 `?scene=device` 화면 구현** (`src/ui/screens.ts`, `src/ui/style.css`, `src/device.ts`, `src/debug.ts`, `src/main.ts`)
+   - `src/ui/screens.ts`에 `docs/TECH.md` §8 시그니처를 유지한 채 레인 B 전용 `confirmExit(onYes, onNo)` 모달 추가 ("나가기" → `exitApp()`, "계속" → 닫기)
+   - `src/device.ts`에 `?scene=device` DOM 검증 화면 구현 (Safe Area 4방향 값, 저장 카운터 `+1` 버튼 및 현재 값, 반복음 켜기/끄기 버튼, 뒤로가기 모달 안내 및 테스트)
+   - `src/main.ts`에 `platform.init()`, 오디오 백그라운드 연동, 뒤로가기 핸들러, `?scene=device` 진입 분기 연결
+6. **검증, 스크린샷 캡처 및 안드로이드 디버그 APK 빌드** (`android/`)
+   - `npm run verify` 및 `npx cap sync android` 실행
+   - `http://localhost:5173/?scene=device&safe=1` 브라우저 스크린샷(`docs/shots/T-101.png`) 촬영
+   - 디버그 APK 빌드(`android/gradlew assembleDebug`) 또는 `npx cap run android` 실행 후 설치 경로와 P-101 확인 순서를 결과 보고에 기록
+
+- **플랫폼 API 및 확인 출처**:
+  - `@capacitor/core`: `Capacitor.isNativePlatform()` (`docs/research/play-launch.md` §6, `https://capacitorjs.com/docs/basics/utilities`)
+  - `@capacitor/app`: `App.addListener('backButton', ...)`, `App.addListener('pause', ...)`, `App.addListener('resume', ...)`, `App.addListener('appStateChange', ...)`, `App.exitApp()` (`docs/research/play-launch.md` 확인 표 `@capacitor/app` 이벤트, `https://capacitorjs.com/docs/apis/app`)
+  - `@capacitor/preferences`: `Preferences.get({ key })`, `Preferences.set({ key, value })`, `Preferences.remove({ key })` (`docs/research/play-launch.md` 확인 표 `@capacitor/preferences` API, `https://capacitorjs.com/docs/apis/preferences`)
+- **디버그 URL**: `http://localhost:5173/?scene=device&safe=1`
+- **검증 명령**:
+  - `npm run verify`
+  - `npx cap sync android`
+
 ## 질문
+
+- [ ] 설치 필요: Java JDK 21 (예: `brew install --cask temurin@21`), Android Studio (Ladybug/Otter 이상) 및 Android SDK (Android 15/16 · API 35/36, platform-tools, build-tools), 환경변수 `ANDROID_HOME=$HOME/Library/Android/sdk` 설정 (현재 이 맥에서 `java -version` 미설치 및 `ANDROID_HOME`·`~/Library/Android/sdk` 미발견 상태입니다)
+- [ ] 패키지 이름(`appId`): `U-101`이 아직 대기 상태여서 티켓 지침대로 기본값 `io.github.kidariseok.defcon2`를 사용할 예정입니다. 다른 패키지 이름을 원하시면 알려주세요.
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 4b7d27fec183
+- 브랜치: kidariseok/start-ticket-t-101
+- 세션 시작: Gemini 4 Argon (High), 2026-10-21 08:26 KST
+- [x] 0단계 빌드 환경 점검 완료 (`java` 및 `ANDROID_HOME`/Android SDK 미설치 확인 → `## 질문`에 기록)
 
 ## 결과 보고
 
