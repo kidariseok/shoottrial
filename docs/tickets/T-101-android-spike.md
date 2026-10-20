@@ -131,8 +131,8 @@ R-101에서 확인한 버전으로 고정한다.
 ## 질문
 
 - [x] 설치 필요: Android Studio 내장 JBR(`/Applications/Android Studio.app/Contents/jbr/Contents/Home`) 및 Android SDK(`~/Library/Android/sdk`, build-tools 36.0.0, platform-tools, licenses) 설치 확인 완료 — 중복 설치 없이 내장 JBR과 SDK를 그대로 사용합니다.
-- [ ] 패키지 이름(`appId`): `U-101`이 아직 대기 상태여서 티켓 지침대로 기본값 `io.github.kidariseok.defcon2`를 사용할 예정입니다. 다른 패키지 이름을 원하시면 알려주세요.
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 패키지 이름(`appId`): `U-101`이 아직 대기 상태여서 티켓 지침대로 기본값 `io.github.kidariseok.defcon2`를 사용할 예정입니다. 다른 패키지 이름을 원하시면 알려주세요. (사용자 확인: `io.github.kidariseok.defcon2` 사용)
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요 (사용자 승인 완료)
 
 ## 진행 기록
 
@@ -140,6 +140,8 @@ R-101에서 확인한 버전으로 고정한다.
 - 브랜치: kidariseok/start-ticket-t-101
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21 08:26 KST
 - [x] 0단계 빌드 환경 점검 완료 (Android Studio 내장 JDK 및 `~/Library/Android/sdk` 설치 확인 완료)
+- [x] 1단계 Capacitor 패키지 고정 설치(`@capacitor/core@8.5.3` 등), `capacitor.config.ts` 작성, `npx cap add android` 및 `AndroidManifest.xml` 세로 고정(`portrait`) 적용 완료
+- [x] 2단계 `src/platform.ts` 단일 플랫폼 래퍼(`init`, `safeRect`, `onBack`, `onPause`, `onResume`, `exitApp`, `prefsGet`, `prefsSet`) 및 CSS Safe Area 변수 연동 완료
 
 ## 결과 보고
 

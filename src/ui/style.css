@@ -1,8 +1,8 @@
 :root {
-  --sa-top: env(safe-area-inset-top, 0px);
-  --sa-right: env(safe-area-inset-right, 0px);
-  --sa-bottom: env(safe-area-inset-bottom, 0px);
-  --sa-left: env(safe-area-inset-left, 0px);
+  --sa-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sa-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --sa-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 
   /* 군용 올리브·카키 팔레트 (Figma 6:33 및 ART §1·§2 기준) */
   --outline-dark: #1b1d26;
