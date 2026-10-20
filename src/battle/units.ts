@@ -1,9 +1,9 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, CARDS, CARD_KEYS, LAYOUT, UI, type CardKey } from '../data'
-import { allyY, inRange, interval, sniperDamage, stats, synergyTier, withinReach } from '../rules'
+import { ABILITY, CARDS, LAYOUT, UI, type CardKey } from '../data'
+import { allyY, blowerRange, cookReach, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach } from '../rules'
 import type { Board, Unit } from './board'
 import { hurtEnemy, type Enemy } from './enemies'
-import { dmgText, hitFlash, muzzle, shake, snipeLine, tracer } from './fx'
+import { dmgText, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
 
 // 배치 카드의 전투 상태. Unit 객체가 키라 이동·교환은 상태가 따라간다
 export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number; revived: boolean }
@@ -153,6 +153,50 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         snipeLine(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
         shake(scene, 'light')
         c.cd = iv
+        break
+      }
+      case 'blower': {
+        const targets = ahead(enemies, a, blowerRange(counts.blower))
+        if (targets.length === 0) break
+        for (const e of targets) {
+          e.knockLeft += knockback(e.type, rank, counts.blower)
+          e.ready = 0
+          // 화상은 중첩 없이 갱신(대입)
+          if (rank >= ABILITY.corporal) e.burn = ABILITY.burnSec
+        }
+        windWave(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
+        c.cd = iv
+        break
+      }
+      case 'cook': {
+        const reach = cookReach(rank, counts.cook)
+        let acted = false
+        for (const b of allies) {
+          if (b === a || !b.combat.alive || b.combat.hp >= b.combat.maxHp) continue
+          if (!withinReach(b.col - a.col, b.row - a.row, reach)) continue
+          b.combat.hp = Math.min(b.combat.maxHp, b.combat.hp + ABILITY.cookHeal)
+          drawBar(b)
+          healText(scene, b.view.x, b.view.y, ABILITY.cookHeal)
+          acted = true
+        }
+        // 상병 이상: 웨이브마다 쓰러진 인접 아군 1명을 일으킨다(행 -> 열 순)
+        if (rank >= ABILITY.corporal && !c.revived) {
+          const fallen = allies
+            .filter((b) => !b.combat.alive && withinReach(b.col - a.col, b.row - a.row, CARDS.cook.range))
+            .sort((p, q) => p.row - q.row || p.col - q.col)[0]
+          if (fallen) {
+            fallen.combat.alive = true
+            fallen.alive = true
+            fallen.combat.hp = fallen.combat.maxHp * ABILITY.cookRevive
+            fallen.combat.stun = 0
+            fallen.view.setAlpha(1)
+            drawBar(fallen)
+            reviveFlash(scene, fallen.view.x, fallen.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
+            c.revived = true
+            acted = true
+          }
+        }
+        if (acted) c.cd = iv
         break
       }
       default:

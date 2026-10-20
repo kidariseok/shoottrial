@@ -60,3 +60,24 @@ export function snipeLine(scene: Scene, x: number, y0: number, y1: number): void
   const r = scene.add.rectangle(x, (y0 + y1) / 2, UI.fx.snipeW, Math.abs(y0 - y1), UI.colors.snipe).setDepth(UI.fx.fxDepth)
   scene.tweens.add({ targets: r, alpha: 0, duration: UI.fx.snipeMs, onComplete: () => r.destroy() })
 }
+
+// 송풍 파동: 청백색 띠가 제설병에서 위로 번지며 사라진다
+export function windWave(scene: Scene, x: number, y0: number, y1: number): void {
+  const r = scene.add.rectangle(x, y0, UI.fx.windW, UI.fx.windH, UI.colors.wind, UI.fx.windAlpha).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: r, y: y1, alpha: 0, duration: UI.fx.windMs, onComplete: () => r.destroy() })
+}
+
+// 회복 숫자: 초록 "+n"이 위로 떠오르며 사라진다
+export function healText(scene: Scene, x: number, y: number, amount: number): void {
+  const t = scene.add
+    .text(x, y, `+${Math.round(amount)}`, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.healColor })
+    .setOrigin(0.5)
+    .setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: t, y: y - UI.fx.healRise, alpha: 0, duration: UI.fx.healMs, onComplete: () => t.destroy() })
+}
+
+// 부활 번쩍임: 흰색·연두 사각형이 커지며 사라진다
+export function reviveFlash(scene: Scene, x: number, y: number, w: number, h: number): void {
+  const r = scene.add.rectangle(x, y, w, h, UI.colors.revive, UI.fx.reviveAlpha).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: r, scale: UI.fx.reviveScale, alpha: 0, duration: UI.fx.reviveMs, onComplete: () => r.destroy() })
+}
