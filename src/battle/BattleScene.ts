@@ -1,9 +1,10 @@
 import { Scene, GameObjects } from 'phaser'
 import { ECONOMY, LAYOUT, ROOKIE, UI } from '../data'
 import { debug } from '../debug'
-import { createBoard, deployIndex } from './board'
+import { createBoard, deployIndex, type Board } from './board'
 
 export class BattleScene extends Scene {
+  public board!: Board
   private supply = 0
   private supplyText!: GameObjects.Text
 
@@ -21,7 +22,7 @@ export class BattleScene extends Scene {
     this.supplyText = this.add.text(UI.supply.x, UI.supply.y, '', { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.color })
     this.showSupply()
 
-    const board = createBoard(this, {
+    this.board = createBoard(this, {
       dy,
       onSell: (refund) => {
         this.supply += refund
@@ -29,8 +30,8 @@ export class BattleScene extends Scene {
       },
     })
     // 신병을 먼저 놓아야 디버그 덱이 같은 칸을 차지하지 않는다
-    board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: ROOKIE.name })
-    board.dealDeck(debug.deck ?? [])
+    this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: ROOKIE.name })
+    this.board.dealDeck(debug.deck ?? [])
   }
 
   private showSupply() {

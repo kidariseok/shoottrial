@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from 'phaser'
 import { CARDS, CARD_KEYS, LAYOUT, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
-import { dropOutcome, merge, nearestEmpty, sellValue } from '../rules'
+import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase } from '../rules'
 
 // rules.Unit 확장. name은 신병 카드만 가진다
 export type Unit = { card: CardKey; rank: number; name?: string }
@@ -11,6 +11,13 @@ export type Slot = { zone: Zone; i: number; x: number; y: number; size: number; 
 export type Board = {
   place(zone: 'deploy' | 'bench', i: number, unit: Unit): boolean
   dealDeck(deck: DeckItem[]): void
+  // 논리 좌표(열, 칸 단위 y: 적 진입 구역 맨 위 = 0) -> 월드 좌표(화면 dy 포함)
+  toScreen(col: number, y: number): { x: number; y: number }
+  // LAYOUT 기준 y -> 월드 y(화면 dy 포함)
+  worldY(baseY: number): number
+  // 배치 구역에 놓인 카드(대기석 제외)
+  deployed(): { unit: Unit; col: number; row: number; view: GameObjects.Container }[]
+  setPhase(phase: FlowPhase): void
 }
 
 // 배치 칸 번호
@@ -85,6 +92,14 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
       view: null,
     })
   const slotOf = (zone: Zone, i: number) => slots.find((s) => s.zone === zone && s.i === i)
+
+  // 화면 dy는 이 두 함수와 위 슬롯 좌표에서만 더한다
+  const toScreen = (col: number, y: number) => ({ x: marginX + (col + 0.5) * cell, y: LAYOUT.entryY + y * cell + dy })
+  const worldY = (baseY: number) => baseY + dy
+  const deployed = () =>
+    slots
+      .filter((s) => s.zone === 'deploy' && s.unit)
+      .map((s) => ({ unit: s.unit as Unit, col: s.i % cols, row: Math.floor(s.i / cols), view: s.view as GameObjects.Container }))
 
   // 카드 도형: 중심 기준 자식 + 크기에 맞춘 배율
   const makeView = (unit: Unit, s: Slot) => {
@@ -163,7 +178,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   }
 
   // 판매: 환급은 sellValue(이등병 비용 x 재료 장수). 확인 창·되돌리기 없음
-  // ponytail: 판매 칸이 항상 활성, 2단계에서 phase==='prep'일 때만 허용
+  // 판매·이동 허용은 rules.dropAllowed(단계별)
   const sellFrom = (from: Slot) => {
     const refund = sellValue((from.unit as Unit).card, (from.unit as Unit).rank)
     from.view?.destroy()
@@ -177,9 +192,9 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     hl.clear()
     for (const s of slots) {
       if (s === from) continue
-      const color = s.unit && dropOutcome(from.unit as Unit, s.unit) === 'merge'
-        ? UI.colors.hlMerge
-        : UI.colors.hlOk
+      const outcome = dropOutcome(from.unit as Unit, s.unit)
+      if (!dropAllowed(phase, from.zone, s.zone, outcome)) continue
+      const color = s.unit && outcome === 'merge' ? UI.colors.hlMerge : UI.colors.hlOk
       if (s === hover) hl.lineStyle(UI.fx.hlHoverWidth, UI.colors.hlHover, UI.fx.hlAlpha)
       else hl.lineStyle(UI.fx.hlWidth, color, UI.fx.hlAlpha)
       hl.strokeRect(s.x - s.size / 2, s.y - s.size / 2, s.size, s.size)
@@ -195,6 +210,9 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     flashing = null
   }
   let hover: Slot | null = null
+  // 흐름 단계와 지금 끌고 있는 카드(잠긴 드래그는 null)
+  let phase: FlowPhase = 'prep'
+  let active: GameObjects.Container | null = null
 
   // 드래그: 직접 포인터 추적 없이 Phaser 이벤트만 쓴다
   // ponytail: 드래그 중 카드 중심 좌표로 칸을 판정한다(손가락 오프셋 없음), 터치 실기기에서 손가락에 가려지면 카드를 손가락 위로 띄운다
@@ -202,6 +220,11 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
     if (!from) return
+    if (!canDrag(phase, from.zone)) {
+      active = null
+      return
+    }
+    active = view
     scene.tweens.killTweensOf(view)
     view.setDepth(UI.fx.dragDepth)
     hover = null
@@ -210,7 +233,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('drag', (_p: unknown, obj: GameObjects.GameObject, dragX: number, dragY: number) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from) return
+    if (!from || view !== active) return
     view.x = dragX
     view.y = dragY
     const s = slotAt(dragX, dragY)
@@ -219,7 +242,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     hover = now
     drawHl(from, hover)
     stopFlash()
-    if (hover?.unit && dropOutcome(from.unit as Unit, hover.unit) === 'merge') {
+    if (hover?.unit && dropOutcome(from.unit as Unit, hover.unit) === 'merge' && dropAllowed(phase, from.zone, hover.zone, 'merge')) {
       flashing = hover.view?.getData('rank') as GameObjects.Graphics
       scene.tweens.add({ targets: flashing, alpha: UI.fx.flashAlpha, duration: UI.fx.flashMs, yoyo: true, repeat: -1 })
     }
@@ -227,7 +250,8 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('dragend', (_p: unknown, obj: GameObjects.GameObject) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from) return
+    if (!from || view !== active) return
+    active = null
     stopFlash() // 대상 view가 destroy되기 전에 해제한다
     hl.clear()
     hover = null
@@ -238,10 +262,11 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
       const deploy = slots.filter((s) => s.zone === 'deploy')
       const i = nearestEmpty(deploy.map((s) => ({ x: s.x, y: s.y, free: s === from || !s.unit })), view.x, view.y)
       const dest = i === null ? from : (deploy[i] as Slot)
-      return dest === from ? snap(view, from.x, from.y) : moveTo(from, dest)
+      return dest === from || !dropAllowed(phase, from.zone, 'deploy', 'move') ? snap(view, from.x, from.y) : moveTo(from, dest)
     }
-    if (target.zone === 'sell') return sellFrom(from)
+    if (target.zone === 'sell') return dropAllowed(phase, from.zone, 'sell', 'move') ? sellFrom(from) : snap(view, from.x, from.y)
     const outcome = dropOutcome(from.unit as Unit, target.unit)
+    if (!dropAllowed(phase, from.zone, target.zone, outcome)) return snap(view, from.x, from.y)
     if (outcome === 'move') return moveTo(from, target)
     if (outcome === 'merge') return mergeInto(from, target)
     // 자리 바꿈(병장끼리·계급 불일치 포함): 상대를 먼저 보관한 뒤 서로 옮긴다
@@ -266,5 +291,5 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     }
   }
 
-  return { place, dealDeck }
+  return { place, dealDeck, toScreen, worldY, deployed, setPhase: (p) => (phase = p) }
 }
