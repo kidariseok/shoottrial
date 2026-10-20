@@ -52,19 +52,23 @@ git --version
 
 1. Antigravity를 열고 **`shoottrial` 폴더를 작업 폴더로 연다**(File → Open Folder). 신뢰(Trust)를 누른다.
    - **URL만 채팅에 붙여 넣으면 안 된다.** 폴더를 열어야 `AGENTS.md`·훅·스킬이 적용된다.
-2. (선택) 공식 앱인토스 하네스: 터미널에서 `agy plugin install toss/apps-in-toss-harness`
+2. (조사 담당만) 네이버 검색 API 키를 환경변수 `NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`로 넣는다. 키는 저장소에 쓰지 않는다.
 3. 새 대화에서 `/start-ticket`이 스킬 목록에 보이는지 확인한다.
 4. (CLI `agy`를 쓸 때만) `~/.gemini/antigravity-cli/settings.json`의 `permissions.allow`에 `"command(npm run verify)"`, `"command(node scripts/harness/autosave.mjs)"`를 추가한다.
 5. 패키지 설치(H-001 이후): `npm install`
 
 ## 4. 이어서 하기
 
-1. 진행 중이던 티켓을 찾는다.
+1. 진행 중이던 티켓과 브랜치를 찾는다. 티켓 진행 기록은 **그 티켓의 브랜치에** 있다(main에는 PR이 병합된 뒤에 들어간다).
    ```sh
-   grep -l "상태: 진행 중" docs/tickets/*.md
+   git fetch origin
+   git branch -r                                   # 작업 브랜치 목록
+   git log origin/<브랜치> -1 --format='%ci %s'     # 마지막 저장 시각
    ```
+   - 티켓 ID로 찾으려면: `git grep -l "상태: 진행 중" $(git branch -r --format='%(refname:short)') -- docs/tickets/`
    - 없으면 `docs/ROADMAP.md` §2에서 다음 티켓을 고른다.
-2. Antigravity **새 대화**에서 `/start-ticket <ID>`를 입력한다.
+2. Orca에서 그 브랜치로 워크트리를 열거나(권장), 메인 폴더에서 `git switch <브랜치>`(origin/ 없이)를 한다.
+3. 그 폴더를 Antigravity로 열고 **새 대화**에서 `/start-ticket <ID>`를 입력한다.
    - 이미 진행 중인 티켓이면 에이전트가 **이어하기 모드**로 진행 기록을 읽고 남은 단계부터 계속한다.
 3. 전에 쓰던 모델과 같은 모델을 고른다(티켓 진행 기록의 "세션 시작" 줄에 적혀 있다).
 
@@ -76,7 +80,8 @@ git --version
 |---|---|---|
 | 인증 만료(8시간 지남) | `git push --dry-run origin main`이 비밀번호를 묻는다 | §2-4를 다시 해서 토큰 입력 |
 | 토큰 만료(30일) | 토큰을 넣어도 거부된다 | §2-1로 새 토큰 발급 |
-| 원격이 앞섬(다른 컴퓨터에서 작업함) | 메시지에 `rejected`, `fetch first` | `git pull --rebase` 후 `node scripts/harness/autosave.mjs` |
+| 원격이 앞섬(다른 컴퓨터에서 같은 브랜치로 작업함) | 메시지에 `rejected`, `fetch first` | `git pull --no-rebase origin <브랜치>` 후 `node scripts/harness/autosave.mjs` |
+| 브랜치가 없음(detached HEAD) | `.harness/push-failed`에 detached HEAD | `git switch -c <새 브랜치>` 후 다시 저장 |
 | 오프라인 | 인터넷 연결 | 연결 후 `node scripts/harness/autosave.mjs` |
 
 - push가 실패해도 **이 컴퓨터에는 커밋이 남아 있다.** 해결하기 전에 앱을 지우지 않는다.

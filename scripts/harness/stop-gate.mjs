@@ -61,7 +61,8 @@ if (/^\s*-\s*\[ \]/m.test(section('질문'))) allow()
 const glob = (g) => new RegExp('^' + (g.endsWith('/') ? `${g}**` : g)
   .replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\/?/g, '\0').replace(/\*/g, '[^/]*').replace(/\0/g, '.*') + '$')
 const owned = [...bullets('소유 경로'), tpath, `docs/shots/${id}*`].map(glob)
-const PROTECTED = /^(AGENTS\.md|docs\/(GDD|TECH|ART|ROADMAP|SETUP)\.md|docs\/tickets\/_TEMPLATE\.md|\.agents\/|scripts\/harness\/)/
+// 기획 문서·하네스·레인 A(Claude Code가 만드는 코어 전투)는 Antigravity 티켓이 바꿀 수 없다.
+const PROTECTED = /^(AGENTS\.md|docs\/(GDD|TECH|ART|ROADMAP|SETUP)\.md|docs\/tickets\/_TEMPLATE\.md|docs\/(references|agents|_archive)\/|\.agents\/|scripts\/harness\/|src\/(battle\/|rules\.ts|data\.ts|stages\.ts))/
 const bad = changed.filter((f) => PROTECTED.test(f) || !owned.some((r) => r.test(f)))
 if (bad.length) block(`소유 경로 밖 변경: ${bad.join(', ')}. 되돌려라(수정: git checkout ${base} -- <파일>, 새 파일: 삭제). 꼭 필요하면 티켓 ## 질문에 "- [ ] <이유>"를 적고 멈춰라.`)
 

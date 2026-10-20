@@ -1,0 +1,36 @@
+{
+  "source_path": "/Users/jinseokoh/orca/workspaces/shoottrial/moonfish/docs/ART.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "ART: 아트 바이블 + 에셋 계약 + 요청 목록 v1.0",
+  "summary": "Art bible and asset contract: visual direction, technical sprite specs (128x128 canvas, foot pivot), production pipeline, asset key/size/frame contract tables, audio limits, ledger schema, and AI-disclosure requirement.",
+  "scope": [
+    "art direction",
+    "sprite technical spec",
+    "unit canvas 128x128 and foot pivot (64,116)",
+    "logical resolution 720x1280 portrait",
+    "asset contract keys (ally_*, enemy_*, boss_apc_*, card_*, icon_*, fx_*, mine, rank_*, bg_gate, tile_*, ui_*)",
+    "placeholder generation",
+    "src/assets.ts",
+    "art/LEDGER.json",
+    "assets:check script",
+    "?scene=gallery debug view",
+    "magenta background removal pipeline",
+    "Gemini Argon image prompts",
+    "Figma UI",
+    "audio assets (sfx_*, bgm_*)",
+    "AI-generated content disclosure",
+    "asset requests A-101 and M3 batch"
+  ],
+  "cross_refs": [
+    "docs/_archive/qrf-ART.md",
+    "art/LEDGER.json",
+    "src/assets.ts",
+    "data.ts",
+    "public/assets/<키>.png"
+  ],
+  "locked": false,
+  "precedence": 4,
+  "notes": ""
+}

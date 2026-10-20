@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// 자동 저장. 바뀐 파일이 있으면 전부 커밋하고 GitHub(origin main)에 push한다.
+// 자동 저장. 바뀐 파일이 있으면 전부 커밋하고 GitHub의 "지금 브랜치"로 push한다.
 // 공용 컴퓨터에서 앱을 지워도 작업이 남게 하려는 장치다.
+// Orca 워크트리마다 브랜치가 다르므로 main으로 직접 push하지 않는다. main은 /finish-ticket의 PR로 들어간다.
 // 호출하는 곳
 //   ① stop-gate.mjs: 에이전트가 턴을 끝낼 때마다
 //   ② post-tool.mjs: 작업 중 5분마다
@@ -32,11 +33,16 @@ export function autosave(root, message) {
   }
 
   let pushed = 'up-to-date'
+  let branch = ''
   let remote = ''
-  try { remote = git('rev-parse', '--verify', '-q', 'refs/remotes/origin/main') } catch {}
-  if (remote !== git('rev-parse', 'HEAD')) {
+  try { branch = git('symbolic-ref', '--short', '-q', 'HEAD') } catch {}
+  try { remote = git('rev-parse', '--verify', '-q', `refs/remotes/origin/${branch}`) } catch {}
+  if (!branch) {
+    pushed = 'failed'
+    writeFileSync(h('push-failed'), `${stamp}\ndetached HEAD라 push할 브랜치가 없다. git switch <브랜치> 후 다시 저장한다.\n`)
+  } else if (remote !== git('rev-parse', 'HEAD')) {
     try {
-      git('push', '-q', 'origin', 'HEAD:main')
+      git('push', '-q', '-u', 'origin', 'HEAD')
       pushed = 'ok'
       rmSync(h('push-failed'), { force: true })
     } catch (e) {

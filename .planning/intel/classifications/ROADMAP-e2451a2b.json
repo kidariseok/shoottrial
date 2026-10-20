@@ -1,0 +1,32 @@
+{
+  "source_path": "/Users/jinseokoh/orca/workspaces/shoottrial/moonfish/docs/ROADMAP.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "ROADMAP v1.0",
+  "summary": "Project roadmap defining milestones M0-M5+, gate criteria G0-G3, M1 ticket list, work lanes with owned paths, model selection, Claude Code tooling usage, and the user's daily Orca workflow.",
+  "scope": [
+    "milestones M0-M5+",
+    "gates G0-G3",
+    "M1 tickets (U-101, R-101, R-102, A-101, H-101, T-101, P-101)",
+    "M2 preview (M2-core, T-102, H-102)",
+    "lanes A/B/C/D and owned paths",
+    "ui/screens.ts A-B boundary",
+    "model selection",
+    "GSD / ponytail / ecc tooling",
+    "Google Play closed test (12 testers x 14 days)",
+    "Capacitor Android",
+    "Orca worktree workflow"
+  ],
+  "cross_refs": [
+    "docs/_archive/qrf-ROADMAP.md",
+    "docs/TECH.md",
+    "docs/agents/antigravity-build.md",
+    "docs/agents/antigravity-research.md",
+    "docs/SETUP.md",
+    "AGENTS.md"
+  ],
+  "locked": false,
+  "precedence": 5,
+  "notes": ""
+}

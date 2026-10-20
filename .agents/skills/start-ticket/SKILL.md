@@ -11,8 +11,14 @@ description: >-
 
 ## 단계
 
-1. **최신 상태 받기**: `git pull --rebase --autostash`
-   - 실패하면 사용자에게 알리고 멈춘다(`docs/SETUP.md` §5).
+1. **최신 상태 받기**
+   ```sh
+   git fetch origin
+   git merge --ff-only "origin/$(git branch --show-current)" 2>/dev/null || true   # 다른 컴퓨터에서 이 브랜치에 저장한 것 따라잡기
+   ```
+   - **새로 시작할 때만**(이어하기가 아닐 때) main의 최신 문서·코드도 받는다: `git merge --no-edit origin/main`
+     - 이어하기 중에는 main을 합치지 않는다. 다른 티켓의 변경이 섞이면 Stop 훅이 소유 경로 위반으로 본다.
+   - 충돌하거나 실패하면 사용자에게 알리고 멈춘다(`docs/SETUP.md` §5).
    - `.harness/push-failed` 파일이 있으면 그 내용을 사용자에게 먼저 알린다.
 2. **이어하기 판단**: 티켓 맨 위가 `상태: 진행 중`이고 `## 진행 기록`에 `기준 커밋:` 줄이 있으면 **이어하기**다. 아래를 실행한다.
    ```sh
@@ -27,7 +33,8 @@ description: >-
    ```sh
    mkdir -p .harness && printf '%s' '<ID>' > .harness/active && git rev-parse HEAD > .harness/base && printf 0 > .harness/attempts-<ID>
    ```
-   - `## 진행 기록`에 `- 기준 커밋: <위 sha 앞 12자리>`를 적는다. 재설치 후에도 Stop 훅이 범위를 계산하는 데 쓴다.
+   - `## 진행 기록`에 `- 기준 커밋: <위 sha 앞 12자리>`와 `- 브랜치: <git branch --show-current 결과>`를 적는다. 재설치 후에도 Stop 훅이 범위를 계산하고, 사람이 브랜치를 찾는 데 쓴다.
+   - 브랜치가 `main`이면 사용자에게 "Orca에서 이 티켓용 워크트리를 만들고 그 폴더에서 다시 시작하는 것을 권합니다"라고 한 번 알린다. 사용자가 그대로 하라고 하면 main에서 진행한다.
 5. **읽기**
    - `AGENTS.md`(자동으로 들어와 있다)
    - 티켓 전체
@@ -37,7 +44,7 @@ description: >-
    - 각 단계에서 바꿀 파일. 반드시 `## 소유 경로` 안이어야 한다.
    - 결과를 확인할 디버그 URL
    - 검증 명령
-   - 앱인토스 API를 쓰는 티켓이면 쓸 함수 이름과 확인한 출처
+   - 플랫폼 API(Capacitor 플러그인·AdMob)를 쓰는 티켓이면 쓸 함수 이름과 확인한 출처(`docs/research/play-launch.md` 또는 공식 문서)
    - 그다음 `상태: 진행 중`으로 바꾸고, 진행 기록의 "세션 시작"에 모델과 시각을 적는다.
 7. **승인 요청**: `## 질문`에 `- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요`를 추가하고 멈춘다.
    - 사용자가 처음부터 "계획 확인 생략"이라고 했다면 건너뛴다.
