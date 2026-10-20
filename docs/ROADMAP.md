@@ -40,7 +40,9 @@
 | R-102 | 한국군 고증·은어·짬 문화·대드론·화생방·포병 → 카드 데이터 후보 | C | Flash Medium | — |
 | A-101 | 전투 목업 + 북한군 보병 시트 + 뒷모습 사격 + 계급장(G1 전까지) | D(사용자) | Gemini Argon 이미지 | — |
 | H-101 | Vite + Phaser 4 스캐폴드, verify, 디버그 파라미터, 에셋 플레이스홀더·갤러리, `ui/screens.ts` 빈 시그니처 | B | **Argon High** | — |
-| T-101 | Capacitor 안드로이드: 세로·Safe Area·뒤로가기 모달·저장·백그라운드 음소거 → 실기기 | B | Argon High | H-101, R-101 |
+| T-101 | Capacitor 안드로이드: 세로·Safe Area·뒤로가기 모달·저장·백그라운드 음소거 → 실기기 | B | Argon High | H-101, R-101, **T-102**(main.ts·debug.ts 충돌 방지), JDK 21·Android Studio |
+| T-102 | 전투 UI(DOM): HUD·상점·카드 정보·배너·결과·부활·일시정지 + `?scene=ui` 데모 | B | Argon High | H-101 |
+| H-102 | 에셋 정리·검사 스크립트(마젠타 제거·128 정렬·assets:check) | B | Argon High | H-101 |
 | P-101 | 실기기 확인 → G0 | 사용자 | — | T-101 |
 
 **M2 레인 A는 G0를 기다리지 않는다.** 브라우저만 쓰므로 H-101이 main에 병합되면 바로 시작한다. G0(실기기)·그림(A-101)·계정(U-101)은 M2와 병행하고, G1 전까지만 끝내면 된다.
