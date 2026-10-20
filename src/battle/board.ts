@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from 'phaser'
 import { CARDS, CARD_KEYS, LAYOUT, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
-import { dropOutcome, merge, sellValue } from '../rules'
+import { dropOutcome, merge, nearestEmpty, sellValue } from '../rules'
 
 // rules.Unit 확장. name은 신병 카드만 가진다
 export type Unit = { card: CardKey; rank: number; name?: string }
@@ -36,6 +36,8 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   const layer = scene.add.container(0, dy)
   const gfx = scene.add.graphics()
   layer.add(gfx)
+  // 칸 강조용. 카드 뷰보다 먼저 만들어 아래에 깔린다. 월드 좌표(슬롯 좌표)로 그린다
+  const hl = scene.add.graphics()
 
   const grid = (x: number, y: number, w: number, h: number, color: number, fill: boolean) => {
     if (fill) gfx.fillStyle(color).fillRect(x, y, w, h)
@@ -150,7 +152,14 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     target.view?.destroy()
     from.unit = null
     from.view = null
-    put(target, { card: b.card, rank, name })
+    const view = put(target, { card: b.card, rank, name })
+    // 진급 연출: 계급 작대기 확대 후 복귀 + 진급! 팝업(도형·텍스트만)
+    scene.tweens.add({ targets: view.getData('rank'), scale: UI.fx.promoteScale, duration: UI.fx.promoteMs, yoyo: true })
+    const popup = scene.add
+      .text(target.x, target.y, UI.text.promote, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.popupColor })
+      .setOrigin(0.5)
+      .setDepth(UI.fx.dragDepth)
+    scene.tweens.add({ targets: popup, y: target.y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => popup.destroy() })
   }
 
   // 판매: 환급은 sellValue(이등병 비용 x 재료 장수). 확인 창·되돌리기 없음
@@ -163,26 +172,74 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     opts.onSell(refund)
   }
 
+  // 칸 강조: 출발 칸을 뺀 모든 칸에 윤곽선. 합성 가능은 다른 색, 손 아래 칸은 더 굵게
+  const drawHl = (from: Slot, hover: Slot | null) => {
+    hl.clear()
+    for (const s of slots) {
+      if (s === from) continue
+      const color = s.unit && dropOutcome(from.unit as Unit, s.unit) === 'merge'
+        ? UI.colors.hlMerge
+        : UI.colors.hlOk
+      if (s === hover) hl.lineStyle(UI.fx.hlHoverWidth, UI.colors.hlHover, UI.fx.hlAlpha)
+      else hl.lineStyle(UI.fx.hlWidth, color, UI.fx.hlAlpha)
+      hl.strokeRect(s.x - s.size / 2, s.y - s.size / 2, s.size, s.size)
+    }
+  }
+
+  // 합성 대상 계급 표시 반짝임
+  let flashing: GameObjects.Graphics | null = null
+  const stopFlash = () => {
+    if (!flashing) return
+    scene.tweens.killTweensOf(flashing)
+    flashing.setAlpha(1)
+    flashing = null
+  }
+  let hover: Slot | null = null
+
   // 드래그: 직접 포인터 추적 없이 Phaser 이벤트만 쓴다
   // ponytail: 드래그 중 카드 중심 좌표로 칸을 판정한다(손가락 오프셋 없음), 터치 실기기에서 손가락에 가려지면 카드를 손가락 위로 띄운다
   scene.input.on('dragstart', (_p: unknown, obj: GameObjects.GameObject) => {
     const view = obj as GameObjects.Container
-    if (!view.getData('slot')) return
+    const from = view.getData('slot') as Slot | undefined
+    if (!from) return
     scene.tweens.killTweensOf(view)
     view.setDepth(UI.fx.dragDepth)
+    hover = null
+    drawHl(from, null)
   })
   scene.input.on('drag', (_p: unknown, obj: GameObjects.GameObject, dragX: number, dragY: number) => {
     const view = obj as GameObjects.Container
-    if (!view.getData('slot')) return
+    const from = view.getData('slot') as Slot | undefined
+    if (!from) return
     view.x = dragX
     view.y = dragY
+    const s = slotAt(dragX, dragY)
+    const now = s === from ? null : s
+    if (now === hover) return // 칸이 바뀔 때만 다시 그린다
+    hover = now
+    drawHl(from, hover)
+    stopFlash()
+    if (hover?.unit && dropOutcome(from.unit as Unit, hover.unit) === 'merge') {
+      flashing = hover.view?.getData('rank') as GameObjects.Graphics
+      scene.tweens.add({ targets: flashing, alpha: UI.fx.flashAlpha, duration: UI.fx.flashMs, yoyo: true, repeat: -1 })
+    }
   })
   scene.input.on('dragend', (_p: unknown, obj: GameObjects.GameObject) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
     if (!from) return
+    stopFlash() // 대상 view가 destroy되기 전에 해제한다
+    hl.clear()
+    hover = null
     const target = slotAt(view.x, view.y)
-    if (target === from || !target) return snap(view, from.x, from.y) // ponytail: 판 밖은 지금 원위치만, 가까운 빈 칸 보정은 다음 단계
+    if (target === from) return snap(view, from.x, from.y)
+    if (!target) {
+      // 판 밖·지뢰 구역·방어선 띠: 놓은 지점에서 가장 가까운 빈 배치 칸으로. 들어 올린 출발 칸도 빈 칸으로 본다
+      const deploy = slots.filter((s) => s.zone === 'deploy')
+      const i = nearestEmpty(deploy.map((s) => ({ x: s.x, y: s.y, free: s === from || !s.unit })), view.x, view.y)
+      const dest = i === null ? from : (deploy[i] as Slot)
+      return dest === from ? snap(view, from.x, from.y) : moveTo(from, dest)
+    }
     if (target.zone === 'sell') return sellFrom(from)
     const outcome = dropOutcome(from.unit as Unit, target.unit)
     if (outcome === 'move') return moveTo(from, target)
