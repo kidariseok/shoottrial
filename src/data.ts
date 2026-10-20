@@ -130,3 +130,102 @@ export const UI = {
   // 1단계 보급 텍스트 위치. HUD 띠 안, 좌상단 일시정지 버튼 오른쪽(우상단 시스템 버튼 자리는 비운다)
   supply: { x: 168, y: 32 },
 } as const
+
+// ---- 2단계 전투 수치 (추가분) ----
+
+// GDD §5.6. 웨이브 HP 스케일(rules.waveHp)은 보스에도 적용한다(OQ-3: W5 1776, W10 2496)
+// color는 아트 전 임시색(ART §2: 적은 회갈색 계열, 붉은색·주황은 적의 공격·경보에만), size는 칸 대비 비율
+// speed 칸/초, interval 초, baseDmg 위병소 피해, knock 밀어내기 배율, range 칸(0이면 막힌 뒤 근접)
+export const ENEMY_KEYS = ['infantry', 'dog', 'rpg', 'boss'] as const
+export type EnemyType = (typeof ENEMY_KEYS)[number]
+export const ENEMIES: Record<
+  EnemyType,
+  {
+    name: string
+    hp: number
+    speed: number
+    dmg: number
+    interval: number
+    baseDmg: number
+    knock: number
+    range: number
+    color: number
+    size: number
+  }
+> = {
+  infantry: { name: '보병', hp: 60, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0, color: 0x80786a, size: 0.55 },
+  dog: { name: '군견', hp: 40, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
+  rpg: { name: 'RPG병', hp: 50, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
+  boss: { name: '장갑차', hp: 1200, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
+}
+
+// 칸 단위 y. 적 진입 구역 맨 위가 0이다(LAYOUT.entryY 기준). 02-CONTEXT 좌표계
+export const GRID = {
+  mineTop: (LAYOUT.mineY - LAYOUT.entryY) / LAYOUT.cell,
+  deployTop: (LAYOUT.deployY - LAYOUT.entryY) / LAYOUT.cell,
+  lineY: (LAYOUT.lineY - LAYOUT.entryY) / LAYOUT.cell,
+}
+
+// GDD §5.6 보스 충격파
+// 충격파: 보스 y가 이 값 이상이 되거나 맨 앞 아군에게 막히는 순간 중 먼저, 한 번(확정). 등장 순간(0)이 아니다
+export const BOSS = { shockStun: 1.5, shockY: GRID.deployTop }
+
+// GDD §5.6 군견. triggerGap은 배치 구역 윗변 앞 칸 수, laneMs는 열 옮김 트윈 시간(연출 보정값)
+export const DOG = { triggerGap: 0.5, laneMs: 250 }
+
+// GDD §4·§4.1·§4.2. 준비/정산 초, 위병소 HP, 데프콘 1(웨이브 7~) 규칙
+// blockGap은 맨 앞 아군 위쪽 경계 앞 칸 수, maxDt·slideSpeed는 연출·판정 보정값
+export const BATTLE = {
+  prepFirst: 30,
+  prepNext: 20,
+  settleSec: 1.5,
+  baseHp: 20,
+  defcon1From: 7,
+  defcon1AllyInterval: 0.8,
+  defcon1SpawnGap: 0.7,
+  blockGap: 0.5,
+  maxDt: 0.1,
+  slideSpeed: 8,
+}
+
+// GDD §5.3 능력. corporal·sergeant는 능력이 켜지는 계급(상병 3, 병장 4)
+export const ABILITY = {
+  corporal: 3,
+  sergeant: 4,
+  burstCount: 2,
+  burstGap: 0.12, // 2점사 두 번째 발까지 간격(연출 보정값)
+  sergeantRifleInterval: 0.8,
+  sniperFalloff: 0.2,
+  sniperStun: 1,
+  knockBase: 1,
+  knockSergeant: 2,
+  burnSec: 3,
+  burnDps: 8,
+  cookHeal: 12,
+  cookBuff: 0.2,
+  cookRevive: 0.5,
+  cookReachSergeant: 2,
+}
+
+// GDD §5.4 시너지 효과. 인덱스 = 켜진 시너지 단계 수(SYNERGY 길이 + 1)
+export const SYN_FX: {
+  rifleInterval: readonly number[]
+  sniperDamage: readonly number[]
+  blowerKnock: readonly number[]
+  blowerRange: readonly number[]
+} = {
+  rifleInterval: [1, 0.8, 0.6],
+  sniperDamage: [1, 1.3],
+  blowerKnock: [1, 1.5, 1.5],
+  blowerRange: [0, 0, 1],
+}
+
+// GDD §5.3·§5.5. 토큰은 계급 수(1~4) + 병장 +2, 시너지 +1(02-CONTEXT). 피해는 폭발 칸과 위아래 blast칸
+export const MINES = {
+  tokensByRank: [1, 2, 3, 4] as readonly number[],
+  sergeantBonus: 2,
+  synergyBonus: 1,
+  damage: 150,
+  bossMult: 3,
+  blast: 1,
+}
