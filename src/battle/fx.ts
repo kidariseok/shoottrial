@@ -81,3 +81,11 @@ export function reviveFlash(scene: Scene, x: number, y: number, w: number, h: nu
   const r = scene.add.rectangle(x, y, w, h, UI.colors.revive, UI.fx.reviveAlpha).setDepth(UI.fx.fxDepth)
   scene.tweens.add({ targets: r, scale: UI.fx.reviveScale, alpha: 0, duration: UI.fx.reviveMs, onComplete: () => r.destroy() })
 }
+
+// 지뢰 폭발: 열 폭 × h 청백색 사각형이 번쩍이고 가운데 원이 커지며 사라진다. 피·불꽃 표현 없음
+export function explosion(scene: Scene, x: number, y: number, h: number): void {
+  const r = scene.add.rectangle(x, y, LAYOUT.cell, h, UI.colors.explosion, UI.fx.explodeAlpha).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: r, alpha: 0, duration: UI.fx.explodeMs, onComplete: () => r.destroy() })
+  const c = scene.add.circle(x, y, UI.fx.explodeCoreR, UI.colors.explosion).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: c, scale: UI.fx.explodeCoreScale, alpha: 0, duration: UI.fx.explodeMs, onComplete: () => c.destroy() })
+}

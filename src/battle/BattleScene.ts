@@ -4,7 +4,7 @@ import { createRng, debug } from '../debug'
 import { defconOf, hasAntiTank, mineTokens, spawnPlan, type FlowPhase, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import { createBoard, deployIndex, type Board } from './board'
-import { removeEnemy, spawnEnemy, tickEnemies, type Enemy } from './enemies'
+import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
 
@@ -138,7 +138,6 @@ export class BattleScene extends Scene {
     this.showHud()
   }
 
-  // 02-06이 지뢰 호출을 아군 행동(3)과 정리(4) 사이에 끼운다
   private fightTick(dt: number) {
     // 1. 출현
     this.clock += dt
@@ -153,6 +152,8 @@ export class BattleScene extends Scene {
     const reached = tickEnemies({ scene: this, board: this.board, enemies: this.enemies, allies, dogRand: this.dogRand }, dt)
     for (const e of reached) this.reachLine(e)
     tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1 }, dt)
+    // 지뢰: 아군 사격 뒤, 정리 전(터진 지뢰의 사망도 같은 틱 정리가 센다)
+    tickMines({ scene: this, board: this.board, enemies: this.enemies })
     // 4. 정리
     this.enemies = this.enemies.filter((e) => {
       if (e.gone) {

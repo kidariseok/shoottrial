@@ -1,8 +1,8 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, BATTLE, BOSS, DOG, ENEMIES, GRID, LAYOUT, UI, type EnemyType } from '../data'
-import { blockY, frontAlly, inRange, pickDogLane, waveHp, type SpawnEvent } from '../rules'
+import { ABILITY, BATTLE, BOSS, DOG, ENEMIES, GRID, LAYOUT, MINES, UI, type EnemyType } from '../data'
+import { blockY, frontAlly, inBlast, inRange, mineDamage, mineTriggered, pickDogLane, waveHp, type SpawnEvent } from '../rules'
 import type { Board } from './board'
-import { dmgText, hitFlash, laneFlash, shake } from './fx'
+import { dmgText, explosion, hitFlash, laneFlash, shake } from './fx'
 import { damageAlly, type Ally } from './units'
 
 // 적 한 마리의 전투 상태. y는 칸 단위 중심 위치(0 = 적 진입 구역 맨 위)
@@ -136,6 +136,23 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
     if (e.y >= GRID.lineY) reached.push(e)
   }
   return reached
+}
+
+// 묻힌 지뢰: 같은 열 적 중심이 지뢰 칸 윗변에 닿으면 터져 그 칸과 위아래 blast칸의 같은 열 적 전부에게 피해
+// 사망 처리는 호출한 쪽 정리 단계가 한다
+export function tickMines(ctx: { scene: Scene; board: Board; enemies: Enemy[] }): void {
+  for (const m of ctx.board.mines()) {
+    const live = ctx.enemies.filter((e) => e.col === m.col && e.hp > 0 && !e.gone)
+    if (!live.some((e) => mineTriggered(e.y, m.row))) continue
+    for (const e of live) {
+      if (!inBlast(e.y, m.row)) continue
+      hurtEnemy(ctx.scene, e, mineDamage(e.type, m.anti))
+    }
+    ctx.board.detonate(m.col, m.row)
+    const p = ctx.board.toScreen(m.col, GRID.mineTop + m.row + 0.5)
+    explosion(ctx.scene, p.x, p.y, (1 + 2 * MINES.blast) * LAYOUT.cell)
+    shake(ctx.scene, 'heavy')
+  }
 }
 
 // 트윈을 끊고 뷰를 없앤다. 두 번 불러도 안전하다
