@@ -107,6 +107,9 @@ export const UI = {
     popupRise: 60,
     dragDepth: 100,
     hlAlpha: 0.9,
+    hlWidth: 4, // 놓을 수 있는 칸 윤곽 굵기
+    hlHoverWidth: 8, // 손 아래 칸 윤곽 굵기
+    flashAlpha: 0.2, // 합성 대상 계급 표시 반짝임의 낮은 알파
   },
   text: {
     promote: '진급!',
@@ -118,6 +121,7 @@ export const UI = {
     color: '#ffffff',
     popupColor: '#ffe066',
     labelColor: '#cfd8dc',
+    lineLabelColor: '#2b2b2b', // 노란 방어선 띠 위 라벨(밝은 라벨색은 안 읽힌다)
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
