@@ -96,13 +96,15 @@
 
 ## 질문
 
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
 - 기준 커밋: 4b7d27fec183
 - 브랜치: kidariseok/h-102-ticket-start
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21 08:26
+- [x] 단계 1: `pngjs` 설치, `package.json`에 `assets:check` 및 `verify` 스크립트 갱신, `art/source/README.md` 3단계 사용법 작성
+- [x] 단계 2: `scripts/assets.mjs` 에셋 정리 스크립트 구현 (계약 표 파싱, 마젠타·1px 번짐 제거, 발끝 y=116/중앙 정렬, 크기 초과 실패, 시트 병합 및 장부 갱신)
 
 ## 결과 보고
 
