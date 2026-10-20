@@ -11,9 +11,9 @@ export type Slot = { zone: Zone; i: number; x: number; y: number; size: number; 
 export type Board = {
   place(zone: 'deploy' | 'bench', i: number, unit: Unit): boolean
   dealDeck(deck: DeckItem[]): void
-  // 논리 좌표(열, 칸 단위 y: 적 진입 구역 맨 위 = 0) -> 월드 좌표(화면 dy 포함)
+  // 논리 좌표(열, 칸 단위 y: 적 진입 구역 맨 위 = 0) -> 월드 좌표(화면 내림 포함)
   toScreen(col: number, y: number): { x: number; y: number }
-  // LAYOUT 기준 y -> 월드 y(화면 dy 포함)
+  // LAYOUT 기준 y -> 월드 y(화면 내림 포함)
   worldY(baseY: number): number
   // 배치 구역에 놓인 카드(대기석 제외)
   deployed(): { unit: Unit; col: number; row: number; view: GameObjects.Container }[]
