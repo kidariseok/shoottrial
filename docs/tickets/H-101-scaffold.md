@@ -142,6 +142,8 @@
 - 세션 시작: Gemini 4 Argon (High), 2026-10-20 17:05
 - [x] 단계 1: 프로젝트 설정 및 의존성 설치 (phaser@4.2.1, typescript, vite, vitest, tsconfig.json, vite.config.ts)
 - [x] 단계 2: HTML·CSS·UI 경계 스텁 및 디버그 모듈 구현 (index.html, src/ui/style.css, src/ui/screens.ts, src/debug.ts)
+- [x] 단계 3: 에셋 계약 표·런타임 플레이스홀더 및 갤러리·부팅 씬 구현 (public/assets/index.json, src/assets.ts, src/gallery.ts, src/main.ts)
+- [x] 단계 4: 단위 테스트 작성 및 검증 (tests/debug.test.ts, tests/assets.test.ts, npm run verify 통과)
 
 ## 결과 보고
 
