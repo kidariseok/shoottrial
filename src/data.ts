@@ -106,6 +106,10 @@ export const UI = {
     snipe: 0xffffff, // 저격 흰 선
     wind: 0xbfe6ff, // 송풍 파동(청백색)
     revive: 0xd8ffd0, // 부활 번쩍임(흰색·연두)
+    mineToken: 0x7fd1b9, // 지뢰 토큰 더미(아군 계열 청록, 붉은색·주황 금지)
+    mineBuried: 0x9fe0c8, // 묻힌 일반 지뢰(반투명으로 그린다)
+    mineAnti: 0xc79bff, // 대전차 토큰·지뢰(연보라, 일반과 구분)
+    explosion: 0xe8f6ff, // 지뢰 폭발(밝은 청백색)
   },
   fx: {
     snapMs: 120,
@@ -151,6 +155,10 @@ export const UI = {
     reviveScale: 1.4, // 부활 번쩍임이 커지는 배율
     reviveAlpha: 0.9,
     reviveMs: 400,
+    explodeAlpha: 0.8, // 폭발 사각형 시작 알파
+    explodeMs: 350,
+    explodeCoreR: 24, // 폭발 중심 원 시작 반지름
+    explodeCoreScale: 3, // 중심 원이 커지는 배율
   },
   text: {
     promote: '진급!',
@@ -193,6 +201,8 @@ export const UI = {
   go: { w: 280, h: 72, yOff: 60, px: 36 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
+  // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
+  mine: { trayCol: 0, trayY: 1.5, tokenR: 36, buriedR: 40, alpha: 0.5, countPx: 36 },
 } as const
 
 // ---- 2단계 전투 수치 (추가분) ----

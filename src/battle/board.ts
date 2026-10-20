@@ -1,5 +1,5 @@
 import { Scene, GameObjects } from 'phaser'
-import { CARDS, CARD_KEYS, LAYOUT, SPRITE_SCALE, UI, type CardKey } from '../data'
+import { CARDS, CARD_KEYS, GRID, LAYOUT, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
 import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase } from '../rules'
 
@@ -18,6 +18,15 @@ export type Board = {
   // 배치 구역에 놓인 카드(대기석 제외)
   deployed(): { unit: Unit; col: number; row: number; view: GameObjects.Container }[]
   setPhase(phase: FlowPhase): void
+  // 지뢰 토큰 n개(0이면 더미 숨김). anti = 이 단계 토큰이 대전차인지(더미 색)
+  setTokens(n: number, anti: boolean): void
+  tokens(): number
+  // 토큰 1개를 지뢰 구역 (col, row 0|1) 빈 칸에 묻는다. 토큰이 없거나 칸이 차 있으면 false
+  bury(col: number, row: number): boolean
+  // 묻힌 지뢰 (row 0 = 지뢰 구역 위 행)
+  mines(): { col: number; row: number; anti: boolean }[]
+  // 묻힌 지뢰 제거(연출은 호출한 쪽)
+  detonate(col: number, row: number): void
 }
 
 // 배치 칸 번호
@@ -291,5 +300,94 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     }
   }
 
-  return { place, dealDeck, toScreen, worldY, deployed, setPhase: (p) => (phase = p) }
+  // ---- 지뢰 토큰 더미와 매설 ----
+  let tokenCount = 0
+  let trayAnti = false
+  const buried: { col: number; row: number; anti: boolean; view: GameObjects.Arc }[] = []
+  const home = toScreen(UI.mine.trayCol, UI.mine.trayY)
+  const disc = scene.add.circle(0, 0, UI.mine.tokenR, UI.colors.mineToken)
+  const count = scene.add.text(0, 0, '', { fontFamily: UI.text.fontFamily, fontSize: `${UI.mine.countPx}px`, color: UI.text.color }).setOrigin(0.5)
+  const tray = scene.add.container(home.x, home.y, [disc, count]).setSize(cell, cell).setVisible(false)
+  tray.setInteractive({ draggable: true })
+  const mineCenter = (col: number, row: number) => toScreen(col, GRID.mineTop + row + 0.5)
+  const hasMine = (col: number, row: number) => buried.some((m) => m.col === col && m.row === row)
+  // 점이 들어 있는 지뢰 구역 칸. 구역 밖이면 null
+  const mineCellAt = (x: number, y: number) => {
+    for (let r = 0; r < LAYOUT.mineRows; r++)
+      for (let c = 0; c < cols; c++) {
+        const p = mineCenter(c, r)
+        if (Math.abs(x - p.x) <= cell / 2 && Math.abs(y - p.y) <= cell / 2) return { col: c, row: r }
+      }
+    return null
+  }
+  const bury = (col: number, row: number) => {
+    if (tokenCount <= 0 || hasMine(col, row)) return false
+    tokenCount -= 1
+    count.setText(String(tokenCount))
+    tray.setVisible(tokenCount > 0)
+    const p = mineCenter(col, row)
+    const view = scene.add.circle(p.x, p.y, UI.mine.buriedR, trayAnti ? UI.colors.mineAnti : UI.colors.mineBuried, UI.mine.alpha)
+    buried.push({ col, row, anti: trayAnti, view })
+    return true
+  }
+  const goHome = () => scene.tweens.add({ targets: tray, x: home.x, y: home.y, duration: UI.fx.snapMs })
+  // ponytail: 한 번 묻은 지뢰는 다시 옮기지 못한다, 실수 되돌리기가 필요하면 지뢰를 더미로 끌어오는 기능을 추가
+  let trayDragging = false
+  tray.on('dragstart', () => {
+    trayDragging = phase === 'prep' && tokenCount > 0
+    if (!trayDragging) return
+    scene.tweens.killTweensOf(tray)
+    tray.setDepth(UI.fx.dragDepth)
+    hl.clear().lineStyle(UI.fx.hlWidth, UI.colors.hlOk, UI.fx.hlAlpha)
+    for (let r = 0; r < LAYOUT.mineRows; r++)
+      for (let c = 0; c < cols; c++) {
+        if (hasMine(c, r)) continue
+        const p = mineCenter(c, r)
+        hl.strokeRect(p.x - cell / 2, p.y - cell / 2, cell, cell)
+      }
+  })
+  tray.on('drag', (_p: unknown, dragX: number, dragY: number) => {
+    if (!trayDragging) return
+    tray.x = dragX
+    tray.y = dragY
+  })
+  tray.on('dragend', () => {
+    if (!trayDragging) return
+    trayDragging = false
+    hl.clear()
+    const cellAt = mineCellAt(tray.x, tray.y)
+    if (cellAt) bury(cellAt.col, cellAt.row)
+    tray.setDepth(0)
+    goHome()
+  })
+
+  const setTokens = (n: number, anti: boolean) => {
+    tokenCount = n
+    trayAnti = anti
+    disc.setFillStyle(anti ? UI.colors.mineAnti : UI.colors.mineToken)
+    count.setText(String(n))
+    trayDragging = false
+    scene.tweens.killTweensOf(tray)
+    tray.setPosition(home.x, home.y).setDepth(0).setVisible(n > 0)
+  }
+  const detonate = (col: number, row: number) => {
+    const i = buried.findIndex((m) => m.col === col && m.row === row)
+    if (i < 0) return
+    buried[i]?.view.destroy()
+    buried.splice(i, 1)
+  }
+
+  return {
+    place,
+    dealDeck,
+    toScreen,
+    worldY,
+    deployed,
+    setPhase: (p) => (phase = p),
+    setTokens,
+    tokens: () => tokenCount,
+    bury,
+    mines: () => buried.map(({ col, row, anti }) => ({ col, row, anti })),
+    detonate,
+  }
 }

@@ -1,7 +1,7 @@
 import { Scene, GameObjects } from 'phaser'
 import { BATTLE, ECONOMY, ENEMIES, LAYOUT, ROOKIE, UI } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, spawnPlan, type FlowPhase, type SpawnEvent } from '../rules'
+import { defconOf, hasAntiTank, mineTokens, spawnPlan, type FlowPhase, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import { createBoard, deployIndex, type Board } from './board'
 import { removeEnemy, spawnEnemy, tickEnemies, type Enemy } from './enemies'
@@ -89,6 +89,10 @@ export class BattleScene extends Scene {
   startPrep() {
     this.phase = 'prep'
     this.board.setPhase('prep')
+    // 지뢰설치병 수·계급·시너지로 이번 준비 단계 토큰이 정해진다(MINE-01)
+    const miners = this.board.deployed().filter((d) => d.unit.card === 'miner').map((d) => ({ rank: d.unit.rank }))
+    const anti = hasAntiTank(miners)
+    this.board.setTokens(mineTokens(miners), anti)
     this.prepLeft = this.wave === 1 ? BATTLE.prepFirst : BATTLE.prepNext
     for (const o of this.goBtn) o.setVisible(true)
   }
@@ -97,6 +101,7 @@ export class BattleScene extends Scene {
     for (const o of this.goBtn) o.setVisible(false)
     this.phase = 'fight'
     this.board.setPhase('fight')
+    this.board.setTokens(0, false) // 쓰지 않은 토큰은 사라지고 묻힌 지뢰는 남는다
     startWave(collectAllies(this.board))
     this.plan = spawnPlan(this.wave, this.spawnRand, defconOf(this.wave) === 1)
     this.spawned = []
