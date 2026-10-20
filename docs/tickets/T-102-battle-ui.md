@@ -91,6 +91,8 @@
 - [x] 티켓 활성화 및 작업 계획 작성 (`docs/tickets/T-102-battle-ui.md`)
 - [x] 1단계: 올리브·카키 군용 패널 스타일시트 및 CSS 변수 작성 (`src/ui/style.css`)
 - [x] 2단계: 전투 UI DOM(`src/ui/screens.ts`) 및 순수 헬퍼(`src/ui/helpers.ts`) 구현 (export 시그니처 불변 확인)
+- [x] 3단계: UI 데모(`src/ui/demo.ts`) 및 디버그 진입점(`src/main.ts`, `src/debug.ts`) 연결
+- [x] 4단계: 단위 테스트(`tests/ui.test.ts`) 작성 및 `npm run verify` 통과
 
 ## 결과 보고
 
