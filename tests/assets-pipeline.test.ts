@@ -112,12 +112,17 @@ describe('H-102 에셋 파이프라인 및 계약 검사 (scripts/assets.mjs, sc
         indexPath: ws.indexPath,
       })
 
-      expect(results.length).toBe(2)
+      expect(results.length).toBe(3)
 
-      // ally_rifle_idle: 2프레임 → 256×128
+      // ally_rifle_idle: 1프레임 → 128×128
       const riflePng = readPngFile(ws.joinPath(ws.outAssetsDir, 'ally_rifle_idle.png'))
-      expect(riflePng.width).toBe(256)
+      expect(riflePng.width).toBe(128)
       expect(riflePng.height).toBe(128)
+
+      // ally_rifle_attack: 2프레임 → 256×128
+      const attackPng = readPngFile(ws.joinPath(ws.outAssetsDir, 'ally_rifle_attack.png'))
+      expect(attackPng.width).toBe(256)
+      expect(attackPng.height).toBe(128)
 
       // fx_muzzle: 2프레임(sheet.png 입력, 중앙 피벗) → 64×32
       const muzzlePng = readPngFile(ws.joinPath(ws.outAssetsDir, 'fx_muzzle.png'))
@@ -126,10 +131,11 @@ describe('H-102 에셋 파이프라인 및 계약 검사 (scripts/assets.mjs, sc
 
       const indexJson = ws.readJson(ws.indexPath)
       expect(indexJson).toContain('ally_rifle_idle')
+      expect(indexJson).toContain('ally_rifle_attack')
       expect(indexJson).toContain('fx_muzzle')
 
       const ledgerJson = ws.readJson(ws.ledgerPath)
-      expect(ledgerJson.entries.length).toBe(2)
+      expect(ledgerJson.entries.length).toBe(3)
 
       const checkRes = checkAssets({
         rootDir: ROOT_DIR,

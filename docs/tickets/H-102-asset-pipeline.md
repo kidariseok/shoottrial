@@ -1,6 +1,6 @@
 # H-102 에셋 정리·검사 스크립트: 마젠타 제거 → 128 캔버스 정렬 → public/assets + 계약 검사
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -62,10 +62,10 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify`(assets:check 포함) 통과
-- [ ] fixture 테스트 통과(마젠타 제거·기준선·크기 초과 실패)
-- [ ] `art/source/README.md`에 사용자가 따라 할 3단계 사용법
-- [ ] `docs/shots/H-102.png`: 처리된 키가 갤러리에 빨간 테두리 없이 보이는 화면
+- [x] `npm run verify`(assets:check 포함) 통과
+- [x] fixture 테스트 통과(마젠타 제거·기준선·크기 초과 실패)
+- [x] `art/source/README.md`에 사용자가 따라 할 3단계 사용법
+- [x] `docs/shots/H-102.png`: 처리된 키가 갤러리에 빨간 테두리 없이 보이는 화면
 
 디버그 URL: `http://localhost:5173/?scene=gallery`
 
@@ -107,14 +107,38 @@
 - [x] 단계 2: `scripts/assets.mjs` 에셋 정리 스크립트 구현 (계약 표 파싱, 마젠타·1px 번짐 제거, 발끝 y=116/중앙 정렬, 크기 초과 실패, 시트 병합 및 장부 갱신)
 - [x] 단계 3: `scripts/assets-check.mjs` 에셋 계약 검사 스크립트 구현 (파일·높이·너비·프레임 범위·알파 채널·장부 대조 검사)
 - [x] 단계 4: `scripts/fixtures/` 테스트 마젠타 이미지 생성 및 `tests/assets-pipeline.test.ts` 단위 테스트 작성 (`npm run verify` 통과)
+- [x] 단계 5: Fixture 에셋을 변환해 `?scene=gallery`에서 빨간 테두리 없이 표시되는 화면을 `docs/shots/H-102.png`(390×844)로 캡처하고 최종 검증(`npm run verify`, `npm run assets:check`) 완료
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `package.json`, `package-lock.json`: `pngjs` 개발 의존성 추가, `assets:check` 스크립트 추가 및 `verify`에 `npm run assets:check` 연결
+  - `art/source/README.md`: 사용자가 따라 할 3단계 에셋 넣기·정리·검사 사용법 작성
+  - `scripts/assets.mjs`: `src/assets.ts` 계약 표 파싱, 마젠타(`#FF00FF` ± 오차) 투명화 및 경계 1px 분홍 번짐 제거, 발끝 기준선(`y=116`)/정중앙 정렬, 크기 초과 시 최근접 축소 없이 실패, 가로 한 줄 시트 병합(`public/assets/<키>.png`), `public/assets/index.json`·`art/LEDGER.json` 갱신 구현
+  - `scripts/assets-check.mjs`: `index.json`·`public/assets/*.png`·`art/LEDGER.json`·`src/assets.ts` 계약 대조 검사(파일 존재, 높이·너비·프레임 범위, 알파 채널 여부, 장부 필수 필드, 장부에만 있는 파일 및 계약 외 키 검출) 구현
+  - `scripts/fixtures/`: 마젠타 배경·1px 분홍 테두리·크기 초과 테스트용 fixture PNG 및 생성·테스트 하네스(`generate-fixtures.mjs`, `pipeline-harness.mjs`, `pipeline-harness.d.mts`, `source/`, `oversize/`)
+  - `tests/assets-pipeline.test.ts`: 계약 파싱 일치, 마젠타·1px 번짐 제거, 발끝 `y=116` 및 중앙 정렬, 크기 초과 실패, 엔드투엔드 변환 및 `assets:check` 위반 검출 단위 테스트 6종
+  - `docs/shots/H-102.png`: 변환된 에셋(`ally_rifle_idle`, `ally_rifle_attack`)이 갤러리(`?scene=gallery`)에서 빨간 테두리 없이 표시되는 390×844 스크린샷
 - 검증 결과:
+  ```
+  > shoottrial@0.1.0 verify
+  > npm run typecheck && npm run test && npm run assets:check && npm run build
+  > tsc --noEmit
+  > vitest run --passWithNoTests
+  Test Files  9 passed (9)
+       Tests  106 passed (106)
+  > node scripts/assets-check.mjs
+  ✓ assets:check 통과 (검사한 에셋 키: 0개)
+  > vite build
+  ✓ built in 1.56s
+  ```
 - 스크린샷:
+  - `docs/shots/H-102.png` (`/?scene=gallery&fps=1&safe=1`, 390×844)
 - 사용자 확인 방법:
+  - `art/source/<키>/` 폴더에 마젠타 배경 `01.png`… 또는 `sheet.png`를 넣고 `node scripts/assets.mjs <키>` 실행 후 `npm run assets:check` 및 `http://localhost:5173/?scene=gallery`에서 확인 (`art/source/README.md` 참고)
 - 확인하지 못한 점:
+  - `art/source/`에 사용자 실데이터 원본이 아직 들어와 있지 않아 fixture 마젠타 시트로 변환 및 갤러리 렌더링을 검증함.
 - 다음 제안:
+  - A-101 스타일 타깃 승인 후 생성된 마젠타 시트를 `art/source/<키>/`에 넣고 `node scripts/assets.mjs`로 일괄 변환 진행.
 
 ## 인계 메모

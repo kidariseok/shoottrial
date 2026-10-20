@@ -48,10 +48,13 @@ function createSoldierFrame(offsetY = 0) {
 
   // 캐릭터 본체(36×72): 남색 외곽선(#1b1d26) + 방탄헬멧/군복(#4b5320, #606b29) + 전투화(#2a2a2a)
   fillRect(png, bx, by, bw, bh, 27, 29, 38, 255) // 외곽선
-  fillRect(png, bx + 4, by + 2, bw - 8, 22, 62, 72, 38, 255) // 헬멧
-  fillRect(png, bx + 2, by + 24, bw - 4, 36, 75, 83, 32, 255) // 디지털 위장 군복 몸통
-  fillRect(png, bx + 6, by + 60, 10, 11, 42, 42, 42, 255) // 왼발 전투화
-  fillRect(png, bx + bw - 16, by + 60, 10, 11, 42, 42, 42, 255) // 오른발 전투화
+  fillRect(png, bx + 4, by + 2, bw - 8, 22, 96, 115, 58, 255) // 방탄헬멧
+  fillRect(png, bx + 6, by + 6, bw - 12, 8, 132, 156, 84, 255) // 헬멧 하이라이트
+  fillRect(png, bx + 2, by + 24, bw - 4, 36, 75, 92, 42, 255) // 디지털 위장 군복 몸통
+  fillRect(png, bx + 8, by + 28, bw - 16, 22, 108, 128, 64, 255) // 군장(배낭)
+  fillRect(png, bx + bw - 6, by - 4 > 0 ? by + 10 : by + 10, 4, 24, 55, 62, 72, 255) // K2 총열 실루엣
+  fillRect(png, bx + 6, by + 60, 10, 11, 48, 52, 58, 255) // 왼발 전투화
+  fillRect(png, bx + bw - 16, by + 60, 10, 11, 48, 52, 58, 255) // 오른발 전투화
 
   return png
 }
@@ -86,9 +89,29 @@ export function generateFixtures(baseDir = __dirname) {
   const rifleDir = join(baseDir, 'source', 'ally_rifle_idle')
   mkdirSync(rifleDir, { recursive: true })
   writeFileSync(join(rifleDir, '01.png'), PNG.sync.write(createSoldierFrame(0), { colorType: 6 }))
-  writeFileSync(join(rifleDir, '02.png'), PNG.sync.write(createSoldierFrame(2), { colorType: 6 }))
   writeFileSync(
     join(rifleDir, 'meta.json'),
+    JSON.stringify(
+      {
+        tool: 'gemini-argon',
+        prompt: 'docs/ART.md#3.2',
+        source: 'https://www.figma.com/design/6RrU20Hv8way6vlYjcTJU3/?node-id=5-18',
+        license: 'proprietary',
+        edited: true,
+        checked: '2026-10-21',
+      },
+      null,
+      2
+    ) + '\n',
+    'utf8'
+  )
+
+  const attackDir = join(baseDir, 'source', 'ally_rifle_attack')
+  mkdirSync(attackDir, { recursive: true })
+  writeFileSync(join(attackDir, '01.png'), PNG.sync.write(createSoldierFrame(0), { colorType: 6 }))
+  writeFileSync(join(attackDir, '02.png'), PNG.sync.write(createSoldierFrame(2), { colorType: 6 }))
+  writeFileSync(
+    join(attackDir, 'meta.json'),
     JSON.stringify(
       {
         tool: 'gemini-argon',

@@ -1,14 +1,1 @@
-{
-  "entries": [
-    {
-      "id": "ally_rifle_idle",
-      "file": "public/assets/ally_rifle_idle.png",
-      "source": "https://www.figma.com/design/6RrU20Hv8way6vlYjcTJU3/?node-id=5-18",
-      "tool": "gemini-argon",
-      "prompt": "docs/ART.md#3.2",
-      "license": "proprietary",
-      "edited": true,
-      "checked": "2026-10-21"
-    }
-  ]
-}
+{"entries":[]}
