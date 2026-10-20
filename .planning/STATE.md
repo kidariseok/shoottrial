@@ -92,3 +92,12 @@ Resume file: None
 - 브랜치 `kidariseok/m2-core-phase1`. 스크린샷 docs/shots/M2-01-02.png, M2-01-03.png, M2-01-03-drag.png.
 - 사람 확인(사용자): `/?scene=battle&deck=rifle:4,sniper:2&supply=99`에서 드래그·합성·판매·보정. 통과하면 Phase 2(전투).
 - 확인 못 한 것: 실제 터치 기기, 높이 1280(dy=0) 화면, 진급 확대 애니메이션 자체.
+
+## 2026-10-21 Phase 2 실행 완료 (사람 확인 대기)
+
+- 계획 6/6 실행. `npm run verify` 통과(테스트 100). 레인 B 파일 변경 없음.
+- 02-06 실행 중 사용량 한도로 에이전트가 끊겼으나 작업 1~3과 SUMMARY 작성까지 끝나 있었고, 오케스트레이터가 SUMMARY 커밋으로 마무리했다.
+- 성공 기준 1~5: 헤드리스 PASS(측정값은 02-06-SUMMARY.md 판정표). 종합 시나리오 `wave=1&seed=42&god=1&speed=2`로 웨이브 10 승리.
+- 사람 확인(사용자): `/?scene=battle&seed=42&deck=rifle:3,sniper:1,blower:1,cook:1,miner:1&speed=2`에서 한 판.
+- 확인 못 한 것: 실제 터치 기기, 높이 1280 화면, 적 60마리 프레임, 연출 애니메이션 일부(02-06 SUMMARY "확인 못 함").
+- 다음: Phase 3(경제·T-102 UI 연결·판 기록·튜닝) → G1.
