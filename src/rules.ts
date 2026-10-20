@@ -1,5 +1,20 @@
 // 순수 계산. phaser·DOM·debug를 import하지 않는다(vitest가 node에서 돌린다). 수치는 data.ts에서만 읽는다.
-import { BATTLE, CARDS, CARD_KEYS, ECONOMY, GRID, LAYOUT, RANKS, SYNERGY, type CardKey, type EnemyType } from './data'
+import {
+  ABILITY,
+  BATTLE,
+  CARDS,
+  CARD_KEYS,
+  ECONOMY,
+  ENEMIES,
+  GRID,
+  LAYOUT,
+  MINES,
+  RANKS,
+  SYNERGY,
+  SYN_FX,
+  type CardKey,
+  type EnemyType,
+} from './data'
 import { STAGE1, WAVES } from './stages'
 
 export type Unit = { card: CardKey; rank: number }
@@ -161,4 +176,37 @@ export function inRange(allyY: number, enemyY: number, range: number): boolean {
 // 열·행 차이 중 큰 쪽이 범위 이내(인접 8칸 = 1)
 export function withinReach(dc: number, dr: number, reach: number): boolean {
   return Math.max(Math.abs(dc), Math.abs(dr)) <= reach
+}
+
+// GDD §5.2·§5.3·§5.4·§4.1. 공격 간격 = 기본 x (소총수만 병장·시너지) x 데프콘 1. 곱으로 겹친다
+export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean): number {
+  let v = CARDS[card].interval
+  if (card === 'rifle') {
+    if (rank >= ABILITY.sergeant) v *= ABILITY.sergeantRifleInterval
+    v *= SYN_FX.rifleInterval[synergyTier(card, synergyCount)] ?? 1
+  }
+  return defcon1 ? v * BATTLE.defcon1AllyInterval : v
+}
+
+// GDD §5.3·§5.4. atk = stats().atk. k는 관통 순서(0부터). 상병 이상은 감소 없음, 시너지 단계로 배율
+export function sniperDamage(atk: number, k: number, rank: number, tier = 0): number {
+  const fall = rank >= ABILITY.corporal ? 1 : Math.max(0, 1 - ABILITY.sniperFalloff * k)
+  return atk * fall * (SYN_FX.sniperDamage[tier] ?? 1)
+}
+
+// GDD §5.3·§5.4·§5.6. 밀어내기 칸 수 = (병장이면 큰 값) x 적 배율 x 시너지 배율
+export function knockback(enemy: EnemyType, rank: number, blowerCount: number): number {
+  const base = rank >= ABILITY.sergeant ? ABILITY.knockSergeant : ABILITY.knockBase
+  return base * ENEMIES[enemy].knock * (SYN_FX.blowerKnock[synergyTier('blower', blowerCount)] ?? 1)
+}
+
+// GDD §5.4. 제설병 사거리(칸) = 기본 + 시너지 가산
+export function blowerRange(blowerCount: number): number {
+  return CARDS.blower.range + (SYN_FX.blowerRange[synergyTier('blower', blowerCount)] ?? 0)
+}
+
+// GDD §5.3·§5.4. 취사병 회복 범위. 시너지면 배치 구역 전원(Infinity)
+export function cookReach(rank: number, cookCount: number): number {
+  if (synergyTier('cook', cookCount) >= 1) return Infinity
+  return rank >= ABILITY.sergeant ? ABILITY.cookReachSergeant : CARDS.cook.range
 }
