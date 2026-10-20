@@ -133,13 +133,15 @@
 
 ## 질문
 
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
 - 기준 커밋: 294b3331124f
 - 브랜치: kidariseok/h101-gallery-scaffold
 - 세션 시작: Gemini 4 Argon (High), 2026-10-20 17:05
+- [x] 단계 1: 프로젝트 설정 및 의존성 설치 (phaser@4.2.1, typescript, vite, vitest, tsconfig.json, vite.config.ts)
+- [x] 단계 2: HTML·CSS·UI 경계 스텁 및 디버그 모듈 구현 (index.html, src/ui/style.css, src/ui/screens.ts, src/debug.ts)
 
 ## 결과 보고
 
