@@ -210,3 +210,46 @@ export function cookReach(rank: number, cookCount: number): number {
   if (synergyTier('cook', cookCount) >= 1) return Infinity
   return rank >= ABILITY.sergeant ? ABILITY.cookReachSergeant : CARDS.cook.range
 }
+
+// GDD §5.3·§5.4·§5.5. 지뢰 토큰 합 = Σ(계급 수 + 병장 보너스) + 시너지 보너스(전체에 한 번)
+export function mineTokens(miners: { rank: number }[]): number {
+  const sum = miners.reduce(
+    (s, m) => s + (MINES.tokensByRank[clampRank(m.rank) - 1] ?? 0) + (m.rank >= ABILITY.sergeant ? MINES.sergeantBonus : 0),
+    0,
+  )
+  return sum + (synergyTier('miner', miners.length) >= 1 ? MINES.synergyBonus : 0)
+}
+
+// GDD §5.3. 상병 이상 지뢰설치병이 한 명이라도 있으면 그 준비 단계의 지뢰는 전부 대전차
+export function hasAntiTank(miners: { rank: number }[]): boolean {
+  return miners.some((m) => m.rank >= ABILITY.corporal)
+}
+
+// GDD §5.6. 군견 열 변경: 양옆 열 중 아군이 적은 열. 같을 때만 rand를 정확히 한 번 부른다(시드 재현)
+// 후보가 하나뿐이거나 아군 수가 다르면 rand를 부르지 않는다. 후보가 없으면 자기 열
+export function pickDogLane(col: number, alliesPerCol: number[], rand: () => number): number {
+  const cands = [col - 1, col + 1].filter((c) => c >= 0 && c < alliesPerCol.length)
+  const [a, b] = cands
+  if (a === undefined) return col
+  if (b === undefined) return a
+  const na = alliesPerCol[a] as number
+  const nb = alliesPerCol[b] as number
+  if (na !== nb) return na < nb ? a : b
+  return rand() < 0.5 ? a : b
+}
+
+// GDD §5.5. 적 중심이 지뢰 칸 윗변에 닿으면 터진다(mineRow는 지뢰 구역 안 행)
+export function mineTriggered(enemyY: number, mineRow: number): boolean {
+  return enemyY >= GRID.mineTop + mineRow
+}
+
+// GDD §5.5. 폭발 범위 = 그 칸 + 위아래 blast칸(같은 열)
+export function inBlast(enemyY: number, mineRow: number): boolean {
+  const top = GRID.mineTop + mineRow
+  return enemyY >= top - MINES.blast && enemyY < top + 1 + MINES.blast
+}
+
+// GDD §5.5. 폭발 피해. 대전차는 보스에게 bossMult배
+export function mineDamage(enemy: EnemyType, anti: boolean): number {
+  return MINES.damage * (anti && enemy === 'boss' ? MINES.bossMult : 1)
+}
