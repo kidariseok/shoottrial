@@ -1,13 +1,13 @@
-import { Scene, GameObjects } from 'phaser'
-import { BATTLE, CARD_KEYS, ECONOMY, ENEMIES, LAYOUT, ROOKIE, UI, type CardKey } from '../data'
+import { Scene } from 'phaser'
+import { BATTLE, CARD_KEYS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, UI, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, hasAntiTank, income, mineTokens, parseUnlocked, spawnPlan, type FlowPhase, type SpawnEvent } from '../rules'
+import { defconOf, hasAntiTank, income, mineTokens, parseUnlocked, spawnPlan, synergies, type FlowPhase, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { createBoard, deployIndex, type Board } from './board'
 import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
-import { buyCard, createShop, refill, toOffers, type Shop } from './shop'
+import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
 
 export class BattleScene extends Scene {
@@ -30,8 +30,9 @@ export class BattleScene extends Scene {
   public nextIdx = 0
   private spawnRand!: () => number
   private dogRand!: () => number
-  private hud!: GameObjects.Text
-  private hudShown = ''
+  public paused = false
+  public hudCalls = 0 // ui.hud를 실제로 부른 횟수(헤드리스가 읽는다)
+  private hudKey = ''
   public store!: Shop
   public unlocked: CardKey[] = []
   private shopKey = ''
@@ -54,15 +55,6 @@ export class BattleScene extends Scene {
     this.unlocked = debug.unlock === 'all' ? [...CARD_KEYS] : parseUnlocked(null)
     this.store = createShop(debug.seed + 2)
 
-    // ponytail: 3단계에서 ui.hud()로 대체
-    this.hud = this.add.text(UI.supply.x, UI.hud.y, '', {
-      fontFamily: UI.text.fontFamily,
-      fontSize: `${UI.hud.px}px`,
-      color: UI.text.color,
-      lineSpacing: UI.hud.gap,
-      wordWrap: { width: UI.hud.rightLimit - UI.supply.x },
-    })
-
     this.board = createBoard(this, {
       dy,
       onSell: (refund) => {
@@ -74,8 +66,50 @@ export class BattleScene extends Scene {
     this.board.dealDeck(debug.deck ?? [])
 
     this.setSpeed(debug.speed ?? 1)
+    ui.bindBattle({
+      pause: () => this.pause(),
+      resume: () => this.resume(),
+      setSpeed: (s) => this.setSpeed(s),
+      quit: () => this.quit(),
+      adReroll: () => this.adReroll(),
+      adSupply: () => this.adSupply(),
+    })
+    this.events.once('shutdown', () => {
+      ui.bindBattle(null)
+      ui.cardInfo(null)
+    })
     this.startPrep()
-    this.showHud()
+    this.syncHud()
+  }
+
+  pause() {
+    if (this.result) return
+    this.paused = true
+    this.tweens.pauseAll()
+  }
+
+  resume() {
+    this.paused = false
+    this.tweens.resumeAll()
+  }
+
+  // 포기
+  quit() {
+    this.resume() // 트윈이 멈춘 채 결과로 가지 않게
+    // ponytail: 04 plan에서 finish가 quit 결과(ui.result)로 간다
+    this.finish(false)
+  }
+
+  // 광고 자체는 M4에서 B가 연결, 여기서는 보상만 적용
+  adReroll() {
+    if (this.phase !== 'prep' || this.result || !useAdReroll(this.store)) return
+    refill(this.store, this.unlocked)
+    this.syncShop()
+  }
+
+  adSupply() {
+    if (this.result || !useAdSupply(this.store)) return
+    this.supply += REWARD.adSupplyAmount
   }
 
   setSpeed(s: 1 | 2) {
@@ -91,6 +125,7 @@ export class BattleScene extends Scene {
     const anti = hasAntiTank(miners)
     this.board.setTokens(mineTokens(miners), anti)
     this.prepLeft = this.wave === 1 ? BATTLE.prepFirst : BATTLE.prepNext
+    if (this.wave === 1) ui.banner(UI.text.bannerIntro, 'info')
     refill(this.store, this.unlocked) // 준비 단계마다 무료로 새로 채운다
     this.syncShop()
   }
@@ -104,6 +139,8 @@ export class BattleScene extends Scene {
     this.spawned = []
     this.clock = 0
     this.nextIdx = 0
+    if (WAVES[this.wave - 1]?.flag) ui.banner(UI.text.bannerFlag, 'flag')
+    else if (this.wave === BATTLE.defcon1From) ui.banner(UI.text.bannerDefcon, 'defcon')
     this.syncShop()
   }
 
@@ -151,7 +188,7 @@ export class BattleScene extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (this.result) return
+    if (this.result || this.paused) return
     const dt = Math.min(delta / 1000, BATTLE.maxDt) * this.speed
     switch (this.phase) {
       case 'prep':
@@ -169,7 +206,7 @@ export class BattleScene extends Scene {
         }
         break
     }
-    this.showHud()
+    this.syncHud()
     this.syncShop()
   }
 
@@ -252,19 +289,26 @@ export class BattleScene extends Scene {
       })
       .setOrigin(0.5)
       .setDepth(UI.fx.dragDepth)
-    this.showHud()
+    this.syncHud()
   }
 
-  // 문자열이 바뀔 때만 setText
-  private showHud() {
-    const t = UI.text
-    const stage =
-      this.phase === 'prep' ? `${t.hudPrep} ${Math.ceil(Math.max(0, this.prepLeft))}${t.hudSec}` : this.phase === 'fight' ? t.hudFight : t.hudSettle
-    const line1 = `${t.hudWave} ${this.wave}/${WAVES.length}${t.hudSep}${t.hudDefcon} ${defconOf(this.wave)}`
-    const line2 = `${stage}${t.hudSep}${t.hudBase} ${this.baseHp}${t.hudSep}${t.supplyLabel} ${this.supply}`
-    const s = `${line1}\n${line2}`
-    if (s === this.hudShown) return
-    this.hudShown = s
-    this.hud.setText(s)
+  // HUD. 값이 바뀔 때만 ui.hud를 부른다(준비 초는 올림 정수라 소수 초가 값 변화로 잡히지 않는다)
+  private syncHud() {
+    const h: ui.Hud = {
+      wave: this.wave,
+      waves: WAVES.length,
+      defcon: defconOf(this.wave),
+      supply: this.supply,
+      baseHp: Math.max(0, this.baseHp),
+      phase: this.phase,
+      prepLeft: this.phase === 'prep' ? Math.ceil(Math.max(0, this.prepLeft)) : 0,
+      speed: this.speed,
+      synergies: synergies(this.board.deployed().map((d) => d.unit.card)),
+    }
+    const key = JSON.stringify(h)
+    if (key === this.hudKey) return
+    this.hudKey = key
+    this.hudCalls += 1
+    ui.hud(h)
   }
 }

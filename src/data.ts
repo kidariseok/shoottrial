@@ -163,7 +163,6 @@ export const UI = {
     promote: '진급!',
     sell: '판매',
     line: '위병소 방어선',
-    supplyLabel: '보급',
     fontPx: 26,
     fontFamily: 'sans-serif',
     color: '#ffffff',
@@ -174,16 +173,11 @@ export const UI = {
     lineUsed: '저지선 소진',
     bannerPoor: '보급이 부족합니다',
     bannerBenchFull: '대기석이 가득 찼습니다',
+    bannerIntro: '적 침투 — 병력을 배치하라',
+    bannerFlag: '대규모 적 접근!',
+    bannerDefcon: '데프콘 1 — 칵트 피스톨',
     win: '승리',
     lose: '패배',
-    hudWave: '웨이브',
-    hudDefcon: '데프콘',
-    hudPrep: '준비',
-    hudFight: '전투',
-    hudSettle: '정산',
-    hudBase: '위병소',
-    hudSec: '초',
-    hudSep: ' · ',
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
@@ -193,10 +187,8 @@ export const UI = {
   shake: { light: { ms: 80, intensity: 0.004 }, heavy: { ms: 200, intensity: 0.012 } },
   // 구역 격자선 굵기
   stroke: 2,
-  // 1단계 보급 텍스트 위치. HUD 띠 안, 좌상단 일시정지 버튼 오른쪽(우상단 시스템 버튼 자리는 비운다)
-  supply: { x: 168, y: 32 },
-  // 2단계 임시 HUD 두 줄. y는 HUD 띠 안 첫 줄 윗변, rightLimit 안에 들어와야 한다(우상단 시스템 버튼 자리 비움)
-  hud: { y: 12, px: 24, gap: 8, rightLimit: 560 },
+  // 카드 길게 누르기(정보 열기)까지 걸리는 시간(ms)
+  hold: { ms: 400 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
