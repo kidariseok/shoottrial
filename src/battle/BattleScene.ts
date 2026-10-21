@@ -60,6 +60,10 @@ export class BattleScene extends Scene {
       onSell: (refund) => {
         this.supply += refund
       },
+      onHold: (u) => {
+        if (u) ui.cardInfo(u.card, u.rank)
+        else ui.cardInfo(null)
+      },
     })
     // 신병을 먼저 놓아야 디버그 덱이 같은 칸을 차지하지 않는다
     this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: ROOKIE.name })

@@ -1,4 +1,4 @@
-import { Scene, GameObjects } from 'phaser'
+import { Scene, GameObjects, type Time } from 'phaser'
 import { CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
 import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
@@ -54,7 +54,7 @@ export function drawRank(gfx: GameObjects.Graphics, rank: number): void {
 
 const labelStyle = (color: string) => ({ fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color })
 
-export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: number) => void; onMerge?: (card: CardKey, rank: number) => void }): Board {
+export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: number) => void; onMerge?: (card: CardKey, rank: number) => void; onHold?: (unit: Unit | null) => void }): Board {
   const { dy } = opts
   const { cell, cols, marginX } = LAYOUT
   // 판 전체를 dy만큼 내린다. HUD 띠(0~hudH)는 이 컨테이너 밖이라 움직이지 않는다
@@ -237,12 +237,44 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   let phase: FlowPhase = 'prep'
   let active: GameObjects.Container | null = null
 
+  // 길게 누르기: 정해진 시간(data.ts) 동안 움직이지 않으면 onHold(unit), 손을 떼면 onHold(null). 드래그가 시작되면 열지 않는다
+  // ponytail: 터치 실기기에서 손가락 오프셋·멀티터치는 확인 못 함, 실기기 확인 때 임계값 조정
+  let holdTimer: Time.TimerEvent | null = null
+  let holding = false
+  const cancelHold = () => {
+    holdTimer?.remove(false)
+    holdTimer = null
+  }
+  scene.input.on('pointerdown', (_p: unknown, over: GameObjects.GameObject[]) => {
+    cancelHold()
+    const unit = over.map((o) => (o.getData('slot') as Slot | undefined)?.unit).find((u) => u)
+    if (!unit) return // 지뢰 토큰 더미·빈 곳은 무시
+    holdTimer = scene.time.delayedCall(UI.hold.ms, () => {
+      holdTimer = null
+      holding = true
+      opts.onHold?.(unit)
+    })
+  })
+  const release = () => {
+    cancelHold()
+    if (!holding) return
+    holding = false
+    opts.onHold?.(null)
+  }
+  scene.input.on('pointerup', release)
+  scene.input.on('pointerupoutside', release)
+
   // 드래그: 직접 포인터 추적 없이 Phaser 이벤트만 쓴다
   // ponytail: 드래그 중 카드 중심 좌표로 칸을 판정한다(손가락 오프셋 없음), 터치 실기기에서 손가락에 가려지면 카드를 손가락 위로 띄운다
   scene.input.on('dragstart', (_p: unknown, obj: GameObjects.GameObject) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
     if (!from) return
+    if (holding) {
+      active = null // 정보가 열려 있는 동안은 카드를 끌지 않는다
+      return
+    }
+    cancelHold() // 움직이면 열지 않는다(Phaser는 드래그 임계값 0이라 조금만 움직여도 dragstart가 난다)
     if (!canDrag(phase, from.zone)) {
       active = null
       return
