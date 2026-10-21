@@ -1,4 +1,4 @@
-import { Scene, GameObjects, type Time } from 'phaser'
+import { Scene, GameObjects, type Input, type Time } from 'phaser'
 import { CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
 import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
@@ -237,7 +237,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   let phase: FlowPhase = 'prep'
   let active: GameObjects.Container | null = null
 
-  // 길게 누르기: 정해진 시간(data.ts) 동안 움직이지 않으면 onHold(unit), 손을 떼면 onHold(null). 드래그가 시작되면 열지 않는다
+  // 길게 누르기: 정해진 시간(data.ts) 동안 거의 움직이지 않으면 onHold(unit), 손을 떼면 onHold(null). 드래그가 시작되면 열지 않는다
   // ponytail: 터치 실기기에서 손가락 오프셋·멀티터치는 확인 못 함, 실기기 확인 때 임계값 조정
   let holdTimer: Time.TimerEvent | null = null
   let holding = false
@@ -261,6 +261,10 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     holding = false
     opts.onHold?.(null)
   }
+  // 임계값 0인 Phaser는 누르는 즉시 dragstart를 내므로, 움직임은 pointermove 거리로 잰다
+  scene.input.on('pointermove', (p: Input.Pointer) => {
+    if (holdTimer && Math.hypot(p.x - p.downX, p.y - p.downY) > UI.hold.slop) cancelHold()
+  })
   scene.input.on('pointerup', release)
   scene.input.on('pointerupoutside', release)
 
@@ -270,11 +274,6 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
     if (!from) return
-    if (holding) {
-      active = null // 정보가 열려 있는 동안은 카드를 끌지 않는다
-      return
-    }
-    cancelHold() // 움직이면 열지 않는다(Phaser는 드래그 임계값 0이라 조금만 움직여도 dragstart가 난다)
     if (!canDrag(phase, from.zone)) {
       active = null
       return
@@ -288,7 +287,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('drag', (_p: unknown, obj: GameObjects.GameObject, dragX: number, dragY: number) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from || view !== active) return
+    if (!from || view !== active || holding) return // 정보가 열려 있는 동안은 카드를 끌지 않는다
     view.x = dragX
     view.y = dragY
     const s = slotAt(dragX, dragY)

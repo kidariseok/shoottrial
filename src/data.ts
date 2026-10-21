@@ -187,8 +187,8 @@ export const UI = {
   shake: { light: { ms: 80, intensity: 0.004 }, heavy: { ms: 200, intensity: 0.012 } },
   // 구역 격자선 굵기
   stroke: 2,
-  // 카드 길게 누르기(정보 열기)까지 걸리는 시간(ms)
-  hold: { ms: 400 },
+  // 카드 길게 누르기(정보 열기)까지 걸리는 시간(ms)과 이 거리(px) 넘게 움직이면 취소하는 여유
+  hold: { ms: 400, slop: 12 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
