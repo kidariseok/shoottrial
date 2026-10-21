@@ -25,8 +25,12 @@
   --alert-red-bright: #ff3b30;
 
   /* 논리 좌표(720x1280) 대비 레이아웃 변수 */
-  --hud-height: calc(100% * 96 / 1280);
-  --shop-max-height: calc(100% * 120 / 1280);
+  --game-scale: calc((100vw - var(--sa-left) - var(--sa-right)) / 720);
+  --canvas-bottom-gap: 0px;
+  --canvas-left-gap: 0px;
+  --canvas-right-gap: 0px;
+  --hud-height: calc(var(--game-scale) * 96px);
+  --shop-max-height: calc(var(--game-scale) * 120px);
   --panel-radius: 6px;
   --panel-border: 2px solid var(--outline-dark);
   --inner-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
@@ -57,13 +61,12 @@ html, body {
 
 #game {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: var(--sa-top);
+  right: var(--sa-right);
+  bottom: var(--sa-bottom);
+  left: var(--sa-left);
+  width: calc(100% - var(--sa-left) - var(--sa-right));
+  height: calc(100% - var(--sa-top) - var(--sa-bottom));
   z-index: 1;
 }
 
@@ -359,9 +362,9 @@ html, body {
 /* 2. 하단 상점 패널 (GDD §3 y=1160~1280 비율 높이 이하) */
 .ui-shop {
   position: absolute;
-  left: var(--sa-left);
-  right: var(--sa-right);
-  bottom: var(--sa-bottom);
+  left: calc(var(--sa-left) + var(--canvas-left-gap, 0px));
+  right: calc(var(--sa-right) + var(--canvas-right-gap, 0px));
+  bottom: calc(var(--sa-bottom) + var(--canvas-bottom-gap, 0px));
   height: var(--shop-max-height);
   max-height: var(--shop-max-height);
   background: linear-gradient(180deg, var(--olive-panel) 0%, var(--olive-bg-dark) 100%);

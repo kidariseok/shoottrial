@@ -1,7 +1,106 @@
 // T-101 할 일 7: ?scene=device (G0 5대 검증용 DOM 화면)
 import { getAudioState, onAudioChange, playSfx, toggleLoopTone } from './audio'
-import { isNative, onPause, onResume, safeRect, triggerBack } from './platform'
+import { isNative, onPause, onResume, safeRect, triggerBack, type SafeRect } from './platform'
 import { defaultSave, load, save, type Save } from './save'
+
+function parsePxValue(raw: string | null | undefined): number | null {
+  if (!raw) return null
+  const trimmed = raw.trim()
+  if (!trimmed || trimmed.includes('env(') || trimmed.includes('var(')) return null
+  const n = Number.parseFloat(trimmed)
+  return Number.isFinite(n) ? Math.round(n) : null
+}
+
+export function calculateLogicalHeight(areaWidth?: number, areaHeight?: number): number {
+  const targetWidth = 720
+  if (typeof areaWidth === 'number' && typeof areaHeight === 'number') {
+    if (areaWidth <= 0 || areaHeight <= 0) return 1280
+    const calculated = Math.round(targetWidth * (areaHeight / areaWidth))
+    return Math.min(1560, Math.max(1280, calculated))
+  }
+  if (typeof window === 'undefined') return 1280
+  const gameEl = typeof document !== 'undefined' ? document.getElementById('game') : null
+  const gameRect = gameEl ? gameEl.getBoundingClientRect() : null
+  const safe = safeRect()
+  const w =
+    gameRect && gameRect.width > 0
+      ? gameRect.width
+      : safe.width > 0
+        ? safe.width
+        : window.innerWidth
+  const h =
+    gameRect && gameRect.height > 0
+      ? gameRect.height
+      : safe.height > 0
+        ? safe.height
+        : window.innerHeight
+  if (w <= 0 || h <= 0) return 1280
+  const calculated = Math.round(targetWidth * (h / w))
+  return Math.min(1560, Math.max(1280, calculated))
+}
+
+export function computeCanvasLayout(
+  canvasRect: { left: number; right: number; bottom: number; width: number },
+  areaRect: { left: number; right: number; bottom: number; width: number; height: number }
+): { scale: number; bottomGap: number; leftGap: number; rightGap: number } {
+  const scale = canvasRect.width > 0 ? canvasRect.width / 720 : 1
+  const bottomGap = Math.max(0, areaRect.bottom - canvasRect.bottom)
+  const leftGap = Math.max(0, canvasRect.left - areaRect.left)
+  const rightGap = Math.max(0, areaRect.right - canvasRect.right)
+  return { scale, bottomGap, leftGap, rightGap }
+}
+
+export function readEffectiveSafeArea(targetEl?: HTMLElement | null): SafeRect {
+  const fallback = safeRect()
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return fallback
+  }
+
+  const rootStyle = document.documentElement.style
+  const rootComputed = window.getComputedStyle(document.documentElement)
+  const elComputed = targetEl ? window.getComputedStyle(targetEl) : null
+
+  const readSide = (side: 'top' | 'right' | 'bottom' | 'left'): number => {
+    const fromInlineSa = parsePxValue(rootStyle.getPropertyValue(`--sa-${side}`))
+    if (fromInlineSa !== null) return fromInlineSa
+
+    const fromInlineInset = parsePxValue(rootStyle.getPropertyValue(`--safe-area-inset-${side}`))
+    if (fromInlineInset !== null) return fromInlineInset
+
+    const fromComputedSa = parsePxValue(rootComputed.getPropertyValue(`--sa-${side}`))
+    if (fromComputedSa !== null) return fromComputedSa
+
+    const fromComputedInset = parsePxValue(
+      rootComputed.getPropertyValue(`--safe-area-inset-${side}`)
+    )
+    if (fromComputedInset !== null) return fromComputedInset
+
+    if (elComputed) {
+      const fromEl = parsePxValue(elComputed[side])
+      if (fromEl !== null) return fromEl
+    }
+
+    return Math.round(fallback[side])
+  }
+
+  const top = readSide('top')
+  const right = readSide('right')
+  const bottom = readSide('bottom')
+  const left = readSide('left')
+  const vw = window.innerWidth || 720
+  const vh = window.innerHeight || 1280
+
+  return {
+    top,
+    right,
+    bottom,
+    left,
+    x: left,
+    y: top,
+    width: Math.max(0, vw - left - right),
+    height: Math.max(0, vh - top - bottom),
+  }
+}
 
 export async function startDeviceScene(): Promise<void> {
   if (typeof document === 'undefined') return
@@ -90,13 +189,13 @@ export async function startDeviceScene(): Promise<void> {
   viewportInfo.className = 'device-meta-row'
 
   function renderSafeArea(): void {
-    const r = safeRect()
+    const r = readEffectiveSafeArea(wrap)
     saTopVal.textContent = `${r.top}px`
     saRightVal.textContent = `${r.right}px`
     saBottomVal.textContent = `${r.bottom}px`
     saLeftVal.textContent = `${r.left}px`
     const orient = r.height >= r.width ? '세로 (Portrait)' : '가로 (Landscape)'
-    viewportInfo.textContent = `유효 영역: ${r.width}×${r.height}px · 방향: ${orient}`
+    viewportInfo.textContent = `유효 영역: ${r.width}×${r.height}px (--sa-*) · 방향: ${orient}`
   }
 
   safeCard.append(safeTitle, safeGrid, viewportInfo)
@@ -249,7 +348,17 @@ export async function startDeviceScene(): Promise<void> {
 
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', renderSafeArea)
-    // Capacitor SystemBars가 페이지 커밋 직후 CSS 변수를 주입할 때 반영
+    window.requestAnimationFrame(renderSafeArea)
+    // Capacitor SystemBars가 페이지 커밋 직후 CSS 변수를 주입할 때 즉시·지연 반영
     setTimeout(renderSafeArea, 150)
+    setTimeout(renderSafeArea, 500)
+    if (typeof MutationObserver !== 'undefined') {
+      const obs = new MutationObserver(renderSafeArea)
+      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(renderSafeArea)
+      ro.observe(wrap)
+    }
   }
 }
