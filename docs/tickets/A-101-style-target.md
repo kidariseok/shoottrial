@@ -1,6 +1,6 @@
 # A-101 스타일 타깃 + 기준 시트 2장 + 카드 시안 + Figma 연결
 
-상태: 진행 중
+상태: 대기
 담당: 사용자 (Gemini Argon 이미지 + Figma). 정리·장부 기록은 Claude Code가 돕는다
 
 ## 목표
@@ -46,33 +46,11 @@ Figma에 이미 있는 그림으로 **전투 화면 목업 1장**이 만들어�
 
 ## 작업 계획
 
-1. **전투 화면 목업 생성 (`battle_mockup`)**
-   - 변경 파일: `art/source/A-101/battle_mockup.png`, `art/source/A-101/battle_mockup.txt`
-   - 내용: `docs/ART.md` §3.2 스타일 타깃 프롬프트 골격 및 `docs/GDD.md` §3 세로 9:16(720×1280 비율) 화면 배치(상단 HUD, 위병소 정문 및 적 진입 구역, 5×2 지뢰 구역, 5×3 배치 구역의 소총수 뒷모습 방어선, 하단 대기석 5칸·상점 패널)를 반영한 치비 비율 픽셀풍 전투 화면 목업 시안 생성 (Figma 목업 배치용 레퍼런스 및 스타일 타깃 겸용)
-2. **북한군 보병 기준 시트 생성 (`enemy_inf_ref`)**
-   - 변경 파일: `art/source/A-101/enemy_inf_ref.png`, `art/source/A-101/enemy_inf_ref.txt`
-   - 내용: 치비 비율 픽셀풍 3/4 탑다운, 회갈색 군복·전투모·보총, **실제 견장과 다르게 변형한 가상 견장**, 앞·뒤·옆(우측) 3방향 기준 시트, 단색 마젠타(`#FF00FF`) 배경, 피·로고·텍스트 없음
-3. **소총수 뒷모습 사격 프레임 시트 생성 (`ally_rifle_attack`)**
-   - 변경 파일: `art/source/A-101/ally_rifle_attack.png`, `art/source/A-101/ally_rifle_attack.txt`
-   - 내용: 치비 비율 픽셀풍 3/4 탑다운, 디지털 위장복·방탄헬멧·K2 소총 착용 한국군 소총수가 **등을 보이고 위쪽을 향해 사격하는 모습** 가로 1줄(2~4프레임), 발끝 기준선 정렬, 단색 마젠타(`#FF00FF`) 배경
-4. **한국군식 계급장 4종 생성 (`rank_1` ~ `rank_4`)**
-   - 변경 파일: `art/source/A-101/rank_1.png` ~ `rank_4.png` (및 시트 `rank_sheet.png`), 각 `.txt` 프롬프트 파일
-   - 내용: 미군식 V자 대신 **한국군식 가로 작대기 1~4개**(이등병~병장, 가상 디자인 픽셀 아이콘), 단색 마젠타(`#FF00FF`) 배경
-5. **장부 기록 및 검증**
-   - 변경 파일: `art/LEDGER.json`
-   - 내용: 생성된 `art/source/A-101/` 에셋 메타데이터(파일 경로, 도구 `gemini-argon`, 프롬프트 `.txt` 경로 등)를 `art/LEDGER.json`에 기록하고 파일 누락 여부 확인
-- **확인할 디버그 URL**: `http://localhost:5173/?scene=gallery`
-- **검증 명령**: `npm run verify` (또는 `npm run assets:check` 및 `ls -la art/source/A-101/`)
-
 ## 질문
-
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요 (만약 Figma에서 내보낸 기존 소총수 `5:18`·북한군 물자 `7:53` 참조 이미지를 로컬에 넣어 주실 예정이면 경로를 함께 알려주시고, 바로 Gemini Argon 이미지 생성으로 진행해도 되면 "진행"이라고 답해 주세요)
 
 ## 진행 기록
 
-- 기준 커밋: 9954369a1029
-- 브랜치: kidariseok/feat-a101-battle-art
-- 세션 시작: Gemini 4 Argon (High), 2026-10-21T23:12:00+09:00
+- 브랜치:
 
 ## 결과 보고
 
