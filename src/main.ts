@@ -1,52 +1,18 @@
 import { Game, Scale, AUTO, type Types } from 'phaser'
 import { initAudio } from './audio'
 import { BattleScene } from './battle/BattleScene'
+import { CARD_KEYS, CARDS } from './data'
 import { debug, initDebugOverlays } from './debug'
-import { startDeviceScene } from './device'
+import { calculateLogicalHeight, computeCanvasLayout, startDeviceScene } from './device'
 import { GalleryScene } from './gallery'
 import { exitApp, init as initPlatform, isNative, onBack, safeRect } from './platform'
+import { defconOf } from './rules'
 import { load as loadSave } from './save'
+import { WAVES } from './stages'
 import { startUiDemo } from './ui/demo'
-import { handleBack } from './ui/screens'
+import { bindBattle, handleBack, hud, shop } from './ui/screens'
 
-export function calculateLogicalHeight(areaWidth?: number, areaHeight?: number): number {
-  const targetWidth = 720
-  if (typeof areaWidth === 'number' && typeof areaHeight === 'number') {
-    if (areaWidth <= 0 || areaHeight <= 0) return 1280
-    const calculated = Math.round(targetWidth * (areaHeight / areaWidth))
-    return Math.min(1560, Math.max(1280, calculated))
-  }
-  if (typeof window === 'undefined') return 1280
-  const gameEl = typeof document !== 'undefined' ? document.getElementById('game') : null
-  const gameRect = gameEl ? gameEl.getBoundingClientRect() : null
-  const safe = safeRect()
-  const w =
-    gameRect && gameRect.width > 0
-      ? gameRect.width
-      : safe.width > 0
-        ? safe.width
-        : window.innerWidth
-  const h =
-    gameRect && gameRect.height > 0
-      ? gameRect.height
-      : safe.height > 0
-        ? safe.height
-        : window.innerHeight
-  if (w <= 0 || h <= 0) return 1280
-  const calculated = Math.round(targetWidth * (h / w))
-  return Math.min(1560, Math.max(1280, calculated))
-}
-
-export function computeCanvasLayout(
-  canvasRect: { left: number; right: number; bottom: number; width: number },
-  areaRect: { left: number; right: number; bottom: number; width: number; height: number }
-): { scale: number; bottomGap: number; leftGap: number; rightGap: number } {
-  const scale = canvasRect.width > 0 ? canvasRect.width / 720 : 1
-  const bottomGap = Math.max(0, areaRect.bottom - canvasRect.bottom)
-  const leftGap = Math.max(0, canvasRect.left - areaRect.left)
-  const rightGap = Math.max(0, areaRect.right - canvasRect.right)
-  return { scale, bottomGap, leftGap, rightGap }
-}
+export { calculateLogicalHeight, computeCanvasLayout }
 
 const hasExplicitScene =
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('scene')
@@ -123,6 +89,52 @@ if (game) {
   })
   game.events.once('ready', () => {
     syncGameScale()
+  })
+  // ponytail: M2 3단계(BattleScene의 직접 ui.hud/ui.shop 호출) 병합 전에도 ?scene=battle에서 DOM 상점·HUD 배치를 검증할 수 있게 폴백 연결
+  let fallbackBound = false
+  game.events.on('poststep', () => {
+    const s = game.scene.getScene('battle') as (BattleScene & { store?: unknown }) | undefined
+    if (!s || !s.scene.isActive() || 'store' in s) return
+    if (!fallbackBound) {
+      fallbackBound = true
+      bindBattle({
+        pause: () => s.scene.pause(),
+        resume: () => s.scene.resume(),
+        setSpeed: (spd) => s.setSpeed(spd),
+        quit: () => {},
+        adReroll: () => {},
+        adSupply: () => {},
+      })
+    }
+    hud({
+      wave: s.wave,
+      waves: WAVES.length,
+      defcon: defconOf(s.wave),
+      supply: s.supply,
+      baseHp: s.baseHp,
+      phase: s.phase,
+      prepLeft: s.prepLeft,
+      speed: s.speed,
+      synergies: [],
+    })
+    const isPrep = s.phase === 'prep' && !s.result
+    const shopEl = document.querySelector('#ui .ui-shop')
+    const isClosed = !shopEl || shopEl.classList.contains('closed')
+    if (isPrep && isClosed) {
+      const offers = CARD_KEYS.map((card) => ({ card, cost: CARDS[card].cost }))
+      shop(
+        true,
+        offers,
+        s.supply,
+        () => {},
+        () => {},
+        () => {
+          if (s.phase === 'prep' && !s.result) s.startFight()
+        }
+      )
+    } else if (!isPrep && shopEl && !isClosed) {
+      shop(false, [], s.supply, () => {}, () => {}, () => {})
+    }
   })
 }
 

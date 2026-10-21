@@ -88,6 +88,8 @@
 - 브랜치: kidariseok/t103-safe-area-panel
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21 22:46
 - [x] 1단계: `src/ui/style.css`에서 `#game`의 flex 중앙 정렬을 제거하고 Safe Area 안쪽으로 배치, `--game-scale` 및 `--shop-max-height: calc(var(--game-scale) * 120px)` 적용 (다음: 2단계 `src/main.ts` 논리 높이·배율 동기화)
+- [x] 2단계: `src/main.ts`에서 `calculateLogicalHeight`를 Safe Area 기준으로 변경하고, 캔버스 표시 배율(`--game-scale`)과 오프셋(`--canvas-*-gap`)을 `resize` 및 `MutationObserver`/`ResizeObserver`로 동기화 (다음: 3단계 `src/device.ts` `--sa-*` 실효값 표시)
+- [x] 3단계: `src/device.ts`에서 `readEffectiveSafeArea`로 실제 `--sa-*` 값을 읽고 `MutationObserver`/`ResizeObserver`로 즉시 갱신되도록 수정 (다음: 4단계 단위 테스트 추가 및 `npm run verify`, 3개 해상도 스크린샷 촬영)
 
 ## 결과 보고
 
