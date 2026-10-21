@@ -362,8 +362,8 @@ Extend the attached top-down pixel art map vertically to a 9:19.5 portrait ratio
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21T23:32:00+09:00
 - [x] 2026-10-21 Claude: 목업(Figma `37:2`), 참조 그림(`art/ref/`, gitignore), 프롬프트 묶음 작성
 - [x] 0단계 목업 승인 (`37:2` 확인 및 방법 1 진행)
-- [ ] A묶음 7장 (생성 중)
-- [ ] B묶음 12장
+- [ ] A묶음 7장 중 6장 완료 (`10-sniper-sheet.png`, `11-cook-sheet.png`, `12-miner-sheet.png`, `13-chem-sheet.png`, `20-nk-infantry-sheet.png`, `21-nk-dog-sheet.png` → `moonfish/art/ref/` 및 로컬 `art/ref/` 저장 완료. `22-nk-rpg-sheet.png`는 이미지 생성 API 쿼터 소진으로 대기)
+- [ ] B묶음 12장 중 2장 완료 (`ally_rifle_idle.png`, `ally_rifle_attack.png` → `moonfish/art/inbox/` 및 로컬 `art/inbox/` 저장 완료)
 - [ ] C묶음 6장
 - [ ] D묶음 2장
 - [ ] E묶음 6장
