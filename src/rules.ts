@@ -8,6 +8,7 @@ import {
   ENEMIES,
   GRID,
   LAYOUT,
+  LOG,
   MINES,
   RANKS,
   SYNERGY,
@@ -306,4 +307,73 @@ export function parseUnlocked(raw: string | null): CardKey[] {
   }
   const list = Array.isArray(saved) ? saved : []
   return CARD_KEYS.filter((c) => UNLOCK.base.includes(c) || list.includes(c))
+}
+
+// ---- 3단계: 판 기록 ----
+
+export type RunResult = 'win' | 'lose' | 'quit'
+export type LogEvent =
+  | { e: 'run_start'; run: number }
+  | { e: 'wave_clear'; wave: number; base_hp: number; supply: number }
+  | { e: 'run_end'; result: RunResult; wave: number; sec: number }
+  | { e: 'card_buy'; card: CardKey; rank: number }
+  | { e: 'merge'; card: CardKey; rank: number }
+  | { e: 'unlock'; card: CardKey; via: 'wave5' | 'ad' }
+export type PlayRun = { t: number; result: RunResult; wave: number; sec: number; events: LogEvent[] }
+export type LogSummary = {
+  runs: number
+  winRate: number
+  avgSec: number
+  avgWave: number
+  buys: number
+  cards: { card: CardKey; buys: number; rate: number; low: boolean }[] // CARD_KEYS 순서, 구매 0인 카드도 포함
+  recent: PlayRun[] // 최신이 앞, 최대 LOG.recent판
+}
+
+// runs는 오래된 판이 앞. 평균은 반올림하지 않는다(표시 단계에서 포맷)
+export function summarizeLog(runs: PlayRun[]): LogSummary {
+  const n = runs.length
+  const avg = (f: (r: PlayRun) => number) => (n === 0 ? 0 : runs.reduce((a, r) => a + f(r), 0) / n)
+  const counts = new Map<CardKey, number>()
+  for (const r of runs) for (const ev of r.events) if (ev.e === 'card_buy') counts.set(ev.card, (counts.get(ev.card) ?? 0) + 1)
+  const buys = [...counts.values()].reduce((a, c) => a + c, 0)
+  return {
+    runs: n,
+    winRate: avg((r) => (r.result === 'win' ? 1 : 0)),
+    avgSec: avg((r) => r.sec),
+    avgWave: avg((r) => r.wave),
+    buys,
+    cards: CARD_KEYS.map((card) => {
+      const b = counts.get(card) ?? 0
+      const rate = buys === 0 ? 0 : b / buys
+      return { card, buys: b, rate, low: buys > 0 && rate < LOG.lowRate }
+    }),
+    recent: runs.slice(-LOG.recent).reverse(),
+  }
+}
+
+// 새 배열을 돌려준다. 최근 LOG.maxRuns판만 남긴다
+export function pushRun(runs: PlayRun[], run: PlayRun): PlayRun[] {
+  return [...runs, run].slice(-LOG.maxRuns)
+}
+
+const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v)
+const isRun = (v: any): v is PlayRun =>
+  !!v && ['win', 'lose', 'quit'].includes(v.result) && isNum(v.wave) && isNum(v.sec) && isNum(v.t) && Array.isArray(v.events)
+
+// 저장 문자열 -> 판 기록. 깨진 항목은 버리고 나머지는 살린다. throw하지 않는다
+export function parsePlayLog(raw: string | null): PlayRun[] {
+  let saved: unknown = []
+  try {
+    saved = JSON.parse(raw ?? '[]')
+  } catch {
+    // 깨진 저장값은 빈 기록으로
+  }
+  return (Array.isArray(saved) ? saved.filter(isRun) : []).slice(-LOG.maxRuns)
+}
+
+// 다음 판 번호. 마지막 판의 run_start + 1, 없으면 판 수 + 1
+export function nextRun(runs: PlayRun[]): number {
+  const start = runs.at(-1)?.events.find((ev) => ev.e === 'run_start')
+  return start?.e === 'run_start' ? start.run + 1 : runs.length + 1
 }
