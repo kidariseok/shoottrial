@@ -21,6 +21,8 @@
 - `src/ui/style.css`
 - `src/ui/screens.ts`
 - `src/main.ts`
+- `index.html`
+- `src/device.ts`
 - `tests/ui.test.ts`
 
 ## 허용 의존성
@@ -39,6 +41,8 @@
 2. 상점 패널 높이를 `calc(var(--game-scale) * 120px)`로 바꾸고, 패널 아래 끝을 캔버스 아래 끝에 맞춘다(캔버스가 화면보다 작으면 그 차이만큼 위로).
 3. `#game`의 flex 가운데 정렬과 Phaser `CENTER_BOTH` 중 하나만 남긴다(Phaser 쪽을 권장). 캔버스가 화면 가운데에 한 번만 정렬되는지 확인한다.
 4. HUD 위쪽 요소도 같은 배율 기준인지 확인한다(이미 Safe Area 기준이면 그대로 둔다).
+5. **(G0 추가) `#game`을 Safe Area 안에 배치한다.** 안드로이드 에뮬레이터에서 캔버스가 상태 표시줄·내비게이션 바 아래까지 그려졌다(`docs/reviews/G0.md`, `docs/shots/G0-emu-battle.png`). `#game`의 top/bottom을 `--sa-top`/`--sa-bottom`만큼 비우고, Phaser 높이 계산(`calculateLogicalHeight`)도 그 영역 기준으로 한다. 그래야 DOM 상점(Safe Area 기준)과 캔버스 대기석이 맞는다.
+6. **(G0 추가)** `?scene=device`의 Safe Area 숫자를 `env()`가 아니라 실제 쓰는 `--sa-*` 값으로 표시한다(안드로이드 15+에서 `env()`는 0을 준다).
 
 ## 검증 명령
 
