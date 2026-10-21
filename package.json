@@ -8,12 +8,19 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "verify": "npm run typecheck && npm run test && npm run build"
+    "assets:check": "node scripts/assets-check.mjs",
+    "verify": "npm run typecheck && npm run test && npm run assets:check && npm run build"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/preferences": "8.0.1",
     "phaser": "4.2.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "pngjs": "^7.0.0",
     "typescript": "^5.7.3",
     "vite": "^6.2.0",
     "vitest": "^3.0.7"

@@ -1,8 +1,8 @@
 :root {
-  --sa-top: env(safe-area-inset-top, 0px);
-  --sa-right: env(safe-area-inset-right, 0px);
-  --sa-bottom: env(safe-area-inset-bottom, 0px);
-  --sa-left: env(safe-area-inset-left, 0px);
+  --sa-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sa-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --sa-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 
   /* 군용 올리브·카키 팔레트 (Figma 6:33 및 ART §1·§2 기준) */
   --outline-dark: #1b1d26;
@@ -25,11 +25,19 @@
   --alert-red-bright: #ff3b30;
 
   /* 논리 좌표(720x1280) 대비 레이아웃 변수 */
-  --hud-height: calc(100% * 96 / 1280);
-  --shop-max-height: calc(100% * 120 / 1280);
+  --game-scale: calc((100vw - var(--sa-left) - var(--sa-right)) / 720);
+  --canvas-bottom-gap: 0px;
+  --canvas-left-gap: 0px;
+  --canvas-right-gap: 0px;
+  --hud-height: calc(var(--game-scale) * 96px);
+  --shop-max-height: calc(var(--game-scale) * 120px);
   --panel-radius: 6px;
   --panel-border: 2px solid var(--outline-dark);
   --inner-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+  --device-pad: 14px;
+  --device-gap: 10px;
+  --device-card-pad: 12px;
+  --device-btn-min-h: 38px;
 }
 
 * {
@@ -53,13 +61,12 @@ html, body {
 
 #game {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  top: var(--sa-top);
+  right: var(--sa-right);
+  bottom: var(--sa-bottom);
+  left: var(--sa-left);
+  width: calc(100% - var(--sa-left) - var(--sa-right));
+  height: calc(100% - var(--sa-top) - var(--sa-bottom));
   z-index: 1;
 }
 
@@ -355,9 +362,9 @@ html, body {
 /* 2. 하단 상점 패널 (GDD §3 y=1160~1280 비율 높이 이하) */
 .ui-shop {
   position: absolute;
-  left: var(--sa-left);
-  right: var(--sa-right);
-  bottom: var(--sa-bottom);
+  left: calc(var(--sa-left) + var(--canvas-left-gap, 0px));
+  right: calc(var(--sa-right) + var(--canvas-right-gap, 0px));
+  bottom: calc(var(--sa-bottom) + var(--canvas-bottom-gap, 0px));
   height: var(--shop-max-height);
   max-height: var(--shop-max-height);
   background: linear-gradient(180deg, var(--olive-panel) 0%, var(--olive-bg-dark) 100%);
@@ -692,4 +699,175 @@ html, body {
   flex: 1;
   min-height: 36px;
   font-size: 13px;
+}
+
+/* 8. 단말기 스파이크 화면 (?scene=device, T-101) */
+.device-screen {
+  position: absolute;
+  top: var(--sa-top);
+  right: var(--sa-right);
+  bottom: var(--sa-bottom);
+  left: var(--sa-left);
+  padding: var(--device-pad);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--device-gap);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(54, 63, 39, 0.45), rgba(11, 13, 18, 0.96)),
+    var(--olive-bg-dark);
+  overflow-y: auto;
+  z-index: 30;
+}
+
+.device-header {
+  background: linear-gradient(180deg, var(--olive-header) 0%, var(--olive-panel) 100%);
+  border: var(--panel-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--inner-bevel);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.device-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.device-badge {
+  align-self: flex-start;
+  background: var(--olive-bg-dark);
+  border: 1px solid var(--accent-brass);
+  color: var(--accent-supply);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.6px;
+}
+
+.device-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-cream);
+}
+
+.device-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.device-card {
+  background: var(--olive-panel);
+  border: var(--panel-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--inner-bevel);
+  padding: var(--device-card-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.device-card-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent-supply);
+  border-bottom: 1.5px solid var(--outline-dark);
+  padding-bottom: 5px;
+}
+
+.device-safe-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.device-safe-cell {
+  background: var(--olive-bg-dark);
+  border: 1px solid var(--khaki-border);
+  border-radius: 4px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.device-safe-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.device-safe-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-cream);
+}
+
+.device-save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.device-count-box {
+  flex: 1;
+  background: var(--olive-bg-dark);
+  border: 1px solid var(--khaki-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.device-count-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.device-count-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--accent-supply);
+}
+
+.device-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.device-main-btn {
+  min-height: var(--device-btn-min-h);
+  padding: 6px 12px;
+  font-size: 13px;
+  flex: 1;
+}
+
+.device-meta-row {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+
+.device-guide-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-cream);
+}
+
+.device-footer {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 4px 6px;
 }
