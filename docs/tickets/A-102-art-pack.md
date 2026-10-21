@@ -357,9 +357,12 @@ Extend the attached top-down pixel art map vertically to a 9:19.5 portrait ratio
 
 ## 진행 기록
 
+- 기준 커밋: 1e79fb69e013
+- 브랜치: kidariseok/feat-a101-battle-art
+- 세션 시작: Gemini 4 Argon (High), 2026-10-21T23:32:00+09:00
 - [x] 2026-10-21 Claude: 목업(Figma `37:2`), 참조 그림(`art/ref/`, gitignore), 프롬프트 묶음 작성
-- [ ] 0단계 목업 승인
-- [ ] A묶음 7장
+- [x] 0단계 목업 승인 (`37:2` 확인 및 방법 1 진행)
+- [ ] A묶음 7장 (생성 중)
 - [ ] B묶음 12장
 - [ ] C묶음 6장
 - [ ] D묶음 2장
