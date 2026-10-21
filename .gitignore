@@ -9,3 +9,10 @@ dist/
 android/app/build/
 android/.gradle/
 android/local.properties
+
+# 그림 참조 이미지(사용자 원본, 공개 저장소에 올리지 않는다)
+art/ref/
+# 그림 원본(사용자 원본). 게임에는 처리된 public/assets/만 쓴다
+art/inbox/*
+!art/inbox/.gitkeep
+art/source/**/*.png
