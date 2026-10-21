@@ -1,13 +1,13 @@
 import { Scene, type GameObjects } from 'phaser'
 import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, RUN, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, hasAntiTank, income, mineTokens, nextUnlock, spawnPlan, synergies, type FlowPhase, type SpawnEvent } from '../rules'
+import { defconOf, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { createBoard, deployIndex, type Board } from './board'
 import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
-import { loadUnlocked, saveUnlocked } from './persist'
+import { loadRuns, loadUnlocked, saveRun, saveUnlocked } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
 
@@ -46,6 +46,9 @@ export class BattleScene extends Scene {
   public gaveUp = false // 포기로 끝났는가(03-05 기록이 쓴다)
   private lineMarks: GameObjects.GameObject[] = [] // 최후 저지선 소진 표시(부활 때 지운다)
   private shopKey = ''
+  // 판 기록(GDD §11). Phaser Scene.events를 덮지 않도록 runEvents로 짓는다
+  public runEvents: LogEvent[] = []
+  public wallSec = 0 // 일시정지·모달을 뺀 실제 경과 초(배속 무관)
 
   constructor() {
     super('battle')
@@ -74,13 +77,25 @@ export class BattleScene extends Scene {
     this.newUnlock = null
     this.lineMarks = []
     this.shopKey = ''
+    this.runEvents = []
+    this.wallSec = 0
     this.hudKey = ''
     this.hudCalls = 0
     this.tweens.resumeAll()
   }
 
+  private log(ev: LogEvent) {
+    this.runEvents.push(ev)
+  }
+
+  // 웨이브 클리어 기록. 정산 수입을 더하기 전 값이다
+  private clearWave() {
+    this.log({ e: 'wave_clear', wave: this.wave, base_hp: Math.max(0, this.baseHp), supply: this.supply })
+  }
+
   create() {
     this.resetRun()
+    this.log({ e: 'run_start', run: nextRun(loadRuns()) })
     // 화면이 길면 판 전체를 아래로 내린다. 값만 넘기고 좌표 계산은 board.ts가 한다
     const dy = this.scale.height - LAYOUT.baseHeight
     this.cameras.main.setBackgroundColor(UI.colors.bg)
@@ -96,6 +111,7 @@ export class BattleScene extends Scene {
       onSell: (refund) => {
         this.supply += refund
       },
+      onMerge: (card, rank) => this.log({ e: 'merge', card, rank }),
       onHold: (u) => {
         if (u) ui.cardInfo(u.card, u.rank)
         else ui.cardInfo(null)
@@ -179,6 +195,7 @@ export class BattleScene extends Scene {
     this.unlocked = CARD_KEYS.filter((k) => this.unlocked.includes(k) || k === next)
     saveUnlocked(this.unlocked)
     this.newUnlock = next
+    this.log({ e: 'unlock', card: next, via: 'wave5' })
     ui.banner(`${UI.text.bannerUnlock}: ${CARDS[next].name}`, 'info')
   }
 
@@ -210,7 +227,10 @@ export class BattleScene extends Scene {
     const r = buyCard(this.store, this.board, i, this.supply)
     if (r.kind === 'poor') ui.banner(UI.text.bannerPoor, 'info')
     else if (r.kind === 'full') ui.banner(UI.text.bannerBenchFull, 'info')
-    else if (r.kind === 'bench' || r.kind === 'merge') this.supply -= r.cost
+    else if ((r.kind === 'bench' || r.kind === 'merge') && r.card) {
+      this.supply -= r.cost
+      this.log({ e: 'card_buy', card: r.card, rank: 1 })
+    }
     this.syncShop()
   }
 
@@ -230,6 +250,7 @@ export class BattleScene extends Scene {
   }
 
   startSettle() {
+    this.clearWave()
     endWave(collectAllies(this.board))
     this.phase = 'settle'
     this.board.setPhase('settle')
@@ -241,7 +262,9 @@ export class BattleScene extends Scene {
 
   update(_time: number, delta: number) {
     if (this.result || this.paused || this.modal) return
-    const dt = Math.min(delta / 1000, BATTLE.maxDt) * this.speed
+    const real = Math.min(delta / 1000, BATTLE.maxDt)
+    this.wallSec += real
+    const dt = real * this.speed
     switch (this.phase) {
       case 'prep':
         this.prepLeft -= dt
@@ -295,8 +318,10 @@ export class BattleScene extends Scene {
     // 5. 종료 판정
     if (this.baseHp <= 0) this.onBaseDown()
     else if (this.nextIdx >= this.plan.length && this.enemies.length === 0) {
-      if (this.wave === WAVES.length) this.finish(true)
-      else this.startSettle()
+      if (this.wave === WAVES.length) {
+        this.clearWave()
+        this.finish(true)
+      } else this.startSettle()
     }
   }
 
@@ -359,6 +384,10 @@ export class BattleScene extends Scene {
   private finish(win: boolean) {
     if (this.result) return
     this.result = win ? 'win' : 'lose'
+    const kind: RunResult = this.gaveUp ? 'quit' : win ? 'win' : 'lose'
+    const sec = Math.round(this.wallSec)
+    this.log({ e: 'run_end', result: kind, wave: this.wave, sec })
+    saveRun({ t: Date.now(), result: kind, wave: this.wave, sec, events: this.runEvents })
     this.board.setPhase('settle')
     this.syncShop()
     this.syncHud()
