@@ -12,6 +12,7 @@ import {
   RANKS,
   SYNERGY,
   SYN_FX,
+  UNLOCK,
   type CardKey,
   type EnemyType,
 } from './data'
@@ -252,4 +253,57 @@ export function inBlast(enemyY: number, mineRow: number): boolean {
 // GDD §5.5. 폭발 피해. 대전차는 보스에게 bossMult배
 export function mineDamage(enemy: EnemyType, anti: boolean): number {
   return MINES.damage * (anti && enemy === 'boss' ? MINES.bossMult : 1)
+}
+
+// ---- 3단계: 구매 판정·해금 ----
+
+export type Spot = { zone: 'bench' | 'deploy'; i: number }
+export type Placed = Spot & { unit: Unit }
+// remove가 있으면 promote 칸이 살아남아 계급이 오르고 remove 칸은 치워진다
+export type BuyStep = { promote: Spot; remove?: Spot }
+export type BuyOutcome = { kind: 'poor' } | { kind: 'bench' } | { kind: 'merge'; steps: BuyStep[] } | { kind: 'full' }
+
+const spotOf = ({ zone, i }: Placed): Spot => ({ zone, i })
+
+// 구매 판정. units는 대기석 먼저 번호 순, 그다음 배치 구역 번호 순. 입력은 바꾸지 않는다
+export function buyOutcome(card: CardKey, supply: number, benchOpen: boolean, units: Placed[]): BuyOutcome {
+  if (supply < CARDS[card].cost) return { kind: 'poor' }
+  if (benchOpen) return { kind: 'bench' }
+  // 시뮬레이션용 복사본. 새로 산 카드는 합성 재료로만 쓰이고 칸을 차지하지 않는다
+  const work = units.map((p) => ({ ...p, unit: { ...p.unit } }))
+  let cur = work.find((p) => p.unit.card === card && p.unit.rank === 1)
+  if (!cur) return { kind: 'full' }
+  cur.unit.rank = 2
+  const steps: BuyStep[] = [{ promote: spotOf(cur) }]
+  // 연쇄: 새 계급과 같은 계급의 같은 카드가 또 있으면 합쳐 한 계급 더 오른다(병장에서 멈춤)
+  while (cur.unit.rank < RANKS.max) {
+    const c: Placed = cur
+    const other = work.find((p) => p !== c && p.unit.card === card && p.unit.rank === c.unit.rank)
+    if (!other) break
+    // 살아남는 칸 = 배치 구역 우선, 같은 구역이면 번호가 작은 쪽
+    const keep = c.zone !== other.zone ? (c.zone === 'deploy' ? c : other) : c.i < other.i ? c : other
+    const drop = keep === c ? other : c
+    work.splice(work.indexOf(drop), 1)
+    keep.unit.rank += 1
+    steps.push({ promote: spotOf(keep), remove: spotOf(drop) })
+    cur = keep
+  }
+  return { kind: 'merge', steps }
+}
+
+// 해금 순서의 다음 잠긴 카드
+export function nextUnlock(unlocked: readonly CardKey[]): CardKey | null {
+  return UNLOCK.order.find((c) => !unlocked.includes(c)) ?? null
+}
+
+// 저장 문자열 -> 해금 목록. 깨져 있으면 기본만. 결과는 항상 CARD_KEYS 순서
+export function parseUnlocked(raw: string | null): CardKey[] {
+  let saved: unknown = []
+  try {
+    saved = JSON.parse(raw ?? '[]')
+  } catch {
+    // 깨진 저장값은 기본 해금으로
+  }
+  const list = Array.isArray(saved) ? saved : []
+  return CARD_KEYS.filter((c) => UNLOCK.base.includes(c) || list.includes(c))
 }

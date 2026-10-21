@@ -303,3 +303,27 @@ export const MINES = {
   bossMult: 3,
   blast: 1,
 }
+
+// GDD §7. base = 첫 판 해금, order = 웨이브 atWave 도달 때마다 하나씩 여는 순서
+export const UNLOCK: { base: readonly CardKey[]; order: readonly CardKey[]; atWave: number } = {
+  base: ['rifle', 'blower', 'sniper'],
+  order: ['cook', 'miner'],
+  atWave: 5,
+}
+
+// GDD §10 보상형 광고 슬롯 횟수·양, §4.2 부활 HP
+export const REWARD = {
+  adRerollMax: 3,
+  adSupplyMax: 1,
+  adSupplyAmount: 5,
+  reviveHp: 10,
+}
+
+// GDD §11. 키는 localStorage 키, maxRuns 최근 판 수, recent 목록 길이, lowRate 구매율 경고선
+export const LOG = {
+  runsKey: 'd2_playlog',
+  unlockedKey: 'd2_unlocked',
+  maxRuns: 50,
+  recent: 10,
+  lowRate: 0.05,
+}
