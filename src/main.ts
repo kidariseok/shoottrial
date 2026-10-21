@@ -1,16 +1,13 @@
 import { Game, Scale, AUTO, type Types } from 'phaser'
 import { initAudio } from './audio'
 import { BattleScene } from './battle/BattleScene'
-import { CARD_KEYS, CARDS } from './data'
 import { debug, initDebugOverlays } from './debug'
 import { calculateLogicalHeight, computeCanvasLayout, startDeviceScene } from './device'
 import { GalleryScene } from './gallery'
 import { exitApp, init as initPlatform, isNative, onBack, safeRect } from './platform'
-import { defconOf } from './rules'
 import { load as loadSave } from './save'
-import { WAVES } from './stages'
 import { startUiDemo } from './ui/demo'
-import { bindBattle, handleBack, hud, shop } from './ui/screens'
+import { handleBack } from './ui/screens'
 
 export { calculateLogicalHeight, computeCanvasLayout }
 
@@ -89,52 +86,6 @@ if (game) {
   })
   game.events.once('ready', () => {
     syncGameScale()
-  })
-  // ponytail: M2 3단계(BattleScene의 직접 ui.hud/ui.shop 호출) 병합 전에도 ?scene=battle에서 DOM 상점·HUD 배치를 검증할 수 있게 폴백 연결
-  let fallbackBound = false
-  game.events.on('poststep', () => {
-    const s = game.scene.getScene('battle') as (BattleScene & { store?: unknown }) | undefined
-    if (!s || !s.scene.isActive() || 'store' in s) return
-    if (!fallbackBound) {
-      fallbackBound = true
-      bindBattle({
-        pause: () => s.scene.pause(),
-        resume: () => s.scene.resume(),
-        setSpeed: (spd) => s.setSpeed(spd),
-        quit: () => {},
-        adReroll: () => {},
-        adSupply: () => {},
-      })
-    }
-    hud({
-      wave: s.wave,
-      waves: WAVES.length,
-      defcon: defconOf(s.wave),
-      supply: s.supply,
-      baseHp: s.baseHp,
-      phase: s.phase,
-      prepLeft: s.prepLeft,
-      speed: s.speed,
-      synergies: [],
-    })
-    const isPrep = s.phase === 'prep' && !s.result
-    const shopEl = document.querySelector('#ui .ui-shop')
-    const isClosed = !shopEl || shopEl.classList.contains('closed')
-    if (isPrep && isClosed) {
-      const offers = CARD_KEYS.map((card) => ({ card, cost: CARDS[card].cost }))
-      shop(
-        true,
-        offers,
-        s.supply,
-        () => {},
-        () => {},
-        () => {
-          if (s.phase === 'prep' && !s.result) s.startFight()
-        }
-      )
-    } else if (!isPrep && shopEl && !isClosed) {
-      shop(false, [], s.supply, () => {}, () => {}, () => {})
-    }
   })
 }
 
