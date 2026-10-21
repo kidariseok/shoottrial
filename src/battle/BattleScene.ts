@@ -51,7 +51,7 @@ export class BattleScene extends Scene {
     super('battle')
   }
 
-  // 클래스 필드 초기값은 생성자에서 한 번만 돈다. scene.restart()는 create만 다시 부르므로 판 상태는 여기서 전부 되돌린다
+  // 클래스 필드 초기값은 생성자에서 한 번만 돈다. 씬 재시작은 create만 다시 부르므로 판 상태는 여기서 전부 되돌린다
   private resetRun() {
     this.phase = 'prep'
     this.wave = Math.min(WAVES.length, Math.max(1, debug.wave ?? 1))
