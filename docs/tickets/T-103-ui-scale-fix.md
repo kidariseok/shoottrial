@@ -1,6 +1,6 @@
 # T-103 UI 크기 보정: 긴 화면에서 상점 패널이 대기석을 가리는 문제 + #game 정렬 중복
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -50,10 +50,10 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] `docs/shots/T-103-1560.png`(720×1560)와 `docs/shots/T-103-1280.png`(720×1280), `docs/shots/T-103-390.png`(390×844): 세 화면 모두 상점 패널 위 끝이 대기석 띠 아래 끝과 맞고, 대기석 카드가 가려지지 않는다(전투 화면 `?scene=battle&deck=rifle:3,sniper:1,blower:1&seed=42`, 준비 단계)
-- [ ] 캔버스가 한 번만 가운데 정렬된다(`getBoundingClientRect()` 좌우 여백이 같고, margin과 flex가 겹치지 않음을 결과 보고에 적음)
-- [ ] `src/ui/screens.ts`의 export 시그니처 변화 없음(`git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 출력 없음)
+- [x] `npm run verify` 통과
+- [x] `docs/shots/T-103-1560.png`(720×1560)와 `docs/shots/T-103-1280.png`(720×1280), `docs/shots/T-103-390.png`(390×844): 세 화면 모두 상점 패널 위 끝이 대기석 띠 아래 끝과 맞고, 대기석 카드가 가려지지 않는다(전투 화면 `?scene=battle&deck=rifle:3,sniper:1,blower:1&seed=42`, 준비 단계)
+- [x] 캔버스가 한 번만 가운데 정렬된다(`getBoundingClientRect()` 좌우 여백이 같고, margin과 flex가 겹치지 않음을 결과 보고에 적음)
+- [x] `src/ui/screens.ts`의 export 시그니처 변화 없음(`git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 출력 없음)
 
 디버그 URL: `http://localhost:5173/?scene=battle&deck=rifle:3,sniper:1,blower:1&seed=42&safe=1`
 
@@ -90,14 +90,35 @@
 - [x] 1단계: `src/ui/style.css`에서 `#game`의 flex 중앙 정렬을 제거하고 Safe Area 안쪽으로 배치, `--game-scale` 및 `--shop-max-height: calc(var(--game-scale) * 120px)` 적용 (다음: 2단계 `src/main.ts` 논리 높이·배율 동기화)
 - [x] 2단계: `src/main.ts`에서 `calculateLogicalHeight`를 Safe Area 기준으로 변경하고, 캔버스 표시 배율(`--game-scale`)과 오프셋(`--canvas-*-gap`)을 `resize` 및 `MutationObserver`/`ResizeObserver`로 동기화 (다음: 3단계 `src/device.ts` `--sa-*` 실효값 표시)
 - [x] 3단계: `src/device.ts`에서 `readEffectiveSafeArea`로 실제 `--sa-*` 값을 읽고 `MutationObserver`/`ResizeObserver`로 즉시 갱신되도록 수정 (다음: 4단계 단위 테스트 추가 및 `npm run verify`, 3개 해상도 스크린샷 촬영)
+- [x] 4단계: `tests/ui.test.ts` 단위 테스트 추가, `npm run verify` 통과 확인, `docs/shots/T-103-1560.png`·`T-103-1280.png`·`T-103-390.png`·`T-103.png` 촬영 및 수치 검증 완료
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `src/ui/style.css` (`#game`의 `display: flex` 중앙 정렬 제거 및 `--sa-*` 기준 Safe Area 배치, `--game-scale`·`--shop-max-height: calc(var(--game-scale) * 120px)`·`--hud-height: calc(var(--game-scale) * 96px)`·`.ui-shop` 하단/좌우 오프셋 보정)
+  - `src/main.ts` (Safe Area 기준 논리 높이 계산, `syncGameScale()`로 `--game-scale` 및 캔버스 오프셋을 `game.scale.on('resize')`·`MutationObserver`·`ResizeObserver`에 연동)
+  - `src/device.ts` (`calculateLogicalHeight`, `computeCanvasLayout`, `readEffectiveSafeArea` 추가 및 `?scene=device`에서 `--sa-*` 실효 픽셀값 즉시 반영)
+  - `tests/ui.test.ts` (Safe Area 비율 기준 논리 높이, 캔버스 표시 배율 및 오프셋 계산 테스트 3건 추가)
+  - `docs/shots/T-103-1560.png`, `docs/shots/T-103-1280.png`, `docs/shots/T-103-390.png`, `docs/shots/T-103.png`
 - 검증 결과:
+  - `npm run verify` 통과 (`tsc --noEmit` 통과, `vitest run` 9 files / 107 tests 통과, `vite build` 성공: `dist/assets/index-c7pQRsIZ.js 1,762.10 kB`, `built in 2.03s`)
+  - `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 출력 없음 (시그니처 변화 없음)
+  - 헤드리스 Chrome 실측:
+    - `720×1560`: `--game-scale = 1`, 대기석 아래 끝 `y = 1440px`, `.ui-shop` `top = 1440px, bottom = 1560px, height = 120px` (오차 0px)
+    - `720×1280`: `--game-scale = 1`, 대기석 아래 끝 `y = 1160px`, `.ui-shop` `top = 1160px, bottom = 1280px, height = 120px` (오차 0px)
+    - `390×844`: `--game-scale = 0.541667`, 대기석 아래 끝 `y = 778.91px`, `.ui-shop` `top = 778.91px, bottom = 843.91px, height = 65px` (오차 0px)
+    - 캔버스 단일 정렬 확인: `getComputedStyle(#game).display === "block"`(flex 제거, Phaser `Scale.CENTER_BOTH` margin만 사용). `600×800` 뷰포트에서 캔버스 폭 `450px`, 좌측 여백 `rect.left = 75px`, 우측 여백 `600 - rect.right = 75px`로 좌우 여백 동일 및 이중 정렬 없음 확인
+    - `?scene=device&safe=1`: `--safe-area-inset-top/bottom: 24px` 주입 즉시 `--sa-*` 실효값 `24px / 0px / 24px / 0px` 및 유효 영역 `411×866px (--sa-*)` 표시 확인
 - 스크린샷:
+  - `docs/shots/T-103-1560.png` (720×1560)
+  - `docs/shots/T-103-1280.png` (720×1280)
+  - `docs/shots/T-103-390.png` (390×844)
+  - `docs/shots/T-103.png` (390×844)
 - 사용자 확인 방법:
+  - `npm run dev` 실행 후 `http://localhost:5173/?scene=battle&deck=rifle:3,sniper:1,blower:1&seed=42&safe=1` 및 `http://localhost:5173/?scene=device&safe=1` 접속
 - 확인하지 못한 점:
+  - 실제 안드로이드 기기 물리 노치·펀치홀에서의 확인 (브라우저 3개 해상도 및 CSS 변수 주입 시뮬레이션으로 검증)
 - 다음 제안:
+  - 레인 A 3단계(`m2-core-phase3`) 병합 후 G1 플레이테스트에서 다양한 화면 비율로 전투·상점 조작감 확인
 
 ## 인계 메모
