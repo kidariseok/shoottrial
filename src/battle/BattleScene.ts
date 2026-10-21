@@ -1,5 +1,5 @@
-import { Scene } from 'phaser'
-import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, UI, UNLOCK, type CardKey } from '../data'
+import { Scene, type GameObjects } from 'phaser'
+import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, RUN, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
 import { defconOf, hasAntiTank, income, mineTokens, nextUnlock, spawnPlan, synergies, type FlowPhase, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
@@ -10,6 +10,9 @@ import { fall, laneFlash, shake } from './fx'
 import { loadUnlocked, saveUnlocked } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
+
+// ponytail: 같은 시드로 재시작해도 판마다 다른 시퀀스. 디버그에서 두 번째 판을 재현하려면 페이지를 새로 연다
+let runsThisPage = 0
 
 export class BattleScene extends Scene {
   // 헤드리스 검증이 읽으므로 모두 public
@@ -38,24 +41,55 @@ export class BattleScene extends Scene {
   public unlocked: CardKey[] = []
   public pool: CardKey[] = [] // 이 준비 단계의 상점 풀(해금이 생겨도 현재 단계에는 반영하지 않는다)
   public newUnlock: CardKey | null = null
+  public modal = false // 부활 제안이 떠 있는 동안 전투 정지
+  public reviveUsed = false
+  public gaveUp = false // 포기로 끝났는가(03-05 기록이 쓴다)
+  private lineMarks: GameObjects.GameObject[] = [] // 최후 저지선 소진 표시(부활 때 지운다)
   private shopKey = ''
 
   constructor() {
     super('battle')
   }
 
+  // 클래스 필드 초기값은 생성자에서 한 번만 돈다. scene.restart()는 create만 다시 부르므로 판 상태는 여기서 전부 되돌린다
+  private resetRun() {
+    this.phase = 'prep'
+    this.wave = Math.min(WAVES.length, Math.max(1, debug.wave ?? 1))
+    this.baseHp = BATTLE.baseHp
+    this.supply = debug.supply ?? ECONOMY.startSupply
+    this.kills = 0
+    this.result = null
+    this.enemies = []
+    this.plan = []
+    this.spawned = []
+    this.lineUsed = Array<boolean>(LAYOUT.cols).fill(false)
+    this.prepLeft = 0
+    this.settleLeft = 0
+    this.clock = 0
+    this.nextIdx = 0
+    this.paused = false
+    this.modal = false
+    this.reviveUsed = false
+    this.gaveUp = false
+    this.newUnlock = null
+    this.lineMarks = []
+    this.shopKey = ''
+    this.hudKey = ''
+    this.hudCalls = 0
+    this.tweens.resumeAll()
+  }
+
   create() {
+    this.resetRun()
     // 화면이 길면 판 전체를 아래로 내린다. 값만 넘기고 좌표 계산은 board.ts가 한다
     const dy = this.scale.height - LAYOUT.baseHeight
     this.cameras.main.setBackgroundColor(UI.colors.bg)
-    this.supply = debug.supply ?? ECONOMY.startSupply
-    this.wave = Math.min(WAVES.length, Math.max(1, debug.wave ?? 1))
-    this.baseHp = BATTLE.baseHp
-    this.lineUsed = Array<boolean>(LAYOUT.cols).fill(false)
-    this.spawnRand = createRng(debug.seed)
-    this.dogRand = createRng(debug.seed + 1)
+    const base = debug.seed + runsThisPage * RUN.reseedStep
+    runsThisPage += 1
+    this.spawnRand = createRng(base)
+    this.dogRand = createRng(base + 1)
     this.unlocked = loadUnlocked(debug.unlock === 'all')
-    this.store = createShop(debug.seed + 2)
+    this.store = createShop(base + 2)
 
     this.board = createBoard(this, {
       dy,
@@ -102,7 +136,7 @@ export class BattleScene extends Scene {
   // 포기
   quit() {
     this.resume() // 트윈이 멈춘 채 결과로 가지 않게
-    // ponytail: 04 plan에서 finish가 quit 결과(ui.result)로 간다
+    this.gaveUp = true
     this.finish(false)
   }
 
@@ -206,7 +240,7 @@ export class BattleScene extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (this.result || this.paused) return
+    if (this.result || this.paused || this.modal) return
     const dt = Math.min(delta / 1000, BATTLE.maxDt) * this.speed
     switch (this.phase) {
       case 'prep':
@@ -259,7 +293,7 @@ export class BattleScene extends Scene {
       return true
     })
     // 5. 종료 판정
-    if (this.baseHp <= 0) this.finish(false)
+    if (this.baseHp <= 0) this.onBaseDown()
     else if (this.nextIdx >= this.plan.length && this.enemies.length === 0) {
       if (this.wave === WAVES.length) this.finish(true)
       else this.startSettle()
@@ -284,8 +318,9 @@ export class BattleScene extends Scene {
       shake(this, 'heavy')
       // 방어선 띠 위 그 열 칸에 소진 표시
       const cy = lineY + LAYOUT.lineH / 2
-      this.add.rectangle(top.x, cy, LAYOUT.cell - UI.fx.lineUsedInset * 2, LAYOUT.lineH, UI.colors.lineUsed)
-      this.add.text(top.x, cy, UI.text.lineUsed, { fontFamily: UI.text.fontFamily, fontSize: `${UI.fx.lineUsedPx}px`, color: UI.text.color }).setOrigin(0.5)
+      const box = this.add.rectangle(top.x, cy, LAYOUT.cell - UI.fx.lineUsedInset * 2, LAYOUT.lineH, UI.colors.lineUsed)
+      const label = this.add.text(top.x, cy, UI.text.lineUsed, { fontFamily: UI.text.fontFamily, fontSize: `${UI.fx.lineUsedPx}px`, color: UI.text.color }).setOrigin(0.5)
+      this.lineMarks.push(box, label)
       return
     }
     if (!debug.god) this.baseHp -= ENEMIES[e.type].baseDmg
@@ -294,20 +329,46 @@ export class BattleScene extends Scene {
     shake(this, 'light')
   }
 
+  // 위병소 HP 0: 판당 한 번 부활을 묻는다. 묻는 동안 전투와 트윈이 멈춘다
+  private onBaseDown() {
+    if (this.reviveUsed) return this.finish(false)
+    this.reviveUsed = true
+    this.modal = true
+    this.tweens.pauseAll()
+    // 광고는 M4에서 B가 연결. 지금은 예 = 바로 부활
+    ui.askRevive(
+      () => this.revive(),
+      () => {
+        this.modal = false
+        this.tweens.resumeAll()
+        this.finish(false)
+      },
+    )
+  }
+
+  private revive() {
+    this.baseHp = REWARD.reviveHp
+    this.lineUsed = this.lineUsed.map(() => false)
+    for (const o of this.lineMarks) o.destroy()
+    this.lineMarks = []
+    this.modal = false
+    this.tweens.resumeAll()
+    ui.banner(UI.text.bannerRevive, 'info')
+  }
+
   private finish(win: boolean) {
+    if (this.result) return
     this.result = win ? 'win' : 'lose'
     this.board.setPhase('settle')
     this.syncShop()
-    // ponytail: 3단계에서 ui.result()/askRevive로 대체
-    this.add
-      .text(LAYOUT.width / 2, this.scale.height / 2, win ? UI.text.win : UI.text.lose, {
-        fontFamily: UI.text.fontFamily,
-        fontSize: `${UI.fx.resultPx}px`,
-        color: UI.text.popupColor,
-      })
-      .setOrigin(0.5)
-      .setDepth(UI.fx.dragDepth)
     this.syncHud()
+    ui.bindBattle(null)
+    // ponytail: M3 로비가 생기면 onLobby를 로비 씬으로
+    ui.result(
+      { win, wave: this.wave, kills: this.kills, unlocked: this.newUnlock ?? undefined },
+      () => this.scene.restart(),
+      () => this.scene.restart(),
+    )
   }
 
   // HUD. 값이 바뀔 때만 ui.hud를 부른다(준비 초는 올림 정수라 소수 초가 값 변화로 잡히지 않는다)

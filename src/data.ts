@@ -134,7 +134,6 @@ export const UI = {
     fallenAlpha: 0.35, // 쓰러진 아군 카드 알파
     enemyDepth: 10, // 카드(0)보다 위, fx(fxDepth)보다 아래
     spawnFadeMs: 300, // 적이 나타날 때 알파 0 -> 1
-    resultPx: 96, // 승리·패배 글자 크기
     lineUsedPx: 22, // 소진 표시 글자 크기
     lineUsedInset: 8, // 소진 표시 사각형 좌우 여백(한쪽)
     msPerSec: 1000, // 초 -> 밀리초(연출 시차 변환)
@@ -177,8 +176,7 @@ export const UI = {
     bannerFlag: '대규모 적 접근!',
     bannerDefcon: '데프콘 1 — 칵트 피스톨',
     bannerUnlock: '새 보직 해금',
-    win: '승리',
-    lose: '패배',
+    bannerRevive: '위병소 부활 — 최후 저지선 복구',
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
@@ -301,6 +299,9 @@ export const UNLOCK: { base: readonly CardKey[]; order: readonly CardKey[]; atWa
   order: ['cook', 'miner'],
   atWave: 5,
 }
+
+// 같은 페이지에서 "다시 출동"할 때마다 난수 시드에 더하는 간격(판마다 다른 출현 순서)
+export const RUN = { reseedStep: 7919 }
 
 // GDD §10 보상형 광고 슬롯 횟수·양, §4.2 부활 HP
 export const REWARD = {
