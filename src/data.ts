@@ -177,6 +177,26 @@ export const UI = {
     bannerDefcon: '데프콘 1 — 칵트 피스톨',
     bannerUnlock: '새 보직 해금',
     bannerRevive: '위병소 부활 — 최후 저지선 복구',
+    // ?scene=log 기록 화면(GDD §11). 열마다 쓰는 짧은 말은 별도 키로 둔다
+    logTitle: '판 기록',
+    logRuns: '판 수',
+    logWinRate: '승률',
+    logAvgTime: '평균 판 시간',
+    logAvgWave: '평균 도달 웨이브',
+    logCardHead: '보직',
+    logBuys: '구매',
+    logRate: '구매율',
+    logRecent: '최근 판',
+    logWave: '웨이브',
+    logWin: '승리',
+    logLose: '패배',
+    logQuit: '포기',
+    logEmpty: '기록이 없습니다',
+    logMin: '분',
+    logSec: '초',
+    logLow: ' (낮음)',
+    logSep: ' · ',
+    logPct: '%',
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
@@ -192,6 +212,10 @@ export const UI = {
   enemyBar: { h: 8, gap: 6 },
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
   mine: { trayCol: 0, trayY: 1.5, tokenR: 36, buriedR: 40, alpha: 0.5, countPx: 36 },
+  // ?scene=log 배치. 24줄 안팎: 제목 1 + 요약 4 + 카드 머리·5 + 최근 머리·10 + 블록 사이 간격 2
+  // 시작 y는 HUD 띠(LAYOUT.hudH) 아래. lineH 44 x 22줄 + blockGap 44 x 2 = 1056 -> y 112 + 1056 = 1168 < 1280
+  // colBuys·colRate는 보직 이름(최대 약 280px) 오른쪽 열, 구매율 열은 '100.0%'가 720 안에 들어오는 위치
+  log: { x: 40, y: 112, titlePx: 40, px: 28, lineH: 44, blockGap: 44, colBuys: 380, colRate: 520, lowColor: '#ffe066', secPerMin: 60, pct: 100, rateDigits: 1, waveDigits: 1 },
 } as const
 
 // ---- 2단계 전투 수치 (추가분) ----

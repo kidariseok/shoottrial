@@ -5,6 +5,7 @@ import { defconOf, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPl
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { createBoard, deployIndex, type Board } from './board'
+import { drawLog } from './log'
 import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
 import { loadRuns, loadUnlocked, saveRun, saveUnlocked } from './persist'
@@ -48,6 +49,7 @@ export class BattleScene extends Scene {
   private shopKey = ''
   // 판 기록(GDD §11). Phaser Scene.events를 덮지 않도록 runEvents로 짓는다
   public runEvents: LogEvent[] = []
+  public logOnly = false // ?scene=log: 판 없이 기록 표만
   public wallSec = 0 // 일시정지·모달을 뺀 실제 경과 초(배속 무관)
 
   constructor() {
@@ -94,6 +96,13 @@ export class BattleScene extends Scene {
   }
 
   create() {
+    if (debug.scene === 'log') {
+      this.logOnly = true
+      this.cameras.main.setBackgroundColor(UI.colors.bg)
+      drawLog(this, loadRuns())
+      return
+    }
+    this.logOnly = false
     this.resetRun()
     this.log({ e: 'run_start', run: nextRun(loadRuns()) })
     // 화면이 길면 판 전체를 아래로 내린다. 값만 넘기고 좌표 계산은 board.ts가 한다
@@ -261,7 +270,7 @@ export class BattleScene extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (this.result || this.paused || this.modal) return
+    if (this.logOnly || this.result || this.paused || this.modal) return
     const real = Math.min(delta / 1000, BATTLE.maxDt)
     this.wallSec += real
     const dt = real * this.speed

@@ -12,7 +12,7 @@ import {
   type LogEvent,
   type RunResult,
 } from '../src/rules'
-import { CARD_KEYS, UNLOCK, REWARD, LOG, type CardKey } from '../src/data'
+import { CARD_KEYS, UNLOCK, REWARD, LOG, UI, type CardKey } from '../src/data'
 
 const b = (i: number, card: CardKey, rank: number): Placed => ({ zone: 'bench', i, unit: { card, rank } })
 const d = (i: number, card: CardKey, rank: number): Placed => ({ zone: 'deploy', i, unit: { card, rank } })
@@ -251,5 +251,23 @@ describe('nextRun', () => {
   })
   it('run_start가 없으면 길이 + 1', () => {
     expect(nextRun([mkRun('win', 1, 1), mkRun('lose', 1, 1)])).toBe(3)
+  })
+})
+
+describe('기록 화면 색·문구 (ART §2)', () => {
+  it('낮은 구매율 색은 노랑이고 붉은 계열이 아니다', () => {
+    expect(UI.log.lowColor).toBe('#ffe066')
+    const c = parseInt(UI.log.lowColor.slice(1), 16)
+    const r = (c >> 16) & 0xff
+    const g = (c >> 8) & 0xff
+    const bl = c & 0xff
+    expect(r - Math.max(g, bl) > 32).toBe(false)
+  })
+  it('기록 화면 문구 키가 모두 비어 있지 않다', () => {
+    const keys = ['logTitle', 'logRuns', 'logWinRate', 'logAvgTime', 'logAvgWave', 'logCardHead', 'logBuys', 'logRate', 'logRecent', 'logWave', 'logWin', 'logLose', 'logQuit', 'logEmpty', 'logMin', 'logSec', 'logLow'] as const
+    for (const k of keys) {
+      const v = UI.text[k]
+      expect(typeof v === 'string' && v.length > 0).toBe(true)
+    }
   })
 })
