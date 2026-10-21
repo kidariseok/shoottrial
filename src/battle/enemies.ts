@@ -16,6 +16,7 @@ export type Enemy = {
   stun: number // 남은 기절 초
   burn: number // 남은 화상 초
   knockLeft: number // 남은 밀려남 칸(02-05가 채운다)
+  knocked: boolean // 제설병에게 이미 밀렸다. 적마다 1회만 밀린다(제설병 단독 열 교착 방지, 03-06)
   dogMoved: boolean
   shocked: boolean
   gone: boolean // 저지선·방어선으로 제거됨(처치로 세지 않는다)
@@ -45,7 +46,7 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
   const bar = scene.add.graphics()
   const view = scene.add.container(pos.x, pos.y, [body, bar]).setDepth(UI.fx.enemyDepth).setAlpha(0)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
-  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, knockLeft: 0, dogMoved: false, shocked: false, gone: false, view, bar }
+  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
 }
 
 // 제거 판정은 호출한 쪽이 hp <= 0으로 거른다

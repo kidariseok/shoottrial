@@ -8,10 +8,12 @@ import {
   ENEMIES,
   GRID,
   LAYOUT,
+  LOG,
   MINES,
   RANKS,
   SYNERGY,
   SYN_FX,
+  UNLOCK,
   type CardKey,
   type EnemyType,
 } from './data'
@@ -252,4 +254,126 @@ export function inBlast(enemyY: number, mineRow: number): boolean {
 // GDD §5.5. 폭발 피해. 대전차는 보스에게 bossMult배
 export function mineDamage(enemy: EnemyType, anti: boolean): number {
   return MINES.damage * (anti && enemy === 'boss' ? MINES.bossMult : 1)
+}
+
+// ---- 3단계: 구매 판정·해금 ----
+
+export type Spot = { zone: 'bench' | 'deploy'; i: number }
+export type Placed = Spot & { unit: Unit }
+// remove가 있으면 promote 칸이 살아남아 계급이 오르고 remove 칸은 치워진다
+export type BuyStep = { promote: Spot; remove?: Spot }
+export type BuyOutcome = { kind: 'poor' } | { kind: 'bench' } | { kind: 'merge'; steps: BuyStep[] } | { kind: 'full' }
+
+const spotOf = ({ zone, i }: Placed): Spot => ({ zone, i })
+
+// 구매 판정. units는 대기석 먼저 번호 순, 그다음 배치 구역 번호 순. 입력은 바꾸지 않는다
+export function buyOutcome(card: CardKey, supply: number, benchOpen: boolean, units: Placed[]): BuyOutcome {
+  if (supply < CARDS[card].cost) return { kind: 'poor' }
+  if (benchOpen) return { kind: 'bench' }
+  // 시뮬레이션용 복사본. 새로 산 카드는 합성 재료로만 쓰이고 칸을 차지하지 않는다
+  const work = units.map((p) => ({ ...p, unit: { ...p.unit } }))
+  let cur = work.find((p) => p.unit.card === card && p.unit.rank === 1)
+  if (!cur) return { kind: 'full' }
+  cur.unit.rank = 2
+  const steps: BuyStep[] = [{ promote: spotOf(cur) }]
+  // 연쇄: 새 계급과 같은 계급의 같은 카드가 또 있으면 합쳐 한 계급 더 오른다(병장에서 멈춤)
+  while (cur.unit.rank < RANKS.max) {
+    const c: Placed = cur
+    const other = work.find((p) => p !== c && p.unit.card === card && p.unit.rank === c.unit.rank)
+    if (!other) break
+    // 살아남는 칸 = 배치 구역 우선, 같은 구역이면 번호가 작은 쪽
+    const keep = c.zone !== other.zone ? (c.zone === 'deploy' ? c : other) : c.i < other.i ? c : other
+    const drop = keep === c ? other : c
+    work.splice(work.indexOf(drop), 1)
+    keep.unit.rank += 1
+    steps.push({ promote: spotOf(keep), remove: spotOf(drop) })
+    cur = keep
+  }
+  return { kind: 'merge', steps }
+}
+
+// 해금 순서의 다음 잠긴 카드
+export function nextUnlock(unlocked: readonly CardKey[]): CardKey | null {
+  return UNLOCK.order.find((c) => !unlocked.includes(c)) ?? null
+}
+
+// 저장 문자열 -> 해금 목록. 깨져 있으면 기본만. 결과는 항상 CARD_KEYS 순서
+export function parseUnlocked(raw: string | null): CardKey[] {
+  let saved: unknown = []
+  try {
+    saved = JSON.parse(raw ?? '[]')
+  } catch {
+    // 깨진 저장값은 기본 해금으로
+  }
+  const list = Array.isArray(saved) ? saved : []
+  return CARD_KEYS.filter((c) => UNLOCK.base.includes(c) || list.includes(c))
+}
+
+// ---- 3단계: 판 기록 ----
+
+export type RunResult = 'win' | 'lose' | 'quit'
+export type LogEvent =
+  | { e: 'run_start'; run: number }
+  | { e: 'wave_clear'; wave: number; base_hp: number; supply: number }
+  | { e: 'run_end'; result: RunResult; wave: number; sec: number }
+  | { e: 'card_buy'; card: CardKey; rank: number }
+  | { e: 'merge'; card: CardKey; rank: number }
+  | { e: 'unlock'; card: CardKey; via: 'wave5' | 'ad' }
+export type PlayRun = { t: number; result: RunResult; wave: number; sec: number; events: LogEvent[] }
+export type LogSummary = {
+  runs: number
+  winRate: number
+  avgSec: number
+  avgWave: number
+  buys: number
+  cards: { card: CardKey; buys: number; rate: number; low: boolean }[] // CARD_KEYS 순서, 구매 0인 카드도 포함
+  recent: PlayRun[] // 최신이 앞, 최대 LOG.recent판
+}
+
+// runs는 오래된 판이 앞. 평균은 반올림하지 않는다(표시 단계에서 포맷)
+export function summarizeLog(runs: PlayRun[]): LogSummary {
+  const n = runs.length
+  const avg = (f: (r: PlayRun) => number) => (n === 0 ? 0 : runs.reduce((a, r) => a + f(r), 0) / n)
+  const counts = new Map<CardKey, number>()
+  for (const r of runs) for (const ev of r.events) if (ev.e === 'card_buy') counts.set(ev.card, (counts.get(ev.card) ?? 0) + 1)
+  const buys = [...counts.values()].reduce((a, c) => a + c, 0)
+  return {
+    runs: n,
+    winRate: avg((r) => (r.result === 'win' ? 1 : 0)),
+    avgSec: avg((r) => r.sec),
+    avgWave: avg((r) => r.wave),
+    buys,
+    cards: CARD_KEYS.map((card) => {
+      const b = counts.get(card) ?? 0
+      const rate = buys === 0 ? 0 : b / buys
+      return { card, buys: b, rate, low: buys > 0 && rate < LOG.lowRate }
+    }),
+    recent: runs.slice(-LOG.recent).reverse(),
+  }
+}
+
+// 새 배열을 돌려준다. 최근 LOG.maxRuns판만 남긴다
+export function pushRun(runs: PlayRun[], run: PlayRun): PlayRun[] {
+  return [...runs, run].slice(-LOG.maxRuns)
+}
+
+const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v)
+const isRun = (v: any): v is PlayRun =>
+  !!v && ['win', 'lose', 'quit'].includes(v.result) && isNum(v.wave) && isNum(v.sec) && isNum(v.t) && Array.isArray(v.events)
+
+// 저장 문자열 -> 판 기록. 깨진 항목은 버리고 나머지는 살린다. throw하지 않는다
+export function parsePlayLog(raw: string | null): PlayRun[] {
+  let saved: unknown = []
+  try {
+    saved = JSON.parse(raw ?? '[]')
+  } catch {
+    // 깨진 저장값은 빈 기록으로
+  }
+  return (Array.isArray(saved) ? saved.filter(isRun) : []).slice(-LOG.maxRuns)
+}
+
+// 다음 판 번호. 마지막 판의 run_start + 1, 없으면 판 수 + 1
+export function nextRun(runs: PlayRun[]): number {
+  const start = runs.at(-1)?.events.find((ev) => ev.e === 'run_start')
+  return start?.e === 'run_start' ? start.run + 1 : runs.length + 1
 }

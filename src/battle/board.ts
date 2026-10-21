@@ -1,15 +1,24 @@
-import { Scene, GameObjects } from 'phaser'
-import { CARDS, CARD_KEYS, GRID, LAYOUT, SPRITE_SCALE, UI, type CardKey } from '../data'
+import { Scene, GameObjects, type Input, type Time } from 'phaser'
+import { CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
-import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase } from '../rules'
+import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
 
 // rules.Unit 확장. name은 신병 카드만 가진다
 export type Unit = { card: CardKey; rank: number; name?: string }
 export type Zone = 'deploy' | 'bench' | 'sell'
+export type BoardUnit = Spot & { unit: Unit }
 // x, y = 월드 좌표의 칸 중심(dy 반영)
 export type Slot = { zone: Zone; i: number; x: number; y: number; size: number; unit: Unit | null; view: GameObjects.Container | null }
 export type Board = {
   place(zone: 'deploy' | 'bench', i: number, unit: Unit): boolean
+  // 칸이 찬 카드. 대기석 번호 순, 그다음 배치 구역 번호 순
+  units(): BoardUnit[]
+  // 첫 빈 대기석 번호. 가득 차면 null
+  benchFree(): number | null
+  // 그 칸 카드를 한 계급 올린다(병장이면 무시). 이름은 자기 것 ?? absorb 칸 것, absorb 칸은 치워진다(환급 없음)
+  promote(zone: 'bench' | 'deploy', i: number, absorb?: Spot): void
+  // 프로그램용 이동(빈 칸으로만)
+  move(from: Spot, to: Spot): boolean
   dealDeck(deck: DeckItem[]): void
   // 논리 좌표(열, 칸 단위 y: 적 진입 구역 맨 위 = 0) -> 월드 좌표(화면 내림 포함)
   toScreen(col: number, y: number): { x: number; y: number }
@@ -45,7 +54,7 @@ export function drawRank(gfx: GameObjects.Graphics, rank: number): void {
 
 const labelStyle = (color: string) => ({ fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color })
 
-export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: number) => void }): Board {
+export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: number) => void; onMerge?: (card: CardKey, rank: number) => void; onHold?: (unit: Unit | null) => void }): Board {
   const { dy } = opts
   const { cell, cols, marginX } = LAYOUT
   // 판 전체를 dy만큼 내린다. HUD 띠(0~hudH)는 이 컨테이너 밖이라 움직이지 않는다
@@ -164,26 +173,31 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     from.view = null
   }
 
-  // 합성: 드래그한 카드는 사라지고 대상 칸 카드가 진급한다. 이름은 재료 중 신병 것을 물려받는다
-  const mergeInto = (from: Slot, target: Slot) => {
-    const a = from.unit as Unit
-    const b = target.unit as Unit
-    const rank = merge(a, b)
-    if (rank === null) return snap(from.view as GameObjects.Container, from.x, from.y)
-    const name = b.name ?? a.name
+  // 대상 칸 카드를 새 계급으로 다시 만든다: 진급 연출(계급 작대기 확대 후 복귀 + 진급! 팝업, 도형·텍스트만) + onMerge
+  const promoteTo = (target: Slot, rank: number, name: string | undefined) => {
+    const card = (target.unit as Unit).card
     scene.tweens.killTweensOf(target.view as GameObjects.Container) // 방금 옮겨져 스냅 중일 수 있다
-    from.view?.destroy()
     target.view?.destroy()
-    from.unit = null
-    from.view = null
-    const view = put(target, { card: b.card, rank, name })
-    // 진급 연출: 계급 작대기 확대 후 복귀 + 진급! 팝업(도형·텍스트만)
+    const view = put(target, { card, rank, name })
     scene.tweens.add({ targets: view.getData('rank'), scale: UI.fx.promoteScale, duration: UI.fx.promoteMs, yoyo: true })
     const popup = scene.add
       .text(target.x, target.y, UI.text.promote, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.popupColor })
       .setOrigin(0.5)
       .setDepth(UI.fx.dragDepth)
     scene.tweens.add({ targets: popup, y: target.y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => popup.destroy() })
+    opts.onMerge?.(card, rank)
+  }
+
+  // 합성: 드래그한 카드는 사라지고 대상 칸 카드가 진급한다. 이름은 재료 중 신병 것을 물려받는다
+  const mergeInto = (from: Slot, target: Slot) => {
+    const a = from.unit as Unit
+    const b = target.unit as Unit
+    const rank = merge(a, b)
+    if (rank === null) return snap(from.view as GameObjects.Container, from.x, from.y)
+    from.view?.destroy()
+    from.unit = null
+    from.view = null
+    promoteTo(target, rank, b.name ?? a.name)
   }
 
   // 판매: 환급은 sellValue(이등병 비용 x 재료 장수). 확인 창·되돌리기 없음
@@ -223,6 +237,37 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   let phase: FlowPhase = 'prep'
   let active: GameObjects.Container | null = null
 
+  // 길게 누르기: 정해진 시간(data.ts) 동안 거의 움직이지 않으면 onHold(unit), 손을 떼면 onHold(null). 드래그가 시작되면 열지 않는다
+  // ponytail: 터치 실기기에서 손가락 오프셋·멀티터치는 확인 못 함, 실기기 확인 때 임계값 조정
+  let holdTimer: Time.TimerEvent | null = null
+  let holding = false
+  const cancelHold = () => {
+    holdTimer?.remove(false)
+    holdTimer = null
+  }
+  scene.input.on('pointerdown', (_p: unknown, over: GameObjects.GameObject[]) => {
+    cancelHold()
+    const unit = over.map((o) => (o.getData('slot') as Slot | undefined)?.unit).find((u) => u)
+    if (!unit) return // 지뢰 토큰 더미·빈 곳은 무시
+    holdTimer = scene.time.delayedCall(UI.hold.ms, () => {
+      holdTimer = null
+      holding = true
+      opts.onHold?.(unit)
+    })
+  })
+  const release = () => {
+    cancelHold()
+    if (!holding) return
+    holding = false
+    opts.onHold?.(null)
+  }
+  // 임계값 0인 Phaser는 누르는 즉시 dragstart를 내므로, 움직임은 pointermove 거리로 잰다
+  scene.input.on('pointermove', (p: Input.Pointer) => {
+    if (holdTimer && Math.hypot(p.x - p.downX, p.y - p.downY) > UI.hold.slop) cancelHold()
+  })
+  scene.input.on('pointerup', release)
+  scene.input.on('pointerupoutside', release)
+
   // 드래그: 직접 포인터 추적 없이 Phaser 이벤트만 쓴다
   // ponytail: 드래그 중 카드 중심 좌표로 칸을 판정한다(손가락 오프셋 없음), 터치 실기기에서 손가락에 가려지면 카드를 손가락 위로 띄운다
   scene.input.on('dragstart', (_p: unknown, obj: GameObjects.GameObject) => {
@@ -242,7 +287,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('drag', (_p: unknown, obj: GameObjects.GameObject, dragX: number, dragY: number) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from || view !== active) return
+    if (!from || view !== active || holding) return // 정보가 열려 있는 동안은 카드를 끌지 않는다
     view.x = dragX
     view.y = dragY
     const s = slotAt(dragX, dragY)
@@ -283,6 +328,32 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     moveTo(from, target)
     relocate(other.view, other.unit, from)
   })
+
+  const units = (): BoardUnit[] =>
+    [...slots.filter((s) => s.zone === 'bench'), ...slots.filter((s) => s.zone === 'deploy')]
+      .filter((s) => s.unit)
+      .map((s) => ({ zone: s.zone as 'bench' | 'deploy', i: s.i, unit: s.unit as Unit }))
+  const benchFree = () => slots.find((s) => s.zone === 'bench' && !s.unit)?.i ?? null
+  const promote = (zone: 'bench' | 'deploy', i: number, absorb?: Spot) => {
+    const s = slotOf(zone, i)
+    if (!s?.unit || s.unit.rank >= RANKS.max) return
+    const a = absorb ? slotOf(absorb.zone, absorb.i) : undefined
+    const name = s.unit.name ?? a?.unit?.name
+    if (a?.unit) {
+      a.view?.destroy()
+      a.unit = null
+      a.view = null
+    }
+    promoteTo(s, s.unit.rank + 1, name)
+  }
+  // ponytail: 프로그램용(튜닝 봇·디버그), 단계 잠금을 보지 않는다
+  const move = (from: Spot, to: Spot) => {
+    const f = slotOf(from.zone, from.i)
+    const t = slotOf(to.zone, to.i)
+    if (!f?.unit || !t || t.unit || f === t) return false
+    moveTo(f, t)
+    return true
+  }
 
   // 대기석 앞칸 -> 배치 구역 아래 행부터(같은 행은 왼쪽 열부터)
   const dealOrder = [
@@ -379,6 +450,10 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
 
   return {
     place,
+    units,
+    benchFree,
+    promote,
+    move,
     dealDeck,
     toScreen,
     worldY,
