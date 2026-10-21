@@ -176,6 +176,7 @@ export const UI = {
     bannerIntro: '적 침투 — 병력을 배치하라',
     bannerFlag: '대규모 적 접근!',
     bannerDefcon: '데프콘 1 — 칵트 피스톨',
+    bannerUnlock: '새 보직 해금',
     win: '승리',
     lose: '패배',
   },

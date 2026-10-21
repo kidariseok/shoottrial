@@ -1,12 +1,13 @@
 import { Scene } from 'phaser'
-import { BATTLE, CARD_KEYS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, UI, type CardKey } from '../data'
+import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, hasAntiTank, income, mineTokens, parseUnlocked, spawnPlan, synergies, type FlowPhase, type SpawnEvent } from '../rules'
+import { defconOf, hasAntiTank, income, mineTokens, nextUnlock, spawnPlan, synergies, type FlowPhase, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { createBoard, deployIndex, type Board } from './board'
 import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
+import { loadUnlocked, saveUnlocked } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
 
@@ -35,6 +36,8 @@ export class BattleScene extends Scene {
   private hudKey = ''
   public store!: Shop
   public unlocked: CardKey[] = []
+  public pool: CardKey[] = [] // 이 준비 단계의 상점 풀(해금이 생겨도 현재 단계에는 반영하지 않는다)
+  public newUnlock: CardKey | null = null
   private shopKey = ''
 
   constructor() {
@@ -51,8 +54,7 @@ export class BattleScene extends Scene {
     this.lineUsed = Array<boolean>(LAYOUT.cols).fill(false)
     this.spawnRand = createRng(debug.seed)
     this.dogRand = createRng(debug.seed + 1)
-    // ponytail: 04 plan에서 localStorage d2_unlocked로 교체
-    this.unlocked = debug.unlock === 'all' ? [...CARD_KEYS] : parseUnlocked(null)
+    this.unlocked = loadUnlocked(debug.unlock === 'all')
     this.store = createShop(debug.seed + 2)
 
     this.board = createBoard(this, {
@@ -107,7 +109,7 @@ export class BattleScene extends Scene {
   // 광고 자체는 M4에서 B가 연결, 여기서는 보상만 적용
   adReroll() {
     if (this.phase !== 'prep' || this.result || !useAdReroll(this.store)) return
-    refill(this.store, this.unlocked)
+    refill(this.store, this.pool)
     this.syncShop()
   }
 
@@ -130,8 +132,20 @@ export class BattleScene extends Scene {
     this.board.setTokens(mineTokens(miners), anti)
     this.prepLeft = this.wave === 1 ? BATTLE.prepFirst : BATTLE.prepNext
     if (this.wave === 1) ui.banner(UI.text.bannerIntro, 'info')
-    refill(this.store, this.unlocked) // 준비 단계마다 무료로 새로 채운다
+    this.pool = this.unlocked
+    refill(this.store, this.pool) // 준비 단계마다 무료로 새로 채운다
+    if (this.wave === UNLOCK.atWave) this.unlockNext() // 새 카드는 다음 준비 단계 풀부터
     this.syncShop()
+  }
+
+  // 웨이브 5 도달 해금. unlocked를 새 배열로 바꾸므로 pool(이번 단계 스냅샷)은 그대로다
+  private unlockNext() {
+    const next = nextUnlock(this.unlocked)
+    if (!next) return
+    this.unlocked = CARD_KEYS.filter((k) => this.unlocked.includes(k) || k === next)
+    saveUnlocked(this.unlocked)
+    this.newUnlock = next
+    ui.banner(`${UI.text.bannerUnlock}: ${CARDS[next].name}`, 'info')
   }
 
   startFight() {
@@ -170,7 +184,7 @@ export class BattleScene extends Scene {
     if (this.phase !== 'prep' || this.result) return
     if (this.supply < ECONOMY.rerollCost) return ui.banner(UI.text.bannerPoor, 'info')
     this.supply -= ECONOMY.rerollCost
-    refill(this.store, this.unlocked)
+    refill(this.store, this.pool)
     this.syncShop()
   }
 
