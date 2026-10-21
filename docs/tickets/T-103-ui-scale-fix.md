@@ -80,13 +80,14 @@
 
 ## 질문
 
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
 - 기준 커밋: 88edaf85454f
 - 브랜치: kidariseok/t103-safe-area-panel
 - 세션 시작: Gemini 4 Argon (High), 2026-10-21 22:46
+- [x] 1단계: `src/ui/style.css`에서 `#game`의 flex 중앙 정렬을 제거하고 Safe Area 안쪽으로 배치, `--game-scale` 및 `--shop-max-height: calc(var(--game-scale) * 120px)` 적용 (다음: 2단계 `src/main.ts` 논리 높이·배율 동기화)
 
 ## 결과 보고
 
