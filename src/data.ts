@@ -100,7 +100,6 @@ export const UI = {
     hitFlash: 0xffffff, // 피격 번쩍임(붉은색 금지)
     laneFlash: 0xbfe6ff, // 최후 저지선 열 섬광(밝은 청백색)
     lineUsed: 0x5a5a4a, // 쓴 최후 저지선 표시(방어선 띠 위, 노란 띠보다 어두운 회황색)
-    go: 0x3a8a5a, // 임시 출동! 버튼
     muzzle: 0xfff3b0, // 총구 섬광(노랑, 붉은색·주황 금지)
     tracer: 0xffe066, // 아군 탄 궤적
     snipe: 0xffffff, // 저격 흰 선
@@ -173,7 +172,8 @@ export const UI = {
     labelColor: '#cfd8dc',
     lineLabelColor: '#2b2b2b', // 노란 방어선 띠 위 라벨(밝은 라벨색은 안 읽힌다)
     lineUsed: '저지선 소진',
-    go: '출동!',
+    bannerPoor: '보급이 부족합니다',
+    bannerBenchFull: '대기석이 가득 찼습니다',
     win: '승리',
     lose: '패배',
     hudWave: '웨이브',
@@ -197,8 +197,6 @@ export const UI = {
   supply: { x: 168, y: 32 },
   // 2단계 임시 HUD 두 줄. y는 HUD 띠 안 첫 줄 윗변, rightLimit 안에 들어와야 한다(우상단 시스템 버튼 자리 비움)
   hud: { y: 12, px: 24, gap: 8, rightLimit: 560 },
-  // 2단계 임시 출동! 버튼. yOff는 shopY 아래 오프셋(버튼 중심)
-  go: { w: 280, h: 72, yOff: 60, px: 36 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다

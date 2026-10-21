@@ -1,11 +1,13 @@
 import { Scene, GameObjects } from 'phaser'
-import { BATTLE, ECONOMY, ENEMIES, LAYOUT, ROOKIE, UI } from '../data'
+import { BATTLE, CARD_KEYS, ECONOMY, ENEMIES, LAYOUT, ROOKIE, UI, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, hasAntiTank, mineTokens, spawnPlan, type FlowPhase, type SpawnEvent } from '../rules'
+import { defconOf, hasAntiTank, income, mineTokens, parseUnlocked, spawnPlan, type FlowPhase, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
+import * as ui from '../ui/screens'
 import { createBoard, deployIndex, type Board } from './board'
 import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { fall, laneFlash, shake } from './fx'
+import { buyCard, createShop, refill, toOffers, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
 
 export class BattleScene extends Scene {
@@ -30,7 +32,9 @@ export class BattleScene extends Scene {
   private dogRand!: () => number
   private hud!: GameObjects.Text
   private hudShown = ''
-  private goBtn: (GameObjects.Rectangle | GameObjects.Text)[] = []
+  public store!: Shop
+  public unlocked: CardKey[] = []
+  private shopKey = ''
 
   constructor() {
     super('battle')
@@ -46,6 +50,9 @@ export class BattleScene extends Scene {
     this.lineUsed = Array<boolean>(LAYOUT.cols).fill(false)
     this.spawnRand = createRng(debug.seed)
     this.dogRand = createRng(debug.seed + 1)
+    // ponytail: 04 plan에서 localStorage d2_unlocked로 교체
+    this.unlocked = debug.unlock === 'all' ? [...CARD_KEYS] : parseUnlocked(null)
+    this.store = createShop(debug.seed + 2)
 
     // ponytail: 3단계에서 ui.hud()로 대체
     this.hud = this.add.text(UI.supply.x, UI.hud.y, '', {
@@ -66,16 +73,6 @@ export class BattleScene extends Scene {
     this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: ROOKIE.name })
     this.board.dealDeck(debug.deck ?? [])
 
-    // ponytail: 3단계에서 ui.shop의 onGo로 대체
-    const goX = LAYOUT.width / 2
-    const goY = this.board.worldY(LAYOUT.shopY) + UI.go.yOff
-    const rect = this.add.rectangle(goX, goY, UI.go.w, UI.go.h, UI.colors.go).setInteractive()
-    const label = this.add.text(goX, goY, UI.text.go, { fontFamily: UI.text.fontFamily, fontSize: `${UI.go.px}px`, color: UI.text.color }).setOrigin(0.5)
-    this.goBtn = [rect, label]
-    rect.on('pointerdown', () => {
-      if (this.phase === 'prep' && !this.result) this.startFight()
-    })
-
     this.setSpeed(debug.speed ?? 1)
     this.startPrep()
     this.showHud()
@@ -94,11 +91,11 @@ export class BattleScene extends Scene {
     const anti = hasAntiTank(miners)
     this.board.setTokens(mineTokens(miners), anti)
     this.prepLeft = this.wave === 1 ? BATTLE.prepFirst : BATTLE.prepNext
-    for (const o of this.goBtn) o.setVisible(true)
+    refill(this.store, this.unlocked) // 준비 단계마다 무료로 새로 채운다
+    this.syncShop()
   }
 
   startFight() {
-    for (const o of this.goBtn) o.setVisible(false)
     this.phase = 'fight'
     this.board.setPhase('fight')
     this.board.setTokens(0, false) // 쓰지 않은 토큰은 사라지고 묻힌 지뢰는 남는다
@@ -107,6 +104,40 @@ export class BattleScene extends Scene {
     this.spawned = []
     this.clock = 0
     this.nextIdx = 0
+    this.syncShop()
+  }
+
+  // 상점 패널. 값이 바뀔 때만 ui.shop을 부른다(부를 때마다 5칸을 새로 그린다)
+  syncShop() {
+    const open = this.phase === 'prep' && !this.result
+    const key = `${open}|${this.supply}|${this.store.offers.join(',')}`
+    if (key === this.shopKey) return
+    this.shopKey = key
+    ui.shop(open, toOffers(this.store), this.supply, (i) => this.buy(i), () => this.reroll(), () => this.go())
+  }
+
+  buy(i: number) {
+    if (this.phase !== 'prep' || this.result) return
+    const r = buyCard(this.store, this.board, i, this.supply)
+    if (r.kind === 'poor') ui.banner(UI.text.bannerPoor, 'info')
+    else if (r.kind === 'full') ui.banner(UI.text.bannerBenchFull, 'info')
+    else if (r.kind === 'bench' || r.kind === 'merge') this.supply -= r.cost
+    this.syncShop()
+  }
+
+  reroll() {
+    if (this.phase !== 'prep' || this.result) return
+    if (this.supply < ECONOMY.rerollCost) return ui.banner(UI.text.bannerPoor, 'info')
+    this.supply -= ECONOMY.rerollCost
+    refill(this.store, this.unlocked)
+    this.syncShop()
+  }
+
+  // 출동!: 준비 시간이 남은 채 누르면 조기 출동 보너스
+  go() {
+    if (this.phase !== 'prep' || this.result) return
+    this.supply += ECONOMY.earlyBonus
+    this.startFight()
   }
 
   startSettle() {
@@ -114,6 +145,9 @@ export class BattleScene extends Scene {
     this.phase = 'settle'
     this.board.setPhase('settle')
     this.settleLeft = BATTLE.settleSec
+    // 이자는 정산 시점 보급 기준. 마지막 웨이브 승리는 이 함수를 거치지 않는다
+    this.supply += income({ supply: this.supply, flag: WAVES[this.wave - 1]?.flag ?? false, early: false })
+    this.syncShop()
   }
 
   update(_time: number, delta: number) {
@@ -136,6 +170,7 @@ export class BattleScene extends Scene {
         break
     }
     this.showHud()
+    this.syncShop()
   }
 
   private fightTick(dt: number) {
@@ -207,7 +242,7 @@ export class BattleScene extends Scene {
   private finish(win: boolean) {
     this.result = win ? 'win' : 'lose'
     this.board.setPhase('settle')
-    for (const o of this.goBtn) o.setVisible(false)
+    this.syncShop()
     // ponytail: 3단계에서 ui.result()/askRevive로 대체
     this.add
       .text(LAYOUT.width / 2, this.scale.height / 2, win ? UI.text.win : UI.text.lose, {
