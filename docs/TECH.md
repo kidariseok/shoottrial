@@ -112,6 +112,7 @@ type Save = {
 ```
 
 - 키는 `d2_save_v1` 하나이고 값은 `JSON.stringify`다.
+- **M2 예외(2026-10-21)**: `save.ts`(T-101)가 생기기 전까지 레인 A가 `localStorage`의 `d2_unlocked`(해금)와 `d2_playlog`(판 기록, GDD §11)를 직접 읽고 쓴다. 코드는 `src/battle/persist.ts` 한 곳에 모은다. T-101 뒤 해금은 `save.ts`로 옮기고, `d2_playlog`는 측정용이라 그대로 둔다.
 - 저장 시점은 판 종료, 해금, 설정 변경, 이름 입력뿐이다. **전투 중에는 저장하지 않는다.**
 - 파싱에 실패하면 기본값 + `log('save_corrupt')`. 앱이 멈추면 안 된다.
 - `v`가 바뀌면 `migrate(old)` 함수 하나를 추가한다(그때 만든다).
@@ -171,7 +172,7 @@ export function bindBattle(ctl: BattleCtl | null): void
 - HUD 버튼·모달·상점 패널은 **DOM(B)**이다. 전투로 가는 입력은 `onBuy`·`onReroll`·`onGo` 콜백과 `bindBattle`의 `ctl`뿐이다.
 - 상점 카드를 누르면 `onBuy(i)` → A가 보급을 차감하고 대기석에 넣는다.
 - 전투 중 안드로이드 뒤로가기 → B가 `ctl.pause()` 후 일시정지 모달을 띄운다(로비에서는 종료 확인 모달).
-- A는 해금·최고 기록 저장에 B의 `save.ts`(`load()`/`save()`)를 import해 쓴다. `?scene=log`는 B의 `main.ts`가 `battle` 씬으로 시작하고, A가 그 안에서 기록 화면을 그린다.
+- A는 해금·최고 기록 저장에 B의 `save.ts`(`load()`/`save()`)를 import해 쓴다(M2 동안은 §5의 예외대로 `src/battle/persist.ts`). `?scene=log`는 B의 `main.ts`가 `battle` 씬으로 시작하고, A가 그 안에서 기록 화면을 그린다.
 - 광고 슬롯 중 `revive`는 `askRevive`, `unlock`은 로비(B)가 처리한다. `reroll`·`supply`만 `ctl`을 거친다.
 
 ## 9. 디버그 URL
