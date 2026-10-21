@@ -358,9 +358,112 @@ async function main() {
   else throw new Error('모드를 모르겠다: ' + MODE)
 }
 
-// live 모드는 실시간 종합 한 판(성공 기준 1~4)이다. Task 2에서 채운다.
+// live 모드: 실시간 종합 한 판(성공 기준 1~4). 게임을 pause하지 않고 250ms마다 폴링하며 실제 DOM으로 조작한다.
+// 카드 구매·출동은 DOM 클릭(.shop-card, .shop-btn-go), 배치·합성·지뢰는 봇과 같이 scene.board 호출(드래그는 02에서 증명).
+// 제설병 단독 열 교착(03-TUNING 참고) 때문에 live는 제설병 단독 열을 피하는 배치(safeBlower)를 쓴다.
+const LIVE_PATH = '/?scene=battle&seed=7&speed=2'
+const LIVE_LIMIT_MS = 8 * 60 * 1000
+
+async function domPrep(p) {
+  return p.ev(`
+    const K = window.__K, s = K.s
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+    const cost = (e) => parseInt(e.querySelector('.shop-card-cost').textContent.replace(/\\D/g, ''), 10)
+    let clicks = 0
+    for (let k = 0; k < 20; k++) {
+      let bought = false
+      for (;;) {
+        const cards = [...document.querySelectorAll('.ui-shop:not(.closed) .shop-card:not(.insufficient):not(.empty)')].sort((a, b) => cost(a) - cost(b))
+        if (!cards.length) break
+        const before = s.supply
+        cards[0].click()
+        clicks++
+        await sleep(30)
+        if (s.supply === before) break
+        bought = true
+      }
+      K.merges(); K.place(); K.merges()
+      if (!bought) break
+    }
+    K.bury()
+    document.querySelector('.shop-btn-go').click()
+    return clicks
+  `)
+}
+
 async function live() {
-  throw new Error('live 모드는 아직 없다')
+  const ctx = await newContext()
+  const p = await ctx.open(LIVE_PATH)
+  await p.ev(`window.__K = await (${kit.toString()})(${JSON.stringify({ safeBlower: true, noBuy: true })})`)
+  const t0 = Date.now()
+  const seenBanners = []
+  const hudMismatch = []
+  let lastPrepWave = 0
+  let preps = 0
+  let clicks = 0
+  let last
+  while (Date.now() - t0 < LIVE_LIMIT_MS) {
+    last = await p.ev(`
+      const s = window.__S
+      const q = (sel) => document.querySelector(sel)
+      const ban = q('.ui-banner')
+      // 결과 모달 머리글만('작전 성공'/'작전 실패'). 부활 모달 머리글도 lose 클래스를 쓰므로 글자로 가른다
+      const head = [...document.querySelectorAll('.ui-modal-backdrop:not(.hidden) .modal-header')].find((h) => /작전 (성공|실패)/.test(h.textContent))
+      const rev = q('.ui-modal-backdrop:not(.hidden) .modal-actions button + button')
+      return {
+        phase: s.phase, wave: s.wave, result: s.result, modal: s.modal, supply: s.supply, baseHp: s.baseHp, wallSec: s.wallSec,
+        hudWave: q('.hud-wave-box')?.textContent, hudVals: [...document.querySelectorAll('.hud-stat-pill .val')].map((e) => e.textContent),
+        shopOpen: !q('.ui-shop').classList.contains('closed'),
+        banner: ban && !ban.classList.contains('hidden') ? ban.textContent : '',
+        resultHead: head ? head.textContent : '',
+        reviveBtn: !!rev && s.modal,
+      }`)
+    if (last.banner && seenBanners[seenBanners.length - 1]?.text !== last.banner) seenBanners.push({ text: last.banner, wave: last.wave, phase: last.phase })
+    if (last.hudWave !== `웨이브 ${last.wave}/10` || last.hudVals[0] !== String(last.supply) || last.hudVals[1] !== String(Math.max(0, Math.ceil(last.baseHp)))) hudMismatch.push({ wave: last.wave, phase: last.phase, hud: [last.hudWave, ...last.hudVals], scene: [last.wave, last.supply, last.baseHp] })
+    if (last.resultHead) break
+    if (last.modal) await p.ev(`const b=document.querySelector('.ui-modal-backdrop:not(.hidden) .modal-actions button + button');if(b)b.click()`)
+    else if (last.phase === 'prep' && last.shopOpen && last.wave !== lastPrepWave && !last.result) {
+      lastPrepWave = last.wave
+      preps++
+      clicks += await domPrep(p)
+    }
+    await sleep(250)
+  }
+  if (!last.resultHead) throw new Error('8분 안에 결과 모달이 뜨지 않았다: ' + JSON.stringify(last))
+  const done = await p.ev(`
+    const s = window.__S
+    const rows = [...document.querySelectorAll('.ui-modal-backdrop:not(.hidden) .modal-stat-row')].filter((r) => r.children[0].textContent !== '부활 효과').map((r) => [r.children[0].textContent, r.children[1].textContent])
+    return { result: s.result, wave: s.wave, kills: s.kills, wallSec: s.wallSec, newUnlock: s.newUnlock, runEvents: s.runEvents, rows, saved: JSON.parse(localStorage.getItem('d2_playlog') || 'null'), unlocked: JSON.parse(localStorage.getItem('d2_unlocked') || 'null') }`)
+  const shot = await p.send('Page.captureScreenshot', { format: 'png' })
+  writeFileSync(SHOTS + 'M2-03-06.png', Buffer.from(shot.data, 'base64'))
+  const prep = (await p.ev(`const { BATTLE } = await import('/src/data.ts'); return [BATTLE.prepFirst, BATTLE.prepNext]`))
+  const reach = { wave: done.wave, wallSec: done.wallSec }
+  const e = est({ wave: reach.wave, wallSec: reach.wallSec, prepFirst: prep[0], prepNext: prep[1] })
+  console.log('\n### 실시간 종합 한 판', LIVE_PATH)
+  console.log(`결과 ${done.result}, 도달 웨이브 ${done.wave}, 처치 ${done.kills}, wallSec ${done.wallSec.toFixed(1)}, 실제 경과 ${((Date.now() - t0) / 1000).toFixed(1)}초, 해금 ${done.newUnlock}, 모달 ${JSON.stringify(done.rows)}`)
+  console.log(`준비 단계 ${preps}번, DOM 상점 클릭 ${clicks}번(대부분 구매), 구매 이벤트 ${done.runEvents.filter((x) => x.e === 'card_buy').length}개, fast ${mm(e.fast)}분 mid ${mm(e.mid)}분 slow ${mm(e.slow)}분(참고: live는 준비 시간을 거의 안 쓰므로 fast에 가깝다)`)
+  console.log('배너(웨이브/단계):', JSON.stringify(seenBanners))
+  console.log(`HUD 불일치 ${hudMismatch.length}건`, JSON.stringify(hudMismatch.slice(0, 3)))
+  console.log('저장된 판', JSON.stringify(done.saved?.map((r) => ({ result: r.result, wave: r.wave, sec: r.sec, events: r.events.length }))), 'd2_unlocked', JSON.stringify(done.unlocked))
+  // 같은 프로필(컨텍스트), 새 페이지로 ?scene=log
+  const lp = await ctx.open('/?scene=log')
+  const texts = await lp.ev(`return window.__S.children.list.filter((o) => o.type === 'Text').map((o) => [Math.round(o.x), Math.round(o.y), o.text, o.style.color])`)
+  const rows = {}
+  for (const [x, y, t, c] of texts) (rows[y] ??= []).push([x, t, c])
+  const lines = Object.keys(rows).map(Number).sort((a, b) => a - b).map((y) => rows[y].sort((a, b) => a[0] - b[0]).map((c) => c[1]).join(' | '))
+  console.log('\n?scene=log 줄:\n' + lines.join('\n'))
+  // 저장 JSON에서 독립 계산
+  const runs = done.saved
+  const sum = runs.reduce((a, r) => a + r.sec, 0) / runs.length
+  const buys = {}
+  let total = 0
+  for (const r of runs) for (const ev of r.events) if (ev.e === 'card_buy') { buys[ev.card] = (buys[ev.card] ?? 0) + 1; total++ }
+  const expect = { runs: String(runs.length), avgTime: `${Math.floor(Math.round(sum) / 60)}분 ${Math.round(sum) % 60}초`, avgWave: (runs.reduce((a, r) => a + r.wave, 0) / runs.length).toFixed(1), buys, total }
+  console.log('독립 계산:', JSON.stringify(expect), '첫 최근 판 기대:', `${{ win: '승리', lose: '패배', quit: '포기' }[runs.at(-1).result]} · 웨이브 ${runs.at(-1).wave} · ${Math.floor(runs.at(-1).sec / 60)}분 ${runs.at(-1).sec % 60}초`)
+  console.log('페이지 오류:', JSON.stringify([...p.errors, ...lp.errors]))
+  await lp.close()
+  await p.close()
+  await ctx.dispose()
 }
 
 main()
