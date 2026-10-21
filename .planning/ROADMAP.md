@@ -29,7 +29,7 @@
 
 - [ ] **Phase 1: 판·차선·배치** - 판을 도형으로 그리고 카드를 끌어 놓고·합치고·팔 수 있다. `rules.ts` 순수 함수와 테스트
 - [ ] **Phase 2: 전투** - 준비·전투·정산 루프에서 카드 5종·적 4종이 열 단위로 싸우고 웨이브 1~10이 돈다
-- [ ] **Phase 3: 경제·연결·측정** - 보급 경제와 상점을 `ui/screens.ts`로 연결하고, 판 기록과 튜닝으로 G1 준비를 끝낸다
+- [x] **Phase 3: 경제·연결·측정** - 보급 경제와 상점을 `ui/screens.ts`로 연결하고, 판 기록과 튜닝으로 G1 준비를 끝낸다
 
 ## Phase Details
 
@@ -80,14 +80,14 @@ Plans:
   3. 웨이브 5에 도달하면 다음 카드가 해금되어 결과에 표시되고, 이후 상점에 그 카드가 나온다.
   4. 몇 판 하고 `?scene=log`를 열면 `d2_playlog`(최근 50판)의 카드별 구매율, 평균 판 시간, 판별 결과·도달 웨이브가 보인다.
   5. 튜닝을 마친 상태에서 사용자가 브라우저로 한 판을 6~10분 안에 끝내고, 처음 하는 사람이 웨이브 5에 도달할 수 있으며, 헤드리스 봇으로 끝까지 가는 판(`god=1`) 중앙값이 6~10분, 초행 봇 20시드 중앙값 도달 웨이브가 5 이상이다. **구매율 5% 미만 카드 없음은 G1에서 사람이 한 판 기록(`?scene=log`)으로 판정한다**(봇 구매율은 봇 규칙을 반영할 뿐이라 판정에 쓰지 않는다) → G1 플레이테스트(P 티켓) 준비 완료.
-**Plans**: 6 plans (03-01 순수 규칙 TDD, 03-02 상점·경제, 03-03 HUD·배너·카드 정보·bindBattle, 03-04 부활·결과·해금, 03-05 판 기록·?scene=log, 03-06 튜닝·종합 확인)
+**Plans**: 6/6 완료 (03-01 순수 규칙 TDD, 03-02 상점·경제, 03-03 HUD·배너·카드 정보·bindBattle, 03-04 부활·결과·해금, 03-05 판 기록·?scene=log, 03-06 튜닝·종합 확인) — 제설병 1회 밀림 규칙 추가, 초행자 게이트 통과, 판 시간 10.5분 추정(G1 사람 확인)
 Plans:
-- [ ] 03-01-PLAN.md — buyOutcome·nextUnlock·parseUnlocked·summarizeLog·pushRun·parsePlayLog 순수 계산과 UNLOCK/REWARD/LOG 수치 (TDD)
-- [ ] 03-02-PLAN.md — 상점 5칸·구매(가득 찬 대기석 즉시 합성 허용)·리롤·출동! +1·정산 수입을 ui.shop으로 연결, 임시 출동! 버튼 제거
-- [ ] 03-03-PLAN.md — ui.hud(값이 바뀔 때만)·banner·cardInfo(길게 누르기)·bindBattle(pause/resume/setSpeed/quit/adReroll/adSupply)
-- [ ] 03-04-PLAN.md — 웨이브 5 해금·저장, askRevive(판당 1회), ui.result, 재시작 안전한 create
-- [ ] 03-05-PLAN.md — d2_playlog 이벤트 수집·저장(50판), ?scene=log 기록 화면
-- [ ] 03-06-PLAN.md — 자동 플레이 봇 튜닝(TUNE-01), 03-TUNING.md, 실시간 종합 한 판, 성공 기준 5 사람 확인
+- [x] 03-01-PLAN.md — buyOutcome·nextUnlock·parseUnlocked·summarizeLog·pushRun·parsePlayLog 순수 계산과 UNLOCK/REWARD/LOG 수치 (TDD)
+- [x] 03-02-PLAN.md — 상점 5칸·구매(가득 찬 대기석 즉시 합성 허용)·리롤·출동! +1·정산 수입을 ui.shop으로 연결, 임시 출동! 버튼 제거
+- [x] 03-03-PLAN.md — ui.hud(값이 바뀔 때만)·banner·cardInfo(길게 누르기)·bindBattle(pause/resume/setSpeed/quit/adReroll/adSupply)
+- [x] 03-04-PLAN.md — 웨이브 5 해금·저장, askRevive(판당 1회), ui.result, 재시작 안전한 create
+- [x] 03-05-PLAN.md — d2_playlog 이벤트 수집·저장(50판), ?scene=log 기록 화면
+- [x] 03-06-PLAN.md — 자동 플레이 봇 튜닝(TUNE-01), 03-TUNING.md, 실시간 종합 한 판, 성공 기준 5 사람 확인
 **UI hint**: yes
 **Discuss/plan 때 정할 것**: M2에서 HP 0일 때 `askRevive`를 부를지 바로 결과로 갈지(OQ-4. 광고는 M4), 결과 화면의 접힌 "기록" 표를 위해 TECH §8 `result()`에 필드를 추가할지(필요하면 **기획 역할로** T-102 전에 §8 개정), `?scene=log`를 띄우려면 `main.ts`(레인 B)의 씬 등록이 필요한지(아니면 `BattleScene` 안에서 처리), 해금 저장(`save.ts`, 레인 B)을 누가 쓰는지.
 

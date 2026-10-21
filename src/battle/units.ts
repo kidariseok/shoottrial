@@ -156,9 +156,10 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         break
       }
       case 'blower': {
-        const targets = ahead(enemies, a, blowerRange(counts.blower))
+        const targets = ahead(enemies, a, blowerRange(counts.blower)).filter((e) => !e.knocked)
         if (targets.length === 0) break
         for (const e of targets) {
+          e.knocked = true
           e.knockLeft += knockback(e.type, rank, counts.blower)
           e.ready = 0
           // 화상은 중첩 없이 갱신(대입)

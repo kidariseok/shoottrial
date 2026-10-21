@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: context exhaustion at 75% (2026-10-21)
+status: milestone-review
+stopped_at: "Phase 3 완료, G1 사람 플레이테스트 대기 (2026-10-21)"
 last_updated: "2026-10-21T13:39:52.806Z"
-last_activity: 2026-10-20 — 문서 인제스트로 PROJECT/REQUIREMENTS/ROADMAP/STATE 생성
+last_activity: 2026-10-21 — 3단계 완료(제설병 1회 밀림 규칙, 튜닝 게이트 재측정)
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 12
-  percent: 67
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-10-20)
 
 **Core value:** 배치 조합이 결과를 바꾸고, 끝나면 "한 판 더"를 누르고 싶은 10웨이브 한 판(도형만으로).
-**Current focus:** M2 그레이박스 코어 — Phase 1: 판·차선·배치
+**Current focus:** M2 그레이박스 코어 완료 — G1 사람 플레이테스트
 
 ## Current Position
 
-Phase: 1 of 3 (판·차선·배치)
-Plan: 0 of TBD in current phase
-Status: Ready to plan (실행은 H-101 머지 뒤)
-Last activity: 2026-10-20 — 문서 인제스트로 PROJECT/REQUIREMENTS/ROADMAP/STATE 생성
+Phase: 3 of 3 완료 (경제·연결·측정)
+Status: G1 사람 플레이테스트 대기 (판 시간 6~10분, 웨이브 5 도달, 카드 구매율 5% 미만 없음)
+Last activity: 2026-10-21 — 제설병 1회 밀림 규칙으로 교착 해소, 초행자 게이트 통과, god 판 시간 10.5분 추정
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
