@@ -1,7 +1,8 @@
 import { Scene, GameObjects, type Input, type Time } from 'phaser'
-import { CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
+import { ART, CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
-import { canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
+import { addSprite, hasArt } from './art'
+import { artKey, canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
 
 // rules.Unit 확장. name은 신병 카드만 가진다
 export type Unit = { card: CardKey; rank: number; name?: string }
@@ -60,8 +61,11 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   const { dy } = opts
   const { cell, cols, marginX } = LAYOUT
   // 판 전체를 dy만큼 내린다. HUD 띠(0~hudH)는 이 컨테이너 밖이라 움직이지 않는다
+  // 배경 그림이 있으면 판 뒤에 깔고(먼저 만들어 맨 아래), 판 칸 색은 반투명으로 그 위에 남긴다
+  const bg = hasArt('bg_gate')
+  if (bg) scene.add.image(0, 0, 'bg_gate').setOrigin(0, 0).setDisplaySize(LAYOUT.width, scene.scale.height)
   const layer = scene.add.container(0, dy)
-  const gfx = scene.add.graphics()
+  const gfx = scene.add.graphics().setAlpha(bg ? ART.gridAlpha : 1)
   layer.add(gfx)
   // 칸 강조용. 카드 뷰보다 먼저 만들어 아래에 깔린다. 월드 좌표(슬롯 좌표)로 그린다
   const hl = scene.add.graphics()
@@ -125,11 +129,17 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   const makeView = (unit: Unit, s: Slot) => {
     const { inset, initialPx, namePx, nameY, rankX, rankY } = UI.card
     const view = scene.add.container(s.x, s.y)
-    const body = scene.add.rectangle(0, 0, cell - inset * 2, cell - inset * 2, CARDS[unit.card].color)
-    const text = scene.add.text(0, 0, CARDS[unit.card].initial, { fontFamily: UI.text.fontFamily, fontSize: `${initialPx}px`, color: UI.text.color }).setOrigin(0.5)
+    const idle = artKey('ally', unit.card, 'idle')
+    // 그림이 있으면 사각형 몸통·머리글자 대신 스프라이트(대기 애니메이션 반복), 계급 작대기는 코드가 그린다
+    if (hasArt(idle)) addSprite(scene, view, idle)
+    else {
+      const body = scene.add.rectangle(0, 0, cell - inset * 2, cell - inset * 2, CARDS[unit.card].color)
+      const text = scene.add.text(0, 0, CARDS[unit.card].initial, { fontFamily: UI.text.fontFamily, fontSize: `${initialPx}px`, color: UI.text.color }).setOrigin(0.5)
+      view.add([body, text])
+    }
     const rank = scene.add.graphics().setPosition(rankX, rankY)
     drawRank(rank, unit.rank)
-    view.add([body, text, rank])
+    view.add(rank)
     if (unit.name) view.add(scene.add.text(0, nameY, unit.name, { fontFamily: UI.text.fontFamily, fontSize: `${namePx}px`, color: UI.text.color }).setOrigin(0.5))
     view.setSize(cell, cell)
     view.setScale(SPRITE_SCALE * (s.size / cell))
@@ -378,7 +388,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   // ---- 지뢰 토큰 더미와 매설 ----
   let tokenCount = 0
   let trayAnti = false
-  const buried: { col: number; row: number; anti: boolean; view: GameObjects.Arc }[] = []
+  const buried: { col: number; row: number; anti: boolean; view: GameObjects.Arc | GameObjects.Image }[] = []
   const home = toScreen(UI.mine.trayCol, UI.mine.trayY)
   const disc = scene.add.circle(0, 0, UI.mine.tokenR, UI.colors.mineToken)
   const count = scene.add.text(0, 0, '', { fontFamily: UI.text.fontFamily, fontSize: `${UI.mine.countPx}px`, color: UI.text.color }).setOrigin(0.5)
@@ -401,7 +411,10 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     count.setText(String(tokenCount))
     tray.setVisible(tokenCount > 0)
     const p = mineCenter(col, row)
-    const view = scene.add.circle(p.x, p.y, UI.mine.buriedR, trayAnti ? UI.colors.mineAnti : UI.colors.mineBuried, UI.mine.alpha)
+    const mineKey = trayAnti ? 'mine_at' : 'mine'
+    const view = hasArt(mineKey)
+      ? scene.add.image(p.x, p.y, mineKey).setAlpha(UI.mine.alpha)
+      : scene.add.circle(p.x, p.y, UI.mine.buriedR, trayAnti ? UI.colors.mineAnti : UI.colors.mineBuried, UI.mine.alpha)
     buried.push({ col, row, anti: trayAnti, view })
     return true
   }

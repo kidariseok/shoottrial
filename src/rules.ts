@@ -1,6 +1,7 @@
 // 순수 계산. phaser·DOM·debug를 import하지 않는다(vitest가 node에서 돌린다). 수치는 data.ts에서만 읽는다.
 import {
   ABILITY,
+  ART,
   BATTLE,
   CARDS,
   CARD_KEYS,
@@ -471,4 +472,23 @@ export function parsePlayLog(raw: string | null): PlayRun[] {
 export function nextRun(runs: PlayRun[]): number {
   const start = runs.at(-1)?.events.find((ev) => ev.e === 'run_start')
   return start?.e === 'run_start' ? start.run + 1 : runs.length + 1
+}
+
+// 그림 이미지 너비 / 계약 프레임 너비. 배수가 아니거나 0 이하면 0
+export function frameCount(imgW: number, contractW: number): number {
+  return imgW > 0 && contractW > 0 && imgW % contractW === 0 ? imgW / contractW : 0
+}
+
+// 그림 키 이름. 적은 state가 'move'(걷기·달리기) 또는 'act'(공격·물기·발사), 아군은 idle·attack, 보스는 hull·turret
+export function artKey(kind: 'ally' | 'enemy' | 'boss', who: string, state: string): string {
+  if (kind === 'enemy') {
+    const e = ART.enemy[who as keyof typeof ART.enemy]
+    return `enemy_${e.id}_${state === 'act' ? e.act : e.move}`
+  }
+  return `${kind}_${who}_${state}`
+}
+
+// 반복 재생하는 애니메이션 키(대기·걷기·달리기·가스). 나머지는 1회
+export function artLoops(key: string): boolean {
+  return ART.loopKeys.includes(key) || ART.loopSuffix.some((s) => key.endsWith(s))
 }

@@ -1,9 +1,10 @@
 import type { Scene, GameObjects } from 'phaser'
 import { ABILITY, CARDS, CARD_KEYS, LAYOUT, UI, type CardKey } from '../data'
-import { allyY, blowerRange, chemDamageMult, cookReach, gasHits, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
+import { allyY, artKey, blowerRange, chemDamageMult, cookReach, gasHits, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
+import { hitSprite, playAct, tickHit } from './art'
 import { hurtEnemy, type Enemy } from './enemies'
-import { dmgText, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
+import { dmgText, flame, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
 
 // 배치 카드의 전투 상태. Unit 객체가 키라 이동·교환은 상태가 따라간다
 export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number; revived: boolean }
@@ -57,7 +58,7 @@ export function damageAlly(scene: Scene, ally: Ally, dmg: number, quiet = false)
   if (!c.alive) return false
   c.hp -= dmg
   if (!quiet) {
-    hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
+    if (!hitSprite(ally.view)) hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
     dmgText(scene, ally.view.x, ally.view.y, dmg)
   }
   if (c.hp <= 0) {
@@ -119,6 +120,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
   const chems = chemsOf(allies)
   for (const a of allies) {
     const c = a.combat
+    tickHit(a.view, dt)
     if (!c.alive) continue
     if (c.stun > 0) {
       c.stun -= dt
@@ -130,6 +132,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
     const iv = interval(card, rank, counts[card], ctx.defcon1, gasHits(ctx.gas, chems, a.col, a.row))
     const mx = a.view.x
     const my = a.view.y - UI.fx.muzzleDy
+    const act = () => playAct(a.view, artKey('ally', card, 'attack')) // 공격하는 순간 1회 재생
     switch (a.unit.card) {
       case 'rifle':
       case 'miner':
@@ -139,6 +142,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         const atk = stats(card, rank).atk * chemDamageMult(chems, a.col, a.row)
         const shots = card === 'rifle' && rank >= ABILITY.corporal ? ABILITY.burstCount : 1
         muzzle(scene, mx, my)
+        act()
         // ponytail: 점사 피해를 한 틱에 적용, 연출만 시차
         for (let i = 0; i < shots; i++) {
           if (target.hp <= 0) break
@@ -157,6 +161,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
           const dmg = sniperDamage(atk, k, rank, tier)
           if (dmg > 0) hurtEnemy(scene, e, dmg)
         })
+        act()
         const first = targets[0]
         if (first && rank >= ABILITY.sergeant) first.stun = Math.max(first.stun, ABILITY.sniperStun)
         snipeLine(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
@@ -172,8 +177,12 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
           e.knockLeft += knockback(e.type, rank, counts.blower)
           e.ready = 0
           // 화상은 중첩 없이 갱신(대입)
-          if (rank >= ABILITY.corporal) e.burn = ABILITY.burnSec
+          if (rank >= ABILITY.corporal) {
+            e.burn = ABILITY.burnSec
+            flame(scene, e.view.x, e.view.y)
+          }
         }
+        act()
         windWave(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
         c.cd = iv
         break
@@ -206,7 +215,10 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
             acted = true
           }
         }
-        if (acted) c.cd = iv
+        if (acted) {
+          act()
+          c.cd = iv
+        }
         break
       }
       default:
