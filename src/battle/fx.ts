@@ -89,3 +89,8 @@ export function explosion(scene: Scene, x: number, y: number, h: number): void {
   const c = scene.add.circle(x, y, UI.fx.explodeCoreR, UI.colors.explosion).setDepth(UI.fx.fxDepth)
   scene.tweens.add({ targets: c, scale: UI.fx.explodeCoreScale, alpha: 0, duration: UI.fx.explodeMs, onComplete: () => c.destroy() })
 }
+
+// 열 세로 띠(화력 지원 강조·예고선). 지우려면 호출한 쪽이 destroy한다. x = 열 중심, 폭·색·알파는 호출한 쪽이 정한다
+export function colBand(scene: Scene, x: number, y0: number, y1: number, w: number, color: number, alpha: number): GameObjects.Rectangle {
+  return scene.add.rectangle(x, (y0 + y1) / 2, w, y1 - y0, color, alpha).setDepth(UI.fx.fxDepth)
+}
