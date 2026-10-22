@@ -27,14 +27,19 @@ function fillRect(png, x0, y0, w, h, r, g, b, a = 255) {
  * 사람 모양(머리·몸통·다리)을 지정된 위치(bx, by)와 크기(bw, bh)로 그린다.
  */
 function drawHumanoid(png, bx, by, bw, bh, options = {}) {
-  if (options.withFringe) {
-    fillRect(png, bx - 1, by - 1, bw + 2, bh + 2, 240, 80, 240, 255)
-  }
   const headH = Math.max(8, Math.floor(bh * 0.28))
   const torsoH = Math.max(10, Math.floor(bh * 0.47))
   const legH = bh - headH - torsoH
   const headInset = Math.max(2, Math.floor(bw * 0.12))
   const legW = Math.max(4, Math.floor(bw * 0.32))
+
+  if (options.withFringe) {
+    // 각 부위 바깥 1px에만 분홍 번짐(#F050F0) 테두리를 그린다
+    fillRect(png, bx + headInset - 1, by - 1, bw - headInset * 2 + 2, headH + 2, 240, 80, 240, 255)
+    fillRect(png, bx - 1, by + headH - 1, bw + 2, torsoH + 2, 240, 80, 240, 255)
+    fillRect(png, bx + 2 - 1, by + headH + torsoH - 1, legW + 2, legH + 2, 240, 80, 240, 255)
+    fillRect(png, bx + bw - 2 - legW - 1, by + headH + torsoH - 1, legW + 2, legH + 2, 240, 80, 240, 255)
+  }
 
   // 남색 외곽선 바운딩을 위해 머리·몸통·전투화를 꽉 차게 그림
   fillRect(png, bx + headInset, by, bw - headInset * 2, headH, 27, 29, 38, 255)
