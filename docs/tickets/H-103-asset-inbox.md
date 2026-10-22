@@ -1,6 +1,6 @@
 # H-103 에셋 받은편지함: AI 원본 자동 분리·자동 축소
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -76,11 +76,11 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] 5번 테스트 5종 통과
-- [ ] `docs/shots/H-103.png`: fixture(또는 6번 실데이터) 결과가 갤러리에 빨간 테두리 없이 보이는 화면
-- [ ] 결과 보고에 6번 실데이터 시험의 출력 줄(실패 메시지와 성공 줄)을 그대로 붙임
-- [ ] 저장소에 사용자 원본 그림이 커밋되지 않음(`git diff --stat origin/main`에 `art/inbox/*.png`, `art/source/**`, `art/ref/**` 없음)
+- [x] `npm run verify` 통과
+- [x] 5번 테스트 5종 통과
+- [x] `docs/shots/H-103.png`: fixture(또는 6번 실데이터) 결과가 갤러리에 빨간 테두리 없이 보이는 화면
+- [x] 결과 보고에 6번 실데이터 시험의 출력 줄(실패 메시지와 성공 줄)을 그대로 붙임
+- [x] 저장소에 사용자 원본 그림이 커밋되지 않음(`git diff --stat origin/main`에 `art/inbox/*.png`, `art/source/**`, `art/ref/**` 없음)
 
 디버그 URL: `http://localhost:5173/?scene=gallery`
 
@@ -129,14 +129,44 @@
 - 세션 시작: Gemini 4 Argon (High), 2026-10-22 17:05
 - [x] 1~3단계: `scripts/assets.mjs`에 받은편지함(`art/inbox/`) 이관·유사 키 추천, 프레임 자동 분리(4px 간격 병합·3% 미만 조각 제거), 자동 축소(유닛 96px 및 배율 공유, 카드 240×300, 보스·이펙트·지뢰 90%, 배경 cover 크롭) 및 한 줄 결과 출력 구현
 - [x] 4단계: `scripts/fixtures/` 및 `tests/assets-pipeline.test.ts`에 H-103 자동 분리·축소 5종 테스트 추가 및 통과 확인 (167 tests 통과)
+- [x] 5단계: `art/ref/01-soldier-motion.png` 실데이터 시험(8명 실패·2명 성공 확인 후 원본 변경분 원복), `art/source/README.md` 한 단계 사용법 갱신, 갤러리 스크린샷(`docs/shots/H-103.png`) 캡처 및 `npm run verify` 통과
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `scripts/assets.mjs`: `art/inbox/*.png` 스캔 및 `art/source/<키>/sheet.png` 이관(기존 파일 `sheet.prev.png` 백업), 계약 외 키일 때 편집 거리 기준 유사 키 3개 제안, 투명 열/덩어리 기반 프레임 자동 분리(4px 미만 간격 병합, 최대 덩어리 면적 3% 미만 조각 제거, 허용 프레임 범위 초과 시 덩어리 수와 x 범위 출력 후 실패, `"split": "even"` 지원), 픽셀풍 자동 축소(칸 평균 색상 + 0.5 알파 임계치 + 1px 분홍 번짐 재정리, 유닛 높이 96px 및 `_idle`/`_walk`/`_run` 기준 배율 `LEDGER.json` 공유, 카드 240×300, 보스·이펙트·지뢰 90%, 배경 `bg_*` 마젠타 유지 720×1560 cover 중앙 크롭, `"fit": false` 시 실패) 및 한 줄 요약 출력 구현
+  - `scripts/fixtures/generate-fixtures.mjs`, `scripts/fixtures/pipeline-harness.mjs`, `scripts/fixtures/pipeline-harness.d.mts`, `scripts/fixtures/oversize/ally_sniper_idle/meta.json`: H-103 5종 테스트용 마젠타 시트 생성기(불규칙 간격·다른 높이 3인 + 떨어진 총구 + 작은 글자 조각, 2인 `_idle`, 5덩어리 범위 초과, 마젠타 포함 배경) 및 테스트 헬퍼 확장
+  - `tests/assets-pipeline.test.ts`: H-103 자동 분리·자동 축소·배율 공유·범위 초과 실패·배경 cover 마젠타 유지 5종 단위/통합 테스트 추가
+  - `art/source/README.md`: "`art/inbox/<키>.png`에 넣고 `node scripts/assets.mjs`" 한 단계 사용법으로 개편
+  - `docs/shots/H-103.png`: 변환된 에셋이 `?scene=gallery`에서 빨간 테두리 없이 표시되는 390×844 스크린샷
 - 검증 결과:
+  - 6번 실데이터(`art/ref/01-soldier-motion.png`) 시험 출력 줄:
+    - 첫 줄 8명 전체 투입 시(실패):
+      `✗ 에셋 정리 실패: [ally_rifle_idle] 찾은 덩어리 수(8덩어리)가 허용 프레임 범위(1~2)를 벗어났습니다. 각 덩어리 x 범위: [24..97, 114..185, 206..283, 294..367, 394..465, 475..576, 578..682, 678..774]`
+    - 앞 2명만 잘라 투입 시(성공):
+      `✓ ally_rifle_idle 2프레임, 배율 0.881, 256×128`
+    - 사격 3명 추가 투입 시(배율 공유 확인):
+      `✓ ally_rifle_attack 3프레임, 배율 0.881(ally_rifle_idle 기준), 384×128`
+  - `npm run verify` 출력:
+    ```
+    > shoottrial@0.1.0 verify
+    > npm run typecheck && npm run test && npm run assets:check && npm run build
+    > tsc --noEmit
+    > vitest run --passWithNoTests
+    Test Files  12 passed (12)
+         Tests  167 passed (167)
+    > node scripts/assets-check.mjs
+    ✓ assets:check 통과 (검사한 에셋 키: 0개)
+    > vite build
+    ✓ built in 6.19s
+    ```
 - 스크린샷:
+  - `docs/shots/H-103.png` (`http://localhost:5173/?scene=gallery`, 390×844)
 - 사용자 확인 방법:
+  - `art/inbox/<키>.png`에 Gemini 생성 그림을 넣고 `node scripts/assets.mjs` 실행 후 `http://localhost:5173/?scene=gallery`에서 확인
 - 확인하지 못한 점:
+  - 없음 (로컬 `art/ref/01-soldier-motion.png` 실데이터 분리·축소 시험까지 완료 후 원본 미커밋 상태로 원복함)
 - 다음 제안:
+  - `docs/tickets/A-102-art-pack.md`의 묶음별 이미지를 `art/inbox/<키>.png`에 넣고 `node scripts/assets.mjs`로 일괄 변환 진행
 
 ## 인계 메모
