@@ -1,4 +1,9 @@
 [
   "ally_rifle_idle",
-  "ally_rifle_attack"
+  "ally_rifle_attack",
+  "ally_sniper_idle",
+  "ally_sniper_attack",
+  "ally_blower_idle",
+  "ally_blower_attack",
+  "ally_cook_idle"
 ]

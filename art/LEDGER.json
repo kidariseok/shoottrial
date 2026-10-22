@@ -21,6 +21,61 @@
       "edited": true,
       "checked": "2026-10-22",
       "scale": 0.122293
+    },
+    {
+      "id": "ally_sniper_idle",
+      "file": "public/assets/ally_sniper_idle.png",
+      "source": "art/source/ally_sniper_idle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.080944
+    },
+    {
+      "id": "ally_sniper_attack",
+      "file": "public/assets/ally_sniper_attack.png",
+      "source": "art/source/ally_sniper_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.080944
+    },
+    {
+      "id": "ally_blower_idle",
+      "file": "public/assets/ally_blower_idle.png",
+      "source": "art/source/ally_blower_idle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.09031
+    },
+    {
+      "id": "ally_blower_attack",
+      "file": "public/assets/ally_blower_attack.png",
+      "source": "art/source/ally_blower_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.09031
+    },
+    {
+      "id": "ally_cook_idle",
+      "file": "public/assets/ally_cook_idle.png",
+      "source": "art/source/ally_cook_idle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.071375
     }
   ]
 }
