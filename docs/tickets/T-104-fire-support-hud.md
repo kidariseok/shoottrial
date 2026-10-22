@@ -90,14 +90,23 @@
 - [x] 3단계: `src/ui/style.css`에 `.hud-support-btn`, `.ui-defcon-flash`(3회 점멸 애니메이션), `.ui-demo-controls` 스타일 추가
 - [x] 4단계: `src/ui/demo.ts`에 "화력 지원 켜짐/꺼짐" 및 "데프콘 1 배너" 데모 버튼 추가
 - [x] 5단계: `tests/ui.test.ts`에 `canFireSupport` 4가지 조합 및 `isSameHud` 테스트 추가, `npm run verify` 통과
+- [x] 6단계: `docs/shots/T-104.png` (390×844, `?scene=ui&safe=1`) 캡처 및 결과 보고 작성
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `src/ui/helpers.ts`: `canFireSupport(phase, support)` 순수 헬퍼 추가 및 `isSameHud`에 `support` 비교 반영
+  - `src/ui/screens.ts`: `Hud.support?: number`, `BattleCtl.fireSupport?(): void`, `export function lobby(): void {}` 추가, HUD 우측(배속 버튼 아래, Safe Area 안, 88×48px) `화력 지원 ×n` 버튼 및 `banner(text, 'defcon')` 호출 시 `#ui` 위 화면 테두리 붉은 점멸 3회(`pointer-events: none`) + `sfx_radio`·`sfx_siren` 오디오 호출 추가
+  - `src/ui/style.css`: `.hud-support-btn`, `.ui-defcon-flash`(`@keyframes defcon-screen-flash` 0.4s × 3 = 1.2s), `.ui-demo-controls` 스타일 및 CSS 변수 추가
+  - `src/ui/demo.ts`: `?scene=ui` 데모에 `"화력 지원 켜짐/꺼짐"` 및 `"데프콘 1 배너"` 버튼 추가
+  - `tests/ui.test.ts`: `canFireSupport` 4가지 조합(`fight`/`prep`·`settle` × `support > 0`/`0`·`undefined`) 및 `isSameHud` 테스트 추가
+  - `docs/shots/T-104.png`: 390×844 뷰포트 스크린샷
 - 검증 결과:
-- 스크린샷:
-- 사용자 확인 방법:
-- 확인하지 못한 점:
-- 다음 제안:
+  - `npm run verify` 통과 (`tsc --noEmit`, `vitest run` 12 files / 163 tests 통과, `assets:check` 통과, `vite build` 성공)
+  - `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` → `+export function lobby(): void {}`
+- 스크린샷: `docs/shots/T-104.png`
+- 사용자 확인 방법: `npm run dev` 실행 후 `http://localhost:5173/?scene=ui&safe=1` 접속하여 하단 `"화력 지원 켜짐/꺼짐"`, `"데프콘 1 배너"` 버튼 클릭
+- 확인하지 못한 점: `sfx_radio`·`sfx_siren` 실제 음원 파일은 아직 에셋에 없으므로 폴백/무시 동작만 확인함
+- 다음 제안: T-105에서 `lobby()` 구현 및 레인 A Phase 5에서 `Hud.support`·`BattleCtl.fireSupport()` 연결
 
 ## 인계 메모
