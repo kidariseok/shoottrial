@@ -1,1 +1,26 @@
-{"entries":[]}
+{
+  "entries": [
+    {
+      "id": "ally_rifle_idle",
+      "file": "public/assets/ally_rifle_idle.png",
+      "source": "art/source/ally_rifle_idle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.122293
+    },
+    {
+      "id": "ally_rifle_attack",
+      "file": "public/assets/ally_rifle_attack.png",
+      "source": "art/source/ally_rifle_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-22",
+      "scale": 0.122293
+    }
+  ]
+}
