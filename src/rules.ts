@@ -6,6 +6,7 @@ import {
   CARD_KEYS,
   ECONOMY,
   ENEMIES,
+  GAS,
   GRID,
   LAYOUT,
   LOG,
@@ -181,14 +182,15 @@ export function withinReach(dc: number, dr: number, reach: number): boolean {
   return Math.max(Math.abs(dc), Math.abs(dr)) <= reach
 }
 
-// GDD §5.2·§5.3·§5.4·§4.1. 공격 간격 = 기본 x (소총수만 병장·시너지) x 데프콘 1. 곱으로 겹친다
-export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean): number {
+// GDD §5.2·§5.3·§5.4·§4.1·§5.6. 공격 간격 = 기본 x (소총수만 병장·시너지) x 데프콘 1 x (가스 위면 slow). 곱으로 겹친다
+export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean, gassed = false): number {
   let v = CARDS[card].interval
   if (card === 'rifle') {
     if (rank >= ABILITY.sergeant) v *= ABILITY.sergeantRifleInterval
     v *= SYN_FX.rifleInterval[synergyTier(card, synergyCount)] ?? 1
   }
-  return defcon1 ? v * BATTLE.defcon1AllyInterval : v
+  if (defcon1) v *= BATTLE.defcon1AllyInterval
+  return gassed ? v * GAS.slow : v
 }
 
 // GDD §5.3·§5.4. atk = stats().atk. k는 관통 순서(0부터). 상병 이상은 감소 없음, 시너지 단계로 배율
@@ -257,6 +259,85 @@ export function mineDamage(enemy: EnemyType, anti: boolean): number {
   return MINES.damage * (anti && enemy === 'boss' ? MINES.bossMult : 1)
 }
 
+// ---- 4단계: 화학전 ----
+
+export type GasDrop = { t: number; col: number; row: number } // col·row는 2x2 왼쪽 위 칸(배치 구역 기준)
+export type Chem = { col: number; row: number; rank: number } // 살아 있는 화학병만 넣는다(쓰러진 화학병 = 입력에서 빠짐)
+
+// 배치 구역 크기의 가스 남은 시간 표(행 x 열). 0이면 가스 없음
+export function emptyGas(): number[][] {
+  return Array.from({ length: LAYOUT.deployRows }, () => Array<number>(LAYOUT.cols).fill(0))
+}
+
+// GDD §5.6. 화학탄 일정. 마지막 출현 시각 T의 GAS.at 지점(횟수가 많으면 순환)에 떨어진다
+// rand는 화학탄마다 col -> row 순으로 정확히 두 번 부른다. extra는 ?gas=1 디버그용 추가 횟수
+export function gasPlan(wave: number, plan: SpawnEvent[], rand: () => number, extra = 0): GasDrop[] {
+  const def = WAVES[wave - 1]
+  if (!def) return []
+  const last = plan.reduce((m, e) => Math.max(m, e.t), 0)
+  return Array.from({ length: def.gas + extra }, (_, i) => ({
+    t: last * (GAS.at[i % GAS.at.length] as number),
+    col: Math.floor(rand() * (LAYOUT.cols - GAS.size + 1)),
+    row: Math.floor(rand() * (LAYOUT.deployRows - GAS.size + 1)),
+  })).sort((a, b) => a.t - b.t)
+}
+
+// GDD §5.3. 화학병 범위(칸): 상병 이상은 넓다
+export function chemReach(rank: number): number {
+  return GAS.reach[rank >= ABILITY.corporal ? 1 : 0] as number
+}
+
+// 어느 화학병이든 범위 안(자기 칸 포함)이면 가스 면역
+export function inChemReach(chems: Chem[], col: number, row: number): boolean {
+  return chems.some((c) => withinReach(col - c.col, row - c.row, chemReach(c.rank)))
+}
+
+// 가스 피해·감속을 받는 칸인가: 가스가 있고 면역이 아니다
+export function gasHits(cells: number[][], chems: Chem[], col: number, row: number): boolean {
+  return (cells[row]?.[col] ?? 0) > 0 && !inChemReach(chems, col, row)
+}
+
+// GDD §5.4. 화학탄이 떨어진 결과. 겹치면 더하지 않고 life로 갱신, 시너지 2명이면 범위 안 칸은 즉시 제독(cleared)
+export function gasCellsAfterDrop(
+  cells: number[][],
+  drop: { col: number; row: number },
+  chems: Chem[],
+  synergyOn: boolean,
+): { cells: number[][]; cleared: number } {
+  const out = cells.map((r) => [...r])
+  let cleared = 0
+  for (let r = drop.row; r < drop.row + GAS.size; r++) {
+    for (let c = drop.col; c < drop.col + GAS.size; c++) {
+      const row = out[r]
+      if (!row || row[c] === undefined) continue
+      if (synergyOn && inChemReach(chems, c, r)) cleared++
+      else row[c] = GAS.life
+    }
+  }
+  return { cells: out, cleared }
+}
+
+// 화학병 한 명의 주기 제독. 범위 안 칸을 0으로, n은 지운 가스 칸 수
+export function cleanseCells(cells: number[][], chem: Chem): { cells: number[][]; n: number } {
+  let n = 0
+  const out = cells.map((row, r) =>
+    row.map((v, c) => {
+      if (!withinReach(c - chem.col, r - chem.row, chemReach(chem.rank))) return v
+      if (v > 0) n++
+      return 0
+    }),
+  )
+  return { cells: out, n }
+}
+
+// GDD §5.3. 병장 화학병 인접(GAS.reach[0], 자기 제외) 아군의 직접 공격 피해 배율. 병장이 여럿이어도 한 번만
+export function chemDamageMult(chems: Chem[], col: number, row: number): number {
+  const near = chems.some(
+    (c) => c.rank >= ABILITY.sergeant && !(c.col === col && c.row === row) && withinReach(col - c.col, row - c.row, GAS.reach[0] as number),
+  )
+  return near ? GAS.sgtBuff : 1
+}
+
 // ---- 3단계: 구매 판정·해금 ----
 
 export type Spot = { zone: 'bench' | 'deploy'; i: number }
@@ -320,6 +401,8 @@ export type LogEvent =
   | { e: 'card_buy'; card: CardKey; rank: number }
   | { e: 'merge'; card: CardKey; rank: number }
   | { e: 'unlock'; card: CardKey; via: 'wave5' | 'ad' }
+  | { e: 'gas_drop'; wave: number; col: number; row: number }
+  | { e: 'gas_clear'; n: number }
 export type PlayRun = { t: number; result: RunResult; wave: number; sec: number; events: LogEvent[] }
 export type LogSummary = {
   runs: number
