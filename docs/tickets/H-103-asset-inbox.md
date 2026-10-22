@@ -1,6 +1,6 @@
 # H-103 에셋 받은편지함: AI 원본 자동 분리·자동 축소
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -86,13 +86,47 @@
 
 ## 작업 계획
 
+1. **받은편지함(`art/inbox/`) 폴더 및 키 이관 처리 구현** (`art/inbox/.gitkeep`, `scripts/assets.mjs`)
+   - `art/inbox/.gitkeep` 생성.
+   - `scripts/assets.mjs` 실행 시 `art/inbox/*.png`를 먼저 스캔해 확장자를 뺀 파일명을 계약 키와 대조하고, 없는 키일 경우 편집 거리(유사도) 기준 가장 비슷한 키 3개를 제안하며 실패하도록 구현.
+   - 유효한 키는 `art/source/<키>/sheet.png`로 이동(기존 `sheet.png`가 있으면 `sheet.prev.png`로 백업)한 뒤 파이프라인 처리로 연결.
+2. **프레임 자동 분리(`sheet.png` 기본) 구현** (`scripts/assets.mjs`)
+   - 마젠타 제거 후 세로로 완전히 투명한 열을 경계로 덩어리(가로 x 구간)를 분리하고, 간격이 4px 미만인 인접 덩어리는 병합.
+   - 최대 덩어리 면적(불투명 픽셀 수 또는 바운딩 박스 면적)의 3% 미만인 작은 조각(글자·반짝이 등) 제거.
+   - 남은 덩어리 수가 계약 허용 프레임 범위(`minFrames`~`maxFrames`) 밖이면 찾은 수와 각 덩어리의 x 범위를 출력하고 실패 처리.
+   - `meta.json`에 `"split": "even"`이 지정된 경우 기존 H-102 균등 분할(`splitHorizontalSheet`) 사용.
+3. **자동 축소(픽셀풍 box 평균 + 알파 임계치 + 1px 분홍 번짐 재정리) 및 배율 공유 구현** (`scripts/assets.mjs`, `scripts/assets-check.mjs`)
+   - `meta.json`의 `"fit": false`일 때만 H-102처럼 크기 초과 시 실패.
+   - 유닛(`ally_*`, `enemy_*`): 배율 = `min(1, 96 / 최대 내용 높이)`. 같은 캐릭터 접두사(`ally_<카드>_*`, `enemy_<종류>_*`)에서 기준 키(`_idle`, `_walk`, `_run`)의 배율을 `art/LEDGER.json` 항목에 `scale`로 기록·참조하여 동일 배율 적용.
+   - 카드(`card_*`, 256×320): 240×300 안에 맞추고 정중앙 배치.
+   - 보스·이펙트·지뢰(`boss_*`, `fx_*`, `mine*`): 캔버스의 90% 안에 맞추고 정중앙 배치.
+   - 배경(`bg_*`): 마젠타 제거 생략, 720×1560을 꽉 채우도록(cover) 축소 후 중앙 크롭.
+   - 축소 알고리즘: 색상 칸 평균(box filter), 알파 칸 평균 ≥ 0.5이면 255 아니면 0(이진 알파), 축소 후 1px 분홍 번짐 정리 1회 추가 실행, 확대 금지(scale ≤ 1).
+   - 결과 한 줄 요약 출력(`✓ <키> <N>프레임, 배율 <S>(<기준키> 기준), <W>×<H>`) 포맷 적용.
+4. **단위·통합 테스트 5종 및 fixture 생성기 확장** (`scripts/fixtures/generate-fixtures.mjs`, `scripts/fixtures/pipeline-harness.mjs`, `tests/assets-pipeline.test.ts`)
+   - 600×300 마젠타 위 높이 다른 사람 모양 3개(불규칙 간격) + 작은 글자 조각 1개 → 3프레임 분리 및 조각 제거 검증.
+   - 가장 큰 프레임 내용 높이 96±1 및 발끝 `y=116` 정렬 검증.
+   - `_idle` 배율을 `_attack`이 이어 쓰는지 검증.
+   - 덩어리 수가 허용 범위 밖이면 실패하고 x 범위를 보고하는지 검증.
+   - `bg_` 키가 cover 크기로 나오고 마젠타 제거를 하지 않는지 검증.
+5. **실데이터(`art/ref/01-soldier-motion.png`) 시험, 갤러리 확인 및 사용법 문서 갱신** (`art/source/README.md`)
+   - 로컬 `art/ref/01-soldier-motion.png` 첫 줄(8명)과 앞 2명을 잘라 `art/inbox/ally_rifle_idle.png`로 시험하여 실패/성공 출력을 기록하고 `?scene=gallery` 확인 후 실데이터 변경분은 모두 되돌림(커밋 제외).
+   - `art/source/README.md` 사용법을 "`art/inbox/<키>.png`에 넣고 `node scripts/assets.mjs`" 한 단계 중심으로 간소화.
+   - `npm run verify` 실행 및 갤러리 스크린샷(`docs/shots/H-103.png`) 확인.
+
+- 디버그 URL: `http://localhost:5173/?scene=gallery`
+- 검증 명령: `npm run verify`
+- 플랫폼 API: 해당 없음
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: ae7c023f0538
+- 브랜치: kidariseok/h-103-asset-inbox
+- 세션 시작: Gemini 4 Argon (High), 2026-10-22 17:05
 
 ## 결과 보고
 
