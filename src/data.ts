@@ -29,7 +29,7 @@ export const LAYOUT = {
 } as const
 
 // 이 순서가 시너지 목록 정렬 순서다
-export const CARD_KEYS = ['rifle', 'sniper', 'blower', 'cook', 'miner'] as const
+export const CARD_KEYS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'] as const
 export type CardKey = (typeof CARD_KEYS)[number]
 
 // GDD §5.2. range 단위는 "칸"이다. color는 아트 전 임시색(ART §2: 붉은색 계열 금지)
@@ -42,6 +42,7 @@ export const CARDS: Record<
   blower: { name: '제설병', initial: '제', color: 0x2a8c8c, cost: 2, hp: 120, atk: 0, interval: 1.5, range: 2 },
   cook: { name: '취사병', initial: '취', color: 0x8a8a3a, cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 }, // 인접 8칸의 반지름
   miner: { name: '지뢰설치병', initial: '지', color: 0x6a5a8a, cost: 2, hp: 80, atk: 6, interval: 1.0, range: 3 },
+  chem: { name: '화학병', initial: '화', color: 0xb0b420, cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 }, // §5.2 지뢰설치병과 같은 단발 사격. 노랑 계열(r > g 금지)
 }
 
 // GDD §5.3. copies는 계급별 이등병 환산 장수(판매 환급·합성 재료 수)
@@ -59,6 +60,7 @@ export const SYNERGY: Record<CardKey, readonly number[]> = {
   blower: [2, 4],
   cook: [2],
   miner: [2],
+  chem: [2], // 4명 단계 없음
 }
 
 // GDD §6
@@ -109,6 +111,9 @@ export const UI = {
     mineBuried: 0x9fe0c8, // 묻힌 일반 지뢰(반투명으로 그린다)
     mineAnti: 0xc79bff, // 대전차 토큰·지뢰(연보라, 일반과 구분)
     explosion: 0xe8f6ff, // 지뢰 폭발(밝은 청백색)
+    gas: 0xb8c84a, // 가스 칸(탁한 황록)
+    gasWarn: 0xd23c3c, // 화학탄 예고(적의 예고라 붉은색 허용, ART §2)
+    dogPlusStroke: 0xffffff, // 강화 군견 테두리
   },
   fx: {
     snapMs: 120,
@@ -210,10 +215,12 @@ export const UI = {
   hold: { ms: 400, slop: 12 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
+  enemyStroke: 2, // 강화 군견 흰 테두리 px
+  gas: { alpha: 0.45, warnAlpha: 0.55, blinkMs: 150, depth: 5 }, // 가스 칸 depth는 카드(0)와 적(enemyDepth) 사이, 예고는 fxDepth
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
   mine: { trayCol: 0, trayY: 1.5, tokenR: 36, buriedR: 40, alpha: 0.5, countPx: 36 },
-  // ?scene=log 배치. 24줄 안팎: 제목 1 + 요약 4 + 카드 머리·5 + 최근 머리·10 + 블록 사이 간격 2
-  // 시작 y는 HUD 띠(LAYOUT.hudH) 아래. lineH 44 x 22줄 + blockGap 44 x 2 = 1056 -> y 112 + 1056 = 1168 < 1280
+  // ?scene=log 배치. 23줄 안팎(카드 6종): 제목 1 + 요약 4 + 카드 머리·5 + 최근 머리·10 + 블록 사이 간격 2
+  // 시작 y는 HUD 띠(LAYOUT.hudH) 아래. lineH 44 x 23줄 + blockGap 44 x 2 = 1100 -> y 112 + 1100 = 1212 < 1280
   // colBuys·colRate는 보직 이름(최대 약 280px) 오른쪽 열, 구매율 열은 '100.0%'가 720 안에 들어오는 위치
   log: { x: 40, y: 112, titlePx: 40, px: 28, lineH: 44, blockGap: 44, colBuys: 380, colRate: 520, lowColor: '#ffe066', secPerMin: 60, pct: 100, rateDigits: 1, waveDigits: 1 },
 } as const
@@ -223,7 +230,7 @@ export const UI = {
 // GDD §5.6. 웨이브 HP 스케일(rules.waveHp)은 보스에도 적용한다(OQ-3: W5 1776, W10 2496)
 // color는 아트 전 임시색(ART §2: 적은 회갈색 계열, 붉은색·주황은 적의 공격·경보에만), size는 칸 대비 비율
 // speed 칸/초, interval 초, baseDmg 위병소 피해, knock 밀어내기 배율, range 칸(0이면 막힌 뒤 근접)
-export const ENEMY_KEYS = ['infantry', 'dog', 'rpg', 'boss'] as const
+export const ENEMY_KEYS = ['infantry', 'dog', 'rpg', 'boss', 'dogPlus'] as const
 export type EnemyType = (typeof ENEMY_KEYS)[number]
 export const ENEMIES: Record<
   EnemyType,
@@ -244,6 +251,7 @@ export const ENEMIES: Record<
   dog: { name: '군견', hp: 40, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
   rpg: { name: 'RPG병', hp: 50, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
   boss: { name: '장갑차', hp: 1200, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
+  dogPlus: { name: '강화 군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
 }
 
 // 칸 단위 y. 적 진입 구역 맨 위가 0이다(LAYOUT.entryY 기준). 02-CONTEXT 좌표계
@@ -307,6 +315,19 @@ export const SYN_FX: {
   blowerRange: [0, 0, 1],
 }
 
+// GDD §5.2·§5.3·§5.4·§5.6 화학전. 가스 칸은 배치 구역 5x3 칸 단위, 시간은 초
+export const GAS = {
+  warn: 1.5, // 예고 초
+  life: 20, // 지속 초(겹쳐 떨어지면 더하지 않고 이 값으로 갱신)
+  slow: 2, // 가스 위 아군 공격 간격 배율
+  dps: 5, // 가스 위 아군 초당 피해
+  cleanse: 3, // 화학병 제독 주기 초
+  reach: [1, 2] as readonly number[], // [이등병·일병, 상병 이상] 체비셰프 거리
+  sgtBuff: 1.15, // 병장 범위 reach[0] 안 아군(자기 제외) 직접 공격 피해 배율
+  at: [0.35, 0.7] as readonly number[], // 그 웨이브 마지막 출현 시각 대비 떨어지는 시점
+  size: 2, // 화학탄 한 발의 한 변 칸 수(2x2)
+}
+
 // GDD §5.3·§5.5. 토큰은 계급 수(1~4) + 병장 +2, 시너지 +1(02-CONTEXT). 피해는 폭발 칸과 위아래 blast칸
 export const MINES = {
   tokensByRank: [1, 2, 3, 4] as readonly number[],
@@ -320,12 +341,12 @@ export const MINES = {
 // GDD §7. base = 첫 판 해금, order = 웨이브 atWave 도달 때마다 하나씩 여는 순서
 export const UNLOCK: { base: readonly CardKey[]; order: readonly CardKey[]; atWave: number } = {
   base: ['rifle', 'blower', 'sniper'],
-  order: ['cook', 'miner'],
+  order: ['cook', 'miner', 'chem'],
   atWave: 5,
 }
 
 // 같은 페이지에서 "다시 출동"할 때마다 난수 시드에 더하는 간격(판마다 다른 출현 순서)
-export const RUN = { reseedStep: 7919 }
+export const RUN = { reseedStep: 7919, gasSeed: 3 } // gasSeed: 화학탄 난수 스트림 = 시드 + 3
 
 // GDD §10 보상형 광고 슬롯 횟수·양, §4.2 부활 HP
 export const REWARD = {

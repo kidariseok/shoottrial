@@ -43,6 +43,7 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
   const size = bodySize(ev.type)
   const pos = board.toScreen(ev.col, 0)
   const body = scene.add.rectangle(0, 0, size, size, ENEMIES[ev.type].color)
+  if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
   const bar = scene.add.graphics()
   const view = scene.add.container(pos.x, pos.y, [body, bar]).setDepth(UI.fx.enemyDepth).setAlpha(0)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
@@ -109,7 +110,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       continue
     }
     // 5. 군견: 배치 구역 앞에서 한 번 열 변경
-    if (e.type === 'dog' && !e.dogMoved && e.y >= GRID.deployTop - DOG.triggerGap) {
+    if ((e.type === 'dog' || e.type === 'dogPlus') && !e.dogMoved && e.y >= GRID.deployTop - DOG.triggerGap) {
       e.dogMoved = true
       const counts = Array<number>(LAYOUT.cols).fill(0)
       for (const a of ctx.allies) if (a.alive) counts[a.col] = (counts[a.col] ?? 0) + 1

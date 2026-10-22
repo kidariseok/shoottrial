@@ -109,7 +109,7 @@ describe('rollShop', () => {
     expect(rollShop(['rifle', 'blower', 'sniper'], rand)).toEqual(['rifle', 'blower', 'sniper', 'sniper', 'blower'])
   })
   it('같은 시드면 같은 상점이 나온다', () => {
-    const pool: Unit['card'][] = ['rifle', 'sniper', 'blower', 'cook', 'miner']
+    const pool: Unit['card'][] = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem']
     const a = rollShop(pool, createRng(42))
     const b = rollShop(pool, createRng(42))
     expect(a).toEqual(b)
@@ -170,6 +170,7 @@ describe('GDD 수치 고정', () => {
       blower: { name: '제설병', cost: 2, hp: 120, atk: 0, interval: 1.5, range: 2 },
       cook: { name: '취사병', cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 },
       miner: { name: '지뢰설치병', cost: 2, hp: 80, atk: 6, interval: 1.0, range: 3 },
+      chem: { name: '화학병', cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 },
     }
     for (const [k, v] of Object.entries(gdd)) {
       const c = CARDS[k as keyof typeof CARDS]
@@ -183,7 +184,7 @@ describe('GDD 수치 고정', () => {
     expect(RANKS.names).toEqual(['이등병', '일병', '상병', '병장'])
   })
   it('§5.4 시너지', () => {
-    expect(SYNERGY).toEqual({ rifle: [2, 4], sniper: [2], blower: [2, 4], cook: [2], miner: [2] })
+    expect(SYNERGY).toEqual({ rifle: [2, 4], sniper: [2], blower: [2, 4], cook: [2], miner: [2], chem: [2] })
   })
   it('§6 경제', () => {
     expect(ECONOMY).toEqual({
