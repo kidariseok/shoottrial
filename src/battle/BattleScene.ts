@@ -1,9 +1,10 @@
 import { Scene, type GameObjects } from 'phaser'
 import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, RUN, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, emptyGas, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
+import { defconOf, gasPlan, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
+import { armGas, clearGas, createGas, tickGas, type Gas } from './gas'
 import { createBoard, deployIndex, type Board } from './board'
 import { drawLog } from './log'
 import { removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
@@ -35,6 +36,10 @@ export class BattleScene extends Scene {
   public nextIdx = 0
   private spawnRand!: () => number
   private dogRand!: () => number
+  private gasRand!: () => number
+  public gas!: Gas
+  public gasDrops: GasDrop[] = [] // 이번 웨이브 화학탄 일정(헤드리스가 읽는다)
+  public gasExtra = 0 // ?gas=N: 웨이브마다 화학탄 N회 추가
   public paused = false
   public hudCalls = 0 // ui.hud를 실제로 부른 횟수(헤드리스가 읽는다)
   private hudKey = ''
@@ -67,6 +72,7 @@ export class BattleScene extends Scene {
     this.enemies = []
     this.plan = []
     this.spawned = []
+    this.gasDrops = []
     this.lineUsed = Array<boolean>(LAYOUT.cols).fill(false)
     this.prepLeft = 0
     this.settleLeft = 0
@@ -112,6 +118,9 @@ export class BattleScene extends Scene {
     runsThisPage += 1
     this.spawnRand = createRng(base)
     this.dogRand = createRng(base + 1)
+    this.gasRand = createRng(base + RUN.gasSeed)
+    // ponytail: 게이트 때 debug.ts로 옮긴다
+    this.gasExtra = Number(new URLSearchParams(location.search).get('gas') ?? 0) || 0
     this.unlocked = loadUnlocked(debug.unlock === 'all')
     this.store = createShop(base + 2)
 
@@ -128,6 +137,7 @@ export class BattleScene extends Scene {
     })
     // 신병을 먼저 놓아야 디버그 덱이 같은 칸을 차지하지 않는다
     this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: ROOKIE.name })
+    this.gas = createGas(this, this.board)
     this.board.dealDeck(debug.deck ?? [])
 
     this.setSpeed(debug.speed ?? 1)
@@ -214,6 +224,8 @@ export class BattleScene extends Scene {
     this.board.setTokens(0, false) // 쓰지 않은 토큰은 사라지고 묻힌 지뢰는 남는다
     startWave(collectAllies(this.board))
     this.plan = spawnPlan(this.wave, this.spawnRand, defconOf(this.wave) === 1)
+    this.gasDrops = gasPlan(this.wave, this.plan, this.gasRand, this.gasExtra)
+    armGas(this.gas, this.gasDrops)
     this.spawned = []
     this.clock = 0
     this.nextIdx = 0
@@ -260,6 +272,7 @@ export class BattleScene extends Scene {
 
   startSettle() {
     this.clearWave()
+    clearGas(this.gas)
     endWave(collectAllies(this.board))
     this.phase = 'settle'
     this.board.setPhase('settle')
@@ -307,7 +320,8 @@ export class BattleScene extends Scene {
     // 3. 적 행동, 방어선 도달 처리
     const reached = tickEnemies({ scene: this, board: this.board, enemies: this.enemies, allies, dogRand: this.dogRand }, dt)
     for (const e of reached) this.reachLine(e)
-    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: emptyGas() }, dt)
+    tickGas({ scene: this, board: this.board, gas: this.gas, allies, wave: this.wave, log: (ev) => this.log(ev) }, this.clock, dt)
+    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: this.gas.cells }, dt)
     // 지뢰: 아군 사격 뒤, 정리 전(터진 지뢰의 사망도 같은 틱 정리가 센다)
     tickMines({ scene: this, board: this.board, enemies: this.enemies })
     // 4. 정리
@@ -393,6 +407,7 @@ export class BattleScene extends Scene {
   private finish(win: boolean) {
     if (this.result) return
     this.result = win ? 'win' : 'lose'
+    clearGas(this.gas)
     const kind: RunResult = this.gaveUp ? 'quit' : win ? 'win' : 'lose'
     const sec = Math.round(this.wallSec)
     this.log({ e: 'run_end', result: kind, wave: this.wave, sec })
