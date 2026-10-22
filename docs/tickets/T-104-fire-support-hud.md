@@ -78,13 +78,14 @@
 
 ## 질문
 
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
 - 기준 커밋: ae7c023f0538
 - 브랜치: kidariseok/t104-ticket-work
 - 세션 시작: Gemini 4 Argon (High), 2026-10-22 17:04
+- [x] 1단계: `src/ui/helpers.ts`에 `canFireSupport(phase, support)` 추가 및 `isSameHud`에 `support` 비교 반영
 
 ## 결과 보고
 
