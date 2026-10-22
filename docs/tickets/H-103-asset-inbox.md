@@ -127,6 +127,8 @@
 - 기준 커밋: ae7c023f0538
 - 브랜치: kidariseok/h-103-asset-inbox
 - 세션 시작: Gemini 4 Argon (High), 2026-10-22 17:05
+- [x] 1~3단계: `scripts/assets.mjs`에 받은편지함(`art/inbox/`) 이관·유사 키 추천, 프레임 자동 분리(4px 간격 병합·3% 미만 조각 제거), 자동 축소(유닛 96px 및 배율 공유, 카드 240×300, 보스·이펙트·지뢰 90%, 배경 cover 크롭) 및 한 줄 결과 출력 구현
+- [x] 4단계: `scripts/fixtures/` 및 `tests/assets-pipeline.test.ts`에 H-103 자동 분리·축소 5종 테스트 추가 및 통과 확인 (167 tests 통과)
 
 ## 결과 보고
 
