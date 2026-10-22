@@ -1,6 +1,7 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, BATTLE, BOSS, DOG, ENEMIES, GRID, LAYOUT, MINES, UI, type EnemyType } from '../data'
-import { blockY, frontAlly, inBlast, inRange, mineDamage, mineTriggered, pickDogLane, waveHp, type SpawnEvent } from '../rules'
+import { ABILITY, ART, BATTLE, BOSS, DOG, ENEMIES, GRID, LAYOUT, MINES, UI, type EnemyType } from '../data'
+import { artKey, blockY, frontAlly, inBlast, inRange, mineDamage, mineTriggered, pickDogLane, waveHp, type SpawnEvent } from '../rules'
+import { addSprite, hasArt, hitSprite, playAct, tickHit } from './art'
 import type { Board } from './board'
 import { dmgText, explosion, hitFlash, laneFlash, shake } from './fx'
 import { damageAlly, type Ally } from './units'
@@ -42,10 +43,23 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
   const hp = waveHp(ENEMIES[ev.type].hp, wave)
   const size = bodySize(ev.type)
   const pos = board.toScreen(ev.col, 0)
-  const body = scene.add.rectangle(0, 0, size, size, ENEMIES[ev.type].color)
-  if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
   const bar = scene.add.graphics()
-  const view = scene.add.container(pos.x, pos.y, [body, bar]).setDepth(UI.fx.enemyDepth).setAlpha(0)
+  const view = scene.add.container(pos.x, pos.y).setDepth(UI.fx.enemyDepth).setAlpha(0)
+  const key = ev.type === 'boss' ? artKey('boss', 'apc', 'hull') : artKey('enemy', ev.type, 'move')
+  if (hasArt(key)) {
+    // 그림이 있는 종류만 스프라이트. 보스는 몸체 위에 포탑(회전 없음)
+    const s = addSprite(scene, view, key, ev.type !== 'boss')
+    if (ev.type === 'boss' && hasArt(artKey('boss', 'apc', 'turret'))) view.add(scene.add.image(0, 0, artKey('boss', 'apc', 'turret')))
+    if (ev.type === 'dogPlus') {
+      s.setTint(ART.dogPlusTint)
+      view.setData('tint', ART.dogPlusTint) // 피격 틴트가 끝나면 이 색으로 돌아간다
+    }
+  } else {
+    const body = scene.add.rectangle(0, 0, size, size, ENEMIES[ev.type].color)
+    if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
+    view.add(body)
+  }
+  view.add(bar)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
   return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
 }
@@ -53,7 +67,7 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
 // 제거 판정은 호출한 쪽이 hp <= 0으로 거른다
 export function hurtEnemy(scene: Scene, e: Enemy, dmg: number): void {
   e.hp -= dmg
-  hitFlash(scene, e.view.x, e.view.y, bodySize(e.type), bodySize(e.type))
+  if (!hitSprite(e.view)) hitFlash(scene, e.view.x, e.view.y, bodySize(e.type), bodySize(e.type))
   dmgText(scene, e.view.x, e.view.y, dmg)
   drawBar(e)
 }
@@ -83,6 +97,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
   const reached: Enemy[] = []
   for (const e of ctx.enemies) {
     if (e.hp <= 0 || e.gone) continue
+    tickHit(e.view, dt)
     const place = () => {
       const p = ctx.board.toScreen(e.col, e.y)
       e.view.y = p.y
@@ -126,6 +141,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       if (e.ready >= ENEMIES[e.type].interval) {
         e.ready -= ENEMIES[e.type].interval
         damageAlly(ctx.scene, front, ENEMIES[e.type].dmg)
+        playAct(e.view, artKey('enemy', e.type, 'act')) // 막혀서 때리는 순간 1회
       }
     } else {
       e.ready = 0

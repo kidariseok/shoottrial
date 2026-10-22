@@ -4,6 +4,7 @@ import { createRng, debug } from '../debug'
 import { colAt, defconOf, gasPlan, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
+import { art, loadArt, setupArt } from './art'
 import { armGas, clearGas, createGas, tickGas, type Gas } from './gas'
 import { createBoard, deployIndex, type Board } from './board'
 import { drawLog } from './log'
@@ -19,6 +20,7 @@ let runsThisPage = 0
 export class BattleScene extends Scene {
   // 헤드리스 검증이 읽으므로 모두 public
   public board!: Board
+  public art = art // 실제 그림이 있는 키(없는 키는 도형). 헤드리스가 읽는다
   public phase: FlowPhase = 'prep'
   public wave = 1
   public baseHp = 0
@@ -112,6 +114,10 @@ export class BattleScene extends Scene {
     this.log({ e: 'wave_clear', wave: this.wave, base_hp: Math.max(0, this.baseHp), supply: this.supply })
   }
 
+  preload() {
+    loadArt(this)
+  }
+
   create() {
     if (debug.scene === 'log') {
       this.logOnly = true
@@ -120,6 +126,7 @@ export class BattleScene extends Scene {
       return
     }
     this.logOnly = false
+    setupArt(this)
     this.resetRun()
     this.log({ e: 'run_start', run: nextRun(loadRuns()) })
     // 화면이 길면 판 전체를 아래로 내린다. 값만 넘기고 좌표 계산은 board.ts가 한다

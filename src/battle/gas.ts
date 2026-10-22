@@ -2,6 +2,7 @@ import type { Scene, GameObjects } from 'phaser'
 import { GAS, LAYOUT, UI } from '../data'
 import { allyY, cleanseCells, emptyGas, gasCellsAfterDrop, gasHits, synergyTier, type Chem, type GasDrop, type LogEvent } from '../rules'
 import type { Board, Unit } from './board'
+import { hasArt } from './art'
 import { shake } from './fx'
 import { chemsOf, damageAlly, synergyCounts, type Ally } from './units'
 
@@ -12,7 +13,7 @@ export type Gas = {
   next: number // 다음에 떨어질 인덱스
   warned: number // 다음에 예고할 인덱스
   warns: GameObjects.Rectangle[] // 떠 있는 예고(떨어지면 destroy)
-  tiles: GameObjects.Rectangle[][] // 칸 표시(미리 만들고 visible만 바꾼다)
+  tiles: (GameObjects.Rectangle | GameObjects.Sprite)[][] // 칸 표시(미리 만들고 visible만 바꾼다)
   cd: Map<Unit, number> // 화학병별 제독 남은 초
 }
 
@@ -20,6 +21,8 @@ export function createGas(scene: Scene, board: Board): Gas {
   const tiles = emptyGas().map((rowCells, row) =>
     rowCells.map((_, col) => {
       const p = board.toScreen(col, allyY(row))
+      // 가스 그림이 있으면 칸 크기로 맞춘 반복 애니메이션, 없으면 반투명 사각형
+      if (hasArt('fx_gas')) return scene.add.sprite(p.x, p.y, 'fx_gas', 0).setDisplaySize(LAYOUT.cell, LAYOUT.cell).setDepth(UI.gas.depth).setVisible(false).play('fx_gas')
       return scene.add.rectangle(p.x, p.y, LAYOUT.cell, LAYOUT.cell, UI.colors.gas, UI.gas.alpha).setDepth(UI.gas.depth).setVisible(false)
     }),
   )

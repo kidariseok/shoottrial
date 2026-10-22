@@ -1,5 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
-import { LAYOUT, UI } from '../data'
+import { ART, LAYOUT, UI } from '../data'
+import { playFx } from './art'
 
 // 도형·트윈만 쓰는 공통 연출. 피·시체 표현은 쓰지 않는다
 
@@ -19,8 +20,10 @@ export function dmgText(scene: Scene, x: number, y: number, amount: number): voi
 }
 
 // 적 쓰러짐: 가라앉으며 페이드 후 destroy
+// 스프라이트면 ART.fallAngle만큼 기울어지며 쓰러진다
 export function fall(scene: Scene, view: GameObjects.Container): void {
-  scene.tweens.add({ targets: view, alpha: 0, y: view.y + UI.fx.fallSink, duration: UI.fx.fallMs, onComplete: () => view.destroy() })
+  const angle = view.getData('sprite') ? ART.fallAngle : view.angle
+  scene.tweens.add({ targets: view, alpha: 0, angle, y: view.y + UI.fx.fallSink, duration: UI.fx.fallMs, onComplete: () => view.destroy() })
 }
 
 // 한 열 폭의 밝은 띠가 번쩍인다(최후 저지선). x = 열 중심
@@ -38,6 +41,7 @@ export function shake(scene: Scene, kind: 'light' | 'heavy'): void {
 
 // 총구 섬광: 노란 작은 원이 번쩍였다 사라진다
 export function muzzle(scene: Scene, x: number, y: number): void {
+  if (playFx(scene, 'fx_muzzle', x, y)) return
   const c = scene.add.circle(x, y, UI.fx.muzzleR, UI.colors.muzzle).setDepth(UI.fx.fxDepth)
   scene.tweens.add({ targets: c, alpha: 0, duration: UI.fx.muzzleMs, onComplete: () => c.destroy() })
 }
@@ -63,12 +67,14 @@ export function snipeLine(scene: Scene, x: number, y0: number, y1: number): void
 
 // 송풍 파동: 청백색 띠가 제설병에서 위로 번지며 사라진다
 export function windWave(scene: Scene, x: number, y0: number, y1: number): void {
+  if (playFx(scene, 'fx_wind', x, (y0 + y1) / 2)) return
   const r = scene.add.rectangle(x, y0, UI.fx.windW, UI.fx.windH, UI.colors.wind, UI.fx.windAlpha).setDepth(UI.fx.fxDepth)
   scene.tweens.add({ targets: r, y: y1, alpha: 0, duration: UI.fx.windMs, onComplete: () => r.destroy() })
 }
 
 // 회복 숫자: 초록 "+n"이 위로 떠오르며 사라진다
 export function healText(scene: Scene, x: number, y: number, amount: number): void {
+  playFx(scene, 'fx_heal', x, y) // 숫자는 그대로 둔다
   const t = scene.add
     .text(x, y, `+${Math.round(amount)}`, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.healColor })
     .setOrigin(0.5)
@@ -84,6 +90,7 @@ export function reviveFlash(scene: Scene, x: number, y: number, w: number, h: nu
 
 // 지뢰 폭발: 열 폭 × h 청백색 사각형이 번쩍이고 가운데 원이 커지며 사라진다. 피·불꽃 표현 없음
 export function explosion(scene: Scene, x: number, y: number, h: number): void {
+  if (playFx(scene, 'fx_explosion', x, y)) return
   const r = scene.add.rectangle(x, y, LAYOUT.cell, h, UI.colors.explosion, UI.fx.explodeAlpha).setDepth(UI.fx.fxDepth)
   scene.tweens.add({ targets: r, alpha: 0, duration: UI.fx.explodeMs, onComplete: () => r.destroy() })
   const c = scene.add.circle(x, y, UI.fx.explodeCoreR, UI.colors.explosion).setDepth(UI.fx.fxDepth)
@@ -93,4 +100,9 @@ export function explosion(scene: Scene, x: number, y: number, h: number): void {
 // 열 세로 띠(화력 지원 강조·예고선). 지우려면 호출한 쪽이 destroy한다. x = 열 중심, 폭·색·알파는 호출한 쪽이 정한다
 export function colBand(scene: Scene, x: number, y0: number, y1: number, w: number, color: number, alpha: number): GameObjects.Rectangle {
   return scene.add.rectangle(x, (y0 + y1) / 2, w, y1 - y0, color, alpha).setDepth(UI.fx.fxDepth)
+}
+
+// 화상 불꽃: 그림이 있을 때만 그린다(도형 대체 없음)
+export function flame(scene: Scene, x: number, y: number): void {
+  playFx(scene, 'fx_flame', x, y)
 }
