@@ -31,7 +31,7 @@
 - [ ] **Phase 2: 전투** - 준비·전투·정산 루프에서 카드 5종·적 4종이 열 단위로 싸우고 웨이브 1~10이 돈다
 - [x] **Phase 3: 경제·연결·측정** - 보급 경제와 상점을 `ui/screens.ts`로 연결하고, 판 기록과 튜닝으로 G1 준비를 끝낸다
 - [x] **Phase 4: 화학전** - 화학병 카드(6번째), 화학탄 포격(가스 칸·예고·제독), 강화 군견, 화학병 해금
-- [ ] **Phase 5: 화력 지원·데프콘 1** - 판당 2회 열 포격(`ctl.fireSupport`, `Hud.support`), 데프콘 1 진입 연출 호출
+- [x] **Phase 5: 화력 지원·데프콘 1** - 판당 2회 열 포격(`ctl.fireSupport`, `Hud.support`), 데프콘 1 진입 연출 호출
 - [ ] **Phase 6: 그림 반영·저장 이전** - 실제 그림이 있으면 스프라이트·애니메이션, 없으면 지금 도형. 피격·쓰러짐·계급·그림자는 코드. 해금·기록을 `save.ts`로 옮김
 
 ## Phase Details
@@ -145,7 +145,7 @@ Plans:
 **Depends on**: Phase 4, **외부: T-104(HUD 화력 지원 버튼·`Hud.support`·`BattleCtl.fireSupport`·데프콘 1 테두리 점멸)가 main에 머지되어야 한다.**
 **Requirements**: FIRE-01, FIRE-02, DEF-01
 **Plans**: 1 plan (Claude 직접 작성, CONTEXT 겸용)
-- [ ] 05-01-PLAN.md — SUPPORT 수치·colAt·supportAvg(TDD), 열 고르기·포격·입력 잠금·?support=N, 데프콘 1 흔들림, 헤드리스 F1~F6
+- [x] 05-01-PLAN.md — SUPPORT 수치·colAt·supportAvg(TDD), 열 고르기·포격·입력 잠금·?support=N, 데프콘 1 흔들림, 헤드리스 F1~F6
 **Debug URL**: `/?scene=battle&wave=7&deck=rifle:4&seed=42`
 
 ### Phase 6: 그림 반영·저장 이전

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 4 완료(화학전), Phase 5 화력 지원 시작 (2026-10-22)"
+stopped_at: "Phase 5 완료(화력 지원), Phase 6 그림 반영·저장 이전 시작 (2026-10-22)"
 last_updated: "2026-10-21T13:39:52.806Z"
-last_activity: 2026-10-22 — 4단계 완료(화학병·화학탄·강화 군견, 봇 게이트 초행자 5·god 5/5 승)
+last_activity: 2026-10-22 — 5단계 완료(화력 지원 판당 2회·데프콘 1 흔들림·supportAvg)
 progress:
   total_phases: 3
   completed_phases: 3
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-20)
 
 ## Current Position
 
-Milestone: M3 수직 슬라이스(레인 A) — Phase 4 완료, Phase 5(화력 지원·데프콘 1) 진행
+Milestone: M3 수직 슬라이스(레인 A) — Phase 4·5 완료, Phase 6(그림 반영·저장 이전) 진행
 Status: T-104 머지됨 → Phase 5 시작 가능. T-105(로비) 레인 B 진행 예정. 그림 A-102 진행 중(소총수 2장 반영)
 
 ## Performance Metrics
