@@ -39,7 +39,7 @@ metrics:
 | Task 1 RED | d29570d | `test(05-01)`: SUPPORT 수치·colAt·supportAvg 실패 테스트 |
 | Task 1 GREEN | 87fc76d | `feat(05-01)`: SUPPORT, UI 색·문구, colAt, LogEvent·supportAvg |
 | Task 2 | 85dbce9 | `feat(05-01)`: 전투 연결, board.lock, fx.colBand, log 줄, ?support, 데프콘 1 흔들림 |
-| Task 3 | (이 문서와 같은 커밋 묶음) | 스크린샷 M3-05.png, SUMMARY |
+| Task 3 | 84c6502 | 스크린샷 M3-05.png, SUMMARY |
 
 ## 헤드리스 확인 (F1~F6)
 
