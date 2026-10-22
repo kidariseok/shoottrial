@@ -146,9 +146,10 @@ export function suggestSimilarKeys(unknownKey, contracts, count = 3) {
  */
 export function ingestInbox(options = {}) {
   const rootDir = options.rootDir ?? process.cwd()
-  const inboxDir = options.inboxDir ?? join(rootDir, 'art', 'inbox')
+  // 원본 폴더를 따로 넘긴 호출(테스트)은 진짜 art/inbox를 건드리지 않는다. 사용자 그림이 테스트 폴더로 옮겨지던 버그 수정
+  const inboxDir = options.inboxDir ?? (options.sourceDir ? null : join(rootDir, 'art', 'inbox'))
   const sourceBaseDir = options.sourceDir ?? join(rootDir, 'art', 'source')
-  if (!existsSync(inboxDir)) {
+  if (!inboxDir || !existsSync(inboxDir)) {
     return []
   }
 
