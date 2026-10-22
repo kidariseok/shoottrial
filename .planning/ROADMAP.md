@@ -30,7 +30,7 @@
 - [ ] **Phase 1: 판·차선·배치** - 판을 도형으로 그리고 카드를 끌어 놓고·합치고·팔 수 있다. `rules.ts` 순수 함수와 테스트
 - [ ] **Phase 2: 전투** - 준비·전투·정산 루프에서 카드 5종·적 4종이 열 단위로 싸우고 웨이브 1~10이 돈다
 - [x] **Phase 3: 경제·연결·측정** - 보급 경제와 상점을 `ui/screens.ts`로 연결하고, 판 기록과 튜닝으로 G1 준비를 끝낸다
-- [ ] **Phase 4: 화학전** - 화학병 카드(6번째), 화학탄 포격(가스 칸·예고·제독), 강화 군견, 화학병 해금
+- [x] **Phase 4: 화학전** - 화학병 카드(6번째), 화학탄 포격(가스 칸·예고·제독), 강화 군견, 화학병 해금
 - [ ] **Phase 5: 화력 지원·데프콘 1** - 판당 2회 열 포격(`ctl.fireSupport`, `Hud.support`), 데프콘 1 진입 연출 호출
 - [ ] **Phase 6: 그림 반영·저장 이전** - 실제 그림이 있으면 스프라이트·애니메이션, 없으면 지금 도형. 피격·쓰러짐·계급·그림자는 코드. 해금·기록을 `save.ts`로 옮김
 
@@ -136,9 +136,9 @@ Phases execute in numeric order: 1 → 2 → 3
   4. 튜닝 봇 게이트를 다시 돌려 초행자 중앙값 웨이브 5 이상을 유지하고, god 봇이 화학병 없이도 웨이브 10을 끝낼 수 있음을 기록한다.
 **Plans**: 3 plans (순차: 04-01 → 04-02 → 04-03, 브랜치 kidariseok/m3-core에서 바로)
 Plans:
-- [ ] 04-01-PLAN.md — 화학병·GAS·강화 군견 수치, WaveDef.gas·dogPlus, spawnPlan 강화 군견, 해금 순서, 가스 순수 함수(gasPlan·inChemReach·gasCellsAfterDrop·cleanseCells·chemDamageMult·interval 감속) (TDD)
-- [ ] 04-02-PLAN.md — 전투 연결(gas.ts 예고·가스 칸·감속·피해·면역·제독·시너지·병장 버프·정리, 화학병 사격, 강화 군견 열 옮김·테두리, `?gas=1`, gas_drop·gas_clear) + 헤드리스 확인·스크린샷 M3-04
-- [ ] 04-03-PLAN.md — 튜닝 봇 gate 재측정 → 04-TUNING.md(초행자 중앙값 < 5 또는 god 미완주면 멈추고 보고), 단계 전체 게이트
+- [x] 04-01-PLAN.md — 화학병·GAS·강화 군견 수치, WaveDef.gas·dogPlus, spawnPlan 강화 군견, 해금 순서, 가스 순수 함수(gasPlan·inChemReach·gasCellsAfterDrop·cleanseCells·chemDamageMult·interval 감속) (TDD)
+- [x] 04-02-PLAN.md — 전투 연결(gas.ts 예고·가스 칸·감속·피해·면역·제독·시너지·병장 버프·정리, 화학병 사격, 강화 군견 열 옮김·테두리, `?gas=1`, gas_drop·gas_clear) + 헤드리스 확인·스크린샷 M3-04
+- [x] 04-03-PLAN.md — 튜닝 봇 gate 재측정 → 04-TUNING.md(초행자 중앙값 < 5 또는 god 미완주면 멈추고 보고), 단계 전체 게이트
 
 ### Phase 5: 화력 지원·데프콘 1
 **Goal**: 전투 중 HUD 버튼으로 열을 골라 포격하고(판당 2회), 웨이브 7 진입 때 데프콘 1 연출이 확실히 보인다.

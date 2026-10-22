@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: milestone-review
-stopped_at: "Phase 3 완료, G1 사람 플레이테스트 대기 (2026-10-21)"
+status: executing
+stopped_at: "Phase 4 완료(화학전), Phase 5 화력 지원 시작 (2026-10-22)"
 last_updated: "2026-10-21T13:39:52.806Z"
-last_activity: 2026-10-21 — 3단계 완료(제설병 1회 밀림 규칙, 튜닝 게이트 재측정)
+last_activity: 2026-10-22 — 4단계 완료(화학병·화학탄·강화 군견, 봇 게이트 초행자 5·god 5/5 승)
 progress:
   total_phases: 3
   completed_phases: 3
@@ -25,11 +25,8 @@ See: .planning/PROJECT.md (updated 2026-10-20)
 
 ## Current Position
 
-Phase: 3 of 3 완료 (경제·연결·측정)
-Status: G1 사람 플레이테스트 대기 (판 시간 6~10분, 웨이브 5 도달, 카드 구매율 5% 미만 없음)
-Last activity: 2026-10-21 — 제설병 1회 밀림 규칙으로 교착 해소, 초행자 게이트 통과, god 판 시간 10.5분 추정
-
-Progress: [██████████] 100%
+Milestone: M3 수직 슬라이스(레인 A) — Phase 4 완료, Phase 5(화력 지원·데프콘 1) 진행
+Status: T-104 머지됨 → Phase 5 시작 가능. T-105(로비) 레인 B 진행 예정. 그림 A-102 진행 중(소총수 2장 반영)
 
 ## Performance Metrics
 
