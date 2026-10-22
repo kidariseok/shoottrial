@@ -391,6 +391,14 @@ export function parseUnlocked(raw: string | null): CardKey[] {
   return CARD_KEYS.filter((c) => UNLOCK.base.includes(c) || list.includes(c))
 }
 
+// ---- 5단계: 화력 지원 ----
+
+// x(월드·논리 좌표) -> 열 0~4. 판 밖(왼쪽 여백·오른쪽 끝 너머)은 -1. 열 경계 x는 오른쪽 열
+export function colAt(x: number): number {
+  const c = Math.floor((x - LAYOUT.marginX) / LAYOUT.cell)
+  return c >= 0 && c < LAYOUT.cols ? c : -1
+}
+
 // ---- 3단계: 판 기록 ----
 
 export type RunResult = 'win' | 'lose' | 'quit'
@@ -403,12 +411,14 @@ export type LogEvent =
   | { e: 'unlock'; card: CardKey; via: 'wave5' | 'ad' }
   | { e: 'gas_drop'; wave: number; col: number; row: number }
   | { e: 'gas_clear'; n: number }
+  | { e: 'fire_support'; wave: number; col: number; kills: number }
 export type PlayRun = { t: number; result: RunResult; wave: number; sec: number; events: LogEvent[] }
 export type LogSummary = {
   runs: number
   winRate: number
   avgSec: number
   avgWave: number
+  supportAvg: number // 판당 평균 화력 지원 횟수
   buys: number
   cards: { card: CardKey; buys: number; rate: number; low: boolean }[] // CARD_KEYS 순서, 구매 0인 카드도 포함
   recent: PlayRun[] // 최신이 앞, 최대 LOG.recent판
@@ -426,6 +436,7 @@ export function summarizeLog(runs: PlayRun[]): LogSummary {
     winRate: avg((r) => (r.result === 'win' ? 1 : 0)),
     avgSec: avg((r) => r.sec),
     avgWave: avg((r) => r.wave),
+    supportAvg: avg((r) => r.events.filter((ev) => ev.e === 'fire_support').length),
     buys,
     cards: CARD_KEYS.map((card) => {
       const b = counts.get(card) ?? 0

@@ -114,6 +114,8 @@ export const UI = {
     gas: 0xb8c84a, // 가스 칸(탁한 황록)
     gasWarn: 0xd23c3c, // 화학탄 예고(적의 예고라 붉은색 허용, ART §2)
     dogPlusStroke: 0xffffff, // 강화 군견 테두리
+    supportPick: 0xffe066, // 화력 지원 열 고르기 강조(노랑)
+    supportWarn: 0xd23c3c, // 화력 지원 예고선(경보라 붉은색 허용, ART §2)
   },
   fx: {
     snapMs: 120,
@@ -162,6 +164,9 @@ export const UI = {
     explodeMs: 350,
     explodeCoreR: 24, // 폭발 중심 원 시작 반지름
     explodeCoreScale: 3, // 중심 원이 커지는 배율
+    supportPickAlpha: 0.25, // 열 고르기 강조 알파
+    supportLineW: 10, // 화력 지원 예고선 굵기
+    supportLineAlpha: 0.85,
   },
   text: {
     promote: '진급!',
@@ -202,6 +207,8 @@ export const UI = {
     logLow: ' (낮음)',
     logSep: ' · ',
     logPct: '%',
+    logSupport: '화력 지원 평균',
+    logTimes: '회',
   },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
@@ -220,7 +227,7 @@ export const UI = {
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
   mine: { trayCol: 0, trayY: 1.5, tokenR: 36, buriedR: 40, alpha: 0.5, countPx: 36 },
   // ?scene=log 배치. 23줄 안팎(카드 6종): 제목 1 + 요약 4 + 카드 머리·5 + 최근 머리·10 + 블록 사이 간격 2
-  // 시작 y는 HUD 띠(LAYOUT.hudH) 아래. lineH 44 x 23줄 + blockGap 44 x 2 = 1100 -> y 112 + 1100 = 1212 < 1280
+  // 시작 y는 HUD 띠(LAYOUT.hudH) 아래. lineH 44 x 24줄 + blockGap 44 x 2 = 1144 -> y 112 + 1144 = 1256 < 1280
   // colBuys·colRate는 보직 이름(최대 약 280px) 오른쪽 열, 구매율 열은 '100.0%'가 720 안에 들어오는 위치
   log: { x: 40, y: 112, titlePx: 40, px: 28, lineH: 44, blockGap: 44, colBuys: 380, colRate: 520, lowColor: '#ffe066', secPerMin: 60, pct: 100, rateDigits: 1, waveDigits: 1 },
 } as const
@@ -264,6 +271,9 @@ export const GRID = {
 // GDD §5.6 보스 충격파
 // 충격파: 보스 y가 이 값 이상이 되거나 맨 앞 아군에게 막히는 순간 중 먼저, 한 번(확정). 등장 순간(0)이 아니다
 export const BOSS = { shockStun: 1.5, shockY: GRID.deployTop }
+
+// GDD §5.8 화력 지원. delay(예고선 뒤 포격)·pickSec(열 고르기 제한)은 초
+export const SUPPORT = { charges: 2, damage: 200, delay: 1.0, pickSec: 5 }
 
 // GDD §5.6 군견. triggerGap은 배치 구역 윗변 앞 칸 수, laneMs는 열 옮김 트윈 시간(연출 보정값)
 export const DOG = { triggerGap: 0.5, laneMs: 250 }
