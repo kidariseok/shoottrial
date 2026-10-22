@@ -1,6 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
 import { ABILITY, CARDS, CARD_KEYS, LAYOUT, UI, type CardKey } from '../data'
-import { allyY, blowerRange, cookReach, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach } from '../rules'
+import { allyY, blowerRange, chemDamageMult, cookReach, gasHits, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
 import { hurtEnemy, type Enemy } from './enemies'
 import { dmgText, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
@@ -46,13 +46,20 @@ function drawBar(ally: Ally): void {
   bar.fillStyle(ratio <= lowRatio ? low : ok).fillRect(-w / 2, y, w * ratio, h)
 }
 
-// 쓰러졌으면 true
-export function damageAlly(scene: Scene, ally: Ally, dmg: number): boolean {
+// 살아 있는 화학병만(쓰러진 화학병은 면역·제독·버프에서 빠진다)
+export function chemsOf(allies: Ally[]): Chem[] {
+  return allies.filter((a) => a.unit.card === 'chem' && a.combat.alive).map((a) => ({ col: a.col, row: a.row, rank: a.unit.rank }))
+}
+
+// 쓰러졌으면 true. quiet이면 번쩍임·숫자를 건너뛴다(매 틱 가스 피해용)
+export function damageAlly(scene: Scene, ally: Ally, dmg: number, quiet = false): boolean {
   const c = ally.combat
   if (!c.alive) return false
   c.hp -= dmg
-  hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
-  dmgText(scene, ally.view.x, ally.view.y, dmg)
+  if (!quiet) {
+    hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
+    dmgText(scene, ally.view.x, ally.view.y, dmg)
+  }
   if (c.hp <= 0) {
     c.hp = 0
     c.alive = false
@@ -106,9 +113,10 @@ function ahead(enemies: Enemy[], a: Ally, range: number): Enemy[] {
 }
 
 // 아군 한 틱. allies는 이번 틱에 한 번 모은 배열(ally.alive는 사본이라 combat.alive를 읽는다)
-export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean }, dt: number): void {
+export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean; gas: number[][] }, dt: number): void {
   const { scene, enemies, allies } = ctx
   const counts = synergyCounts(allies)
+  const chems = chemsOf(allies)
   for (const a of allies) {
     const c = a.combat
     if (!c.alive) continue
@@ -119,15 +127,16 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
     c.cd = Math.max(0, c.cd - dt)
     if (c.cd > 0) continue
     const { card, rank } = a.unit
-    const iv = interval(card, rank, counts[card], ctx.defcon1)
+    const iv = interval(card, rank, counts[card], ctx.defcon1, gasHits(ctx.gas, chems, a.col, a.row))
     const mx = a.view.x
     const my = a.view.y - UI.fx.muzzleDy
     switch (a.unit.card) {
       case 'rifle':
-      case 'miner': {
+      case 'miner':
+      case 'chem': {
         const target = ahead(enemies, a, CARDS[card].range)[0]
         if (!target) break
-        const atk = stats(card, rank).atk
+        const atk = stats(card, rank).atk * chemDamageMult(chems, a.col, a.row)
         const shots = card === 'rifle' && rank >= ABILITY.corporal ? ABILITY.burstCount : 1
         muzzle(scene, mx, my)
         // ponytail: 점사 피해를 한 틱에 적용, 연출만 시차
@@ -143,7 +152,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         const targets = ahead(enemies, a, CARDS.sniper.range)
         if (targets.length === 0) break
         const tier = synergyTier('sniper', counts.sniper)
-        const atk = stats('sniper', rank).atk
+        const atk = stats('sniper', rank).atk * chemDamageMult(chems, a.col, a.row)
         targets.forEach((e, k) => {
           const dmg = sniperDamage(atk, k, rank, tier)
           if (dmg > 0) hurtEnemy(scene, e, dmg)

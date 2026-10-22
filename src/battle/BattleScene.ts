@@ -1,7 +1,7 @@
 import { Scene, type GameObjects } from 'phaser'
 import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, LAYOUT, REWARD, ROOKIE, RUN, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { defconOf, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
+import { defconOf, emptyGas, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { createBoard, deployIndex, type Board } from './board'
@@ -307,7 +307,7 @@ export class BattleScene extends Scene {
     // 3. 적 행동, 방어선 도달 처리
     const reached = tickEnemies({ scene: this, board: this.board, enemies: this.enemies, allies, dogRand: this.dogRand }, dt)
     for (const e of reached) this.reachLine(e)
-    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1 }, dt)
+    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: emptyGas() }, dt)
     // 지뢰: 아군 사격 뒤, 정리 전(터진 지뢰의 사망도 같은 틱 정리가 센다)
     tickMines({ scene: this, board: this.board, enemies: this.enemies })
     // 4. 정리

@@ -111,6 +111,9 @@ export const UI = {
     mineBuried: 0x9fe0c8, // 묻힌 일반 지뢰(반투명으로 그린다)
     mineAnti: 0xc79bff, // 대전차 토큰·지뢰(연보라, 일반과 구분)
     explosion: 0xe8f6ff, // 지뢰 폭발(밝은 청백색)
+    gas: 0xb8c84a, // 가스 칸(탁한 황록)
+    gasWarn: 0xd23c3c, // 화학탄 예고(적의 예고라 붉은색 허용, ART §2)
+    dogPlusStroke: 0xffffff, // 강화 군견 테두리
   },
   fx: {
     snapMs: 120,
@@ -212,6 +215,8 @@ export const UI = {
   hold: { ms: 400, slop: 12 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
+  enemyStroke: 2, // 강화 군견 흰 테두리 px
+  gas: { alpha: 0.45, warnAlpha: 0.55, blinkMs: 150, depth: 5 }, // 가스 칸 depth는 카드(0)와 적(enemyDepth) 사이, 예고는 fxDepth
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
   mine: { trayCol: 0, trayY: 1.5, tokenR: 36, buriedR: 40, alpha: 0.5, countPx: 36 },
   // ?scene=log 배치. 23줄 안팎(카드 6종): 제목 1 + 요약 4 + 카드 머리·5 + 최근 머리·10 + 블록 사이 간격 2
@@ -341,7 +346,7 @@ export const UNLOCK: { base: readonly CardKey[]; order: readonly CardKey[]; atWa
 }
 
 // 같은 페이지에서 "다시 출동"할 때마다 난수 시드에 더하는 간격(판마다 다른 출현 순서)
-export const RUN = { reseedStep: 7919 }
+export const RUN = { reseedStep: 7919, gasSeed: 3 } // gasSeed: 화학탄 난수 스트림 = 시드 + 3
 
 // GDD §10 보상형 광고 슬롯 횟수·양, §4.2 부활 HP
 export const REWARD = {
