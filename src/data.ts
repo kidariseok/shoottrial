@@ -374,3 +374,29 @@ export const LOG = {
   recent: 10,
   lowRate: 0.05,
 }
+
+// docs/ART.md §2·§4 그림 반영. 실제 그림이 목록(indexUrl)에 있는 키만 스프라이트로 그리고 나머지는 도형이다
+// foot은 발끝 피벗 비율(116/128), footY는 카드·적 중심에서 발끝까지 px, fps는 반복(loop)·1회(once) 애니메이션 초당 프레임
+export const ART = {
+  indexKey: 'art_index',
+  indexUrl: '/assets/index.json',
+  dir: '/assets/',
+  fps: { loop: 6, once: 12 },
+  loopSuffix: ['_idle', '_walk', '_run'] as readonly string[],
+  loopKeys: ['fx_gas'] as readonly string[],
+  foot: 116 / 128,
+  footY: 52,
+  shadow: { w: 84, h: 24, alpha: 0.35, color: 0x000000 },
+  hitMs: 120, // 피격 틴트 시간
+  hitTint: 0xffffff,
+  fallAngle: 80, // 쓰러질 때 기울기(도)
+  dogPlusTint: 0x8a7468, // 강화 군견: 같은 그림에 진한 틴트
+  gridAlpha: 0.35, // bg_gate가 있을 때 판 칸 색의 알파
+  // 적 종류 -> 그림 이름과 걷기(달리기)·공격 상태 이름. 강화 군견은 군견 그림을 쓴다
+  enemy: {
+    infantry: { id: 'inf', move: 'walk', act: 'attack' },
+    dog: { id: 'dog', move: 'run', act: 'bite' },
+    dogPlus: { id: 'dog', move: 'run', act: 'bite' },
+    rpg: { id: 'rpg', move: 'walk', act: 'fire' },
+  },
+} as const
