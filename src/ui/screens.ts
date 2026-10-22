@@ -1,5 +1,7 @@
 // docs/TECH.md §8 레인 A·B 경계 고정 시그니처
+import { playSfx } from '../audio'
 import {
+  canFireSupport,
   cloneHud,
   getCardInitial,
   getCardName,
@@ -20,6 +22,7 @@ export type Hud = {
   prepLeft: number
   speed: 1 | 2
   synergies: { card: string; count: number; on: boolean }[]
+  support?: number
 }
 export type Offer = { card: string; cost: number } | null
 
@@ -27,6 +30,7 @@ let currentCtl: BattleCtl | null = null
 let lastHud: Hud | null = null
 let currentSpeed: 1 | 2 = 1
 let bannerTimer: ReturnType<typeof setTimeout> | null = null
+let defconFlashTimer: ReturnType<typeof setTimeout> | null = null
 
 interface UiRefs {
   root: HTMLElement
@@ -39,6 +43,7 @@ interface UiRefs {
   prepPill: HTMLElement
   supplyAdBtn: HTMLButtonElement
   speedBtn: HTMLButtonElement
+  supportBtn: HTMLButtonElement
   synergyRail: HTMLElement
   shopEl: HTMLElement
   shopCards: HTMLElement
@@ -47,6 +52,7 @@ interface UiRefs {
   goBtn: HTMLButtonElement
   cardInfoBackdrop: HTMLElement
   bannerEl: HTMLElement
+  defconFlashEl: HTMLElement
   pauseBackdrop: HTMLElement
   reviveBackdrop: HTMLElement
   resultBackdrop: HTMLElement
@@ -161,7 +167,18 @@ function ensureRefs(): UiRefs | null {
   })
 
   rowBottom.append(statsGroup, supplyAdBtn)
-  hudEl.append(rowTop, rowBottom)
+
+  const supportBtn = document.createElement('button')
+  supportBtn.type = 'button'
+  supportBtn.className = 'mil-btn hud-support-btn disabled'
+  supportBtn.disabled = true
+  supportBtn.textContent = '화력 지원 ×0'
+  supportBtn.addEventListener('click', () => {
+    if (supportBtn.disabled) return
+    currentCtl?.fireSupport?.()
+  })
+
+  hudEl.append(rowTop, rowBottom, supportBtn)
 
   // 좌측 활성 시너지 줄
   const synergyRail = document.createElement('div')
@@ -210,6 +227,10 @@ function ensureRefs(): UiRefs | null {
   const bannerEl = document.createElement('div')
   bannerEl.className = 'ui-banner hidden'
 
+  // 데프콘 1 화면 테두리 붉은 점멸 오버레이
+  const defconFlashEl = document.createElement('div')
+  defconFlashEl.className = 'ui-defcon-flash hidden'
+
   // 일시정지 모달
   const pauseBackdrop = document.createElement('div')
   pauseBackdrop.className = 'ui-modal-backdrop hidden'
@@ -232,6 +253,7 @@ function ensureRefs(): UiRefs | null {
     shopEl,
     cardInfoBackdrop,
     bannerEl,
+    defconFlashEl,
     pauseBackdrop,
     reviveBackdrop,
     resultBackdrop,
@@ -249,6 +271,7 @@ function ensureRefs(): UiRefs | null {
     prepPill,
     supplyAdBtn,
     speedBtn,
+    supportBtn,
     synergyRail,
     shopEl,
     shopCards,
@@ -257,6 +280,7 @@ function ensureRefs(): UiRefs | null {
     goBtn,
     cardInfoBackdrop,
     bannerEl,
+    defconFlashEl,
     pauseBackdrop,
     reviveBackdrop,
     resultBackdrop,
@@ -353,6 +377,13 @@ export function hud(h: Hud): void {
 
   r.speedBtn.textContent = `${h.speed}x`
   r.speedBtn.classList.toggle('active-2x', h.speed === 2)
+
+  const supportCount = Math.max(0, h.support ?? 0)
+  const canSupport = canFireSupport(h.phase, h.support)
+  r.supportBtn.textContent = `화력 지원 ×${supportCount}`
+  r.supportBtn.disabled = !canSupport
+  r.supportBtn.classList.toggle('disabled', !canSupport)
+  r.supportBtn.classList.toggle('active-support', canSupport)
 
   // 시너지 갱신
   r.synergyRail.innerHTML = ''
@@ -501,6 +532,29 @@ export function banner(text: string, kind: 'flag' | 'defcon' | 'info'): void {
   r.bannerEl.textContent = text
   r.bannerEl.className = `ui-banner kind-${kind}`
 
+  if (kind === 'defcon') {
+    const playOptionalSfx = playSfx as (key: string) => boolean
+    try {
+      playOptionalSfx('sfx_radio')
+      playOptionalSfx('sfx_siren')
+    } catch {
+      // sfx_radio·sfx_siren 파일이 없으면 조용히 넘어간다
+    }
+
+    if (defconFlashTimer !== null) {
+      clearTimeout(defconFlashTimer)
+      defconFlashTimer = null
+    }
+    r.defconFlashEl.classList.remove('hidden', 'active')
+    void r.defconFlashEl.offsetWidth
+    r.defconFlashEl.classList.add('active')
+    defconFlashTimer = setTimeout(() => {
+      r.defconFlashEl.classList.remove('active')
+      r.defconFlashEl.classList.add('hidden')
+      defconFlashTimer = null
+    }, 1200)
+  }
+
   bannerTimer = setTimeout(() => {
     r.bannerEl.classList.add('hidden')
     bannerTimer = null
@@ -634,6 +688,7 @@ export type BattleCtl = {
   quit(): void          // 포기 → A가 결과 화면(result)으로 간다
   adReroll(): void      // 광고를 끝까지 본 뒤 B가 부른다. A가 무료 리롤 1회를 적용한다
   adSupply(): void      // 광고를 끝까지 본 뒤 B가 부른다. A가 보급 +5를 적용한다
+  fireSupport?(): void  // M3(선택): HUD "화력 지원" 버튼
 }
 
 export function bindBattle(ctl: BattleCtl | null): void {
@@ -641,6 +696,9 @@ export function bindBattle(ctl: BattleCtl | null): void {
   ensureRefs()
   syncCtlButtons()
 }
+
+// T-105에서 구현
+export function lobby(): void {}
 
 // 레인 B 전용: 안드로이드 뒤로가기 종료 확인 모달 (T-101 할 일 6)
 export function confirmExit(onYes: () => void, onNo: () => void): void {
