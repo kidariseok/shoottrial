@@ -5,6 +5,7 @@ import {
   readEffectiveSafeArea,
 } from '../src/device'
 import {
+  canFireSupport,
   cloneHud,
   getCardInitial,
   getCardName,
@@ -124,5 +125,28 @@ describe('UI 순수 헬퍼 테스트', () => {
     expect(rect.height).toBe(1280)
     expect(rect.top).toBe(0)
     expect(rect.bottom).toBe(0)
+  })
+
+  it('T-104: canFireSupport는 phase === "fight"이고 support > 0일 때만 true를 반환한다 (조합 4가지)', () => {
+    // 1. 전투 단계 + 남은 횟수 > 0 -> 활성
+    expect(canFireSupport('fight', 2)).toBe(true)
+    expect(canFireSupport('fight', 1)).toBe(true)
+
+    // 2. 전투 단계 + 남은 횟수 0 또는 미지정 -> 비활성
+    expect(canFireSupport('fight', 0)).toBe(false)
+    expect(canFireSupport('fight', undefined)).toBe(false)
+
+    // 3. 비전투 단계(prep/settle) + 남은 횟수 > 0 -> 비활성
+    expect(canFireSupport('prep', 2)).toBe(false)
+    expect(canFireSupport('settle', 2)).toBe(false)
+
+    // 4. 비전투 단계(prep/settle) + 남은 횟수 0 또는 미지정 -> 비활성
+    expect(canFireSupport('prep', 0)).toBe(false)
+    expect(canFireSupport('settle', undefined)).toBe(false)
+
+    // isSameHud도 support 변경을 감지한다
+    const copy = cloneHud(sampleHud)
+    expect(isSameHud(sampleHud, { ...copy, support: 2 })).toBe(false)
+    expect(isSameHud({ ...sampleHud, support: 2 }, { ...copy, support: 2 })).toBe(true)
   })
 })

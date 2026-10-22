@@ -86,6 +86,9 @@
 - 브랜치: kidariseok/t104-ticket-work
 - 세션 시작: Gemini 4 Argon (High), 2026-10-22 17:04
 - [x] 1단계: `src/ui/helpers.ts`에 `canFireSupport(phase, support)` 추가 및 `isSameHud`에 `support` 비교 반영
+- [x] 2단계: `src/ui/screens.ts`에 `Hud.support`, `BattleCtl.fireSupport`, `lobby()` 추가 및 화력 지원 버튼·데프콘 1 테두리 점멸/오디오 호출 구현
+- [x] 3단계: `src/ui/style.css`에 `.hud-support-btn`, `.ui-defcon-flash`(3회 점멸 애니메이션), `.ui-demo-controls` 스타일 추가
+- [x] 4단계: `src/ui/demo.ts`에 "화력 지원 켜짐/꺼짐" 및 "데프콘 1 배너" 데모 버튼 추가
 
 ## 결과 보고
 
