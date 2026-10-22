@@ -152,4 +152,7 @@ Plans:
 **Goal**: `public/assets/<키>.png`가 있으면 아군·적·보스·이펙트·지뢰·배경이 그림으로 보이고, 없으면 지금 도형 그대로다. 해금·판 기록·이름이 `save.ts`(Capacitor Preferences)에 저장된다.
 **Depends on**: Phase 5, 외부: H-103(받은편지함 도구)과 A-102 그림 일부. 그림이 없어도 fixture로 진행한다.
 **Requirements**: SPR-01, SPR-02, SAVE-01
+**Plans**: 2 plans
+- [ ] 06-01-PLAN.md — 실제 그림 키만 스프라이트·애니메이션(아군·적·보스·이펙트·배경), 피격 틴트·그림자·계급은 코드, `?art=0`
+- [ ] 06-02 — save.ts 이전(SAVE-01). **T-105(로비·save.ts 수정) 머지 뒤** 작성
 
