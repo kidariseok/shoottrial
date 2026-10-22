@@ -144,6 +144,8 @@ Plans:
 **Goal**: 전투 중 HUD 버튼으로 열을 골라 포격하고(판당 2회), 웨이브 7 진입 때 데프콘 1 연출이 확실히 보인다.
 **Depends on**: Phase 4, **외부: T-104(HUD 화력 지원 버튼·`Hud.support`·`BattleCtl.fireSupport`·데프콘 1 테두리 점멸)가 main에 머지되어야 한다.**
 **Requirements**: FIRE-01, FIRE-02, DEF-01
+**Plans**: 1 plan (Claude 직접 작성, CONTEXT 겸용)
+- [ ] 05-01-PLAN.md — SUPPORT 수치·colAt·supportAvg(TDD), 열 고르기·포격·입력 잠금·?support=N, 데프콘 1 흔들림, 헤드리스 F1~F6
 **Debug URL**: `/?scene=battle&wave=7&deck=rifle:4&seed=42`
 
 ### Phase 6: 그림 반영·저장 이전
