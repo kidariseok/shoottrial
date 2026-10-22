@@ -39,7 +39,7 @@ metrics:
 | Task 1 RED | b7b43c6 | `test(06-01)`: frameCount·artKey 표·artLoops·ART 수치 실패 테스트 |
 | Task 1 GREEN | 3c0ba60 | `feat(06-01)`: ART 수치, frameCount·artKey·artLoops |
 | Task 2 | c003146 | `feat(06-01)`: art.ts, 아군·적·보스·지뢰·가스·이펙트·배경 연결, ?art=0 |
-| Task 3 | (아래 마지막 커밋) | 스크린샷 3장, SUMMARY |
+| Task 3 | 7e38e9d | 스크린샷 3장, SUMMARY |
 
 ## 구현 요약
 
