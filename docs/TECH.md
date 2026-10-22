@@ -145,7 +145,7 @@ show(slot):
 
 ```ts
 export type Phase = 'prep' | 'fight' | 'settle'
-export type Hud = { wave: number; waves: number; defcon: 2 | 1; supply: number; baseHp: number; phase: Phase; prepLeft: number; speed: 1 | 2; synergies: { card: string; count: number; on: boolean }[] }
+export type Hud = { wave: number; waves: number; defcon: 2 | 1; supply: number; baseHp: number; phase: Phase; prepLeft: number; speed: 1 | 2; synergies: { card: string; count: number; on: boolean }[]; support?: number }  // support: 남은 화력 지원 횟수(M3, GDD §5.8)
 export type Offer = { card: string; cost: number } | null
 
 export function hud(h: Hud): void                                              // 매 프레임이 아니라 값이 바뀔 때만
@@ -164,8 +164,10 @@ export type BattleCtl = {
   quit(): void          // 포기 → A가 결과 화면(result)으로 간다
   adReroll(): void      // 광고를 끝까지 본 뒤 B가 부른다. A가 무료 리롤 1회를 적용한다
   adSupply(): void      // 광고를 끝까지 본 뒤 B가 부른다. A가 보급 +5를 적용한다
+  fireSupport?(): void  // M3(선택, Phase 5부터 A가 넘긴다): HUD "화력 지원" 버튼. A가 열 고르기를 시작한다(전투 단계·남은 횟수 > 0일 때만 동작)
 }
 export function bindBattle(ctl: BattleCtl | null): void
+export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battle 씬을 멈춘 뒤 부른다. B가 로비를 그리고, 출동하면 B가 battle 씬을 다시 시작한다(T-105)
 ```
 
 - 대기석·판매 칸·배치 구역·지뢰 토큰은 **캔버스(A)**다. 드래그가 한 좌표계 안에서 끝나야 하기 때문이다.
@@ -173,6 +175,7 @@ export function bindBattle(ctl: BattleCtl | null): void
 - 상점 카드를 누르면 `onBuy(i)` → A가 보급을 차감하고 대기석에 넣는다.
 - 전투 중 안드로이드 뒤로가기 → B가 `ctl.pause()` 후 일시정지 모달을 띄운다(로비에서는 종료 확인 모달).
 - A는 해금·최고 기록 저장에 B의 `save.ts`(`load()`/`save()`)를 import해 쓴다(M2 동안은 §5의 예외대로 `src/battle/persist.ts`). `?scene=log`는 B의 `main.ts`가 `battle` 씬으로 시작하고, A가 그 안에서 기록 화면을 그린다.
+- **M3 변경(2026-10-22)**: `Hud.support`와 `BattleCtl.fireSupport()`를 더했다. B는 전투 단계이고 `support > 0`일 때만 버튼을 켠다(T-104).
 - 광고 슬롯 중 `revive`는 `askRevive`, `unlock`은 로비(B)가 처리한다. `reroll`·`supply`만 `ctl`을 거친다.
 
 ## 9. 디버그 URL
