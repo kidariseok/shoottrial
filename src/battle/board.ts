@@ -20,6 +20,8 @@ export type Board = {
   // 프로그램용 이동(빈 칸으로만)
   move(from: Spot, to: Spot): boolean
   dealDeck(deck: DeckItem[]): void
+  // 화력 지원 열 고르는 동안 카드 집기·길게 누르기를 막는다
+  lock(on: boolean): void
   // 논리 좌표(열, 칸 단위 y: 적 진입 구역 맨 위 = 0) -> 월드 좌표(화면 내림 포함)
   toScreen(col: number, y: number): { x: number; y: number }
   // LAYOUT 기준 y -> 월드 y(화면 내림 포함)
@@ -236,6 +238,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   // 흐름 단계와 지금 끌고 있는 카드(잠긴 드래그는 null)
   let phase: FlowPhase = 'prep'
   let active: GameObjects.Container | null = null
+  let locked = false // 화력 지원 열 고르기 중
 
   // 길게 누르기: 정해진 시간(data.ts) 동안 거의 움직이지 않으면 onHold(unit), 손을 떼면 onHold(null). 드래그가 시작되면 열지 않는다
   // ponytail: 터치 실기기에서 손가락 오프셋·멀티터치는 확인 못 함, 실기기 확인 때 임계값 조정
@@ -247,6 +250,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   }
   scene.input.on('pointerdown', (_p: unknown, over: GameObjects.GameObject[]) => {
     cancelHold()
+    if (locked) return
     const unit = over.map((o) => (o.getData('slot') as Slot | undefined)?.unit).find((u) => u)
     if (!unit) return // 지뢰 토큰 더미·빈 곳은 무시
     holdTimer = scene.time.delayedCall(UI.hold.ms, () => {
@@ -273,7 +277,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('dragstart', (_p: unknown, obj: GameObjects.GameObject) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from) return
+    if (!from || locked) return
     if (!canDrag(phase, from.zone)) {
       active = null
       return
@@ -459,6 +463,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     worldY,
     deployed,
     setPhase: (p) => (phase = p),
+    lock: (on) => (locked = on),
     setTokens,
     tokens: () => tokenCount,
     bury,

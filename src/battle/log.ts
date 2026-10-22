@@ -34,6 +34,7 @@ export function drawLog(scene: Scene, runs: PlayRun[]): void {
   line([[L.x, T.logWinRate], [L.colBuys, pct(sum.winRate)]], T.color)
   line([[L.x, T.logAvgTime], [L.colBuys, mmss(sum.avgSec)]], T.color)
   line([[L.x, T.logAvgWave], [L.colBuys, sum.avgWave.toFixed(L.waveDigits)]], T.color)
+  line([[L.x, T.logSupport], [L.colBuys, `${sum.supportAvg.toFixed(L.waveDigits)}${T.logTimes}`]], T.color)
   y += L.blockGap
 
   line([[L.x, T.logCardHead], [L.colBuys, T.logBuys], [L.colRate, T.logRate]], T.labelColor)
