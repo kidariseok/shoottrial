@@ -1,21 +1,31 @@
 // tests/assets-pipeline.test.ts를 위한 테스트 헬퍼 (Node fs/tmp 및 pngjs 래퍼)
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 import {
   BASELINE_Y,
+  UNIT_TARGET_HEIGHT,
   alignFrameToCanvas,
   findBoundingBox,
+  ingestInbox,
   loadAssetContracts,
   mergeFramesToSheet,
   processAllAssets,
   processAssetKey,
   removeMagenta,
+  splitSheetByChunks,
+  suggestSimilarKeys,
 } from '../assets.mjs'
 import { checkAssets } from '../assets-check.mjs'
-import { generateFixtures } from './generate-fixtures.mjs'
+import {
+  createFiveChunkSheet,
+  createIrregularThreeSoldierSheet,
+  createMagentaBackgroundFixture,
+  createTwoSoldierIdleSheet,
+  generateFixtures,
+} from './generate-fixtures.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 export const ROOT_DIR = resolve(__dirname, '..', '..')
@@ -23,15 +33,23 @@ export const FIXTURES_DIR = __dirname
 
 export {
   BASELINE_Y,
+  UNIT_TARGET_HEIGHT,
   alignFrameToCanvas,
   checkAssets,
+  createFiveChunkSheet,
+  createIrregularThreeSoldierSheet,
+  createMagentaBackgroundFixture,
+  createTwoSoldierIdleSheet,
   findBoundingBox,
   generateFixtures,
+  ingestInbox,
   loadAssetContracts,
   mergeFramesToSheet,
   processAllAssets,
   processAssetKey,
   removeMagenta,
+  splitSheetByChunks,
+  suggestSimilarKeys,
 }
 
 export function readFixturePng(relPath) {
@@ -40,6 +58,28 @@ export function readFixturePng(relPath) {
 
 export function readPngFile(absPath) {
   return PNG.sync.read(readFileSync(absPath))
+}
+
+export function writePngFile(absPath, png) {
+  mkdirSync(dirname(absPath), { recursive: true })
+  writeFileSync(absPath, PNG.sync.write(png, { colorType: 6 }))
+}
+
+export function sliceSheetFrame(sheetPng, frameIndex, frameW) {
+  const frameH = sheetPng.height
+  const startX = frameIndex * frameW
+  const out = new PNG({ width: frameW, height: frameH, colorType: 6 })
+  for (let y = 0; y < frameH; y++) {
+    for (let x = 0; x < frameW; x++) {
+      const srcIdx = (y * sheetPng.width + (startX + x)) * 4
+      const dstIdx = (y * frameW + x) * 4
+      out.data[dstIdx] = sheetPng.data[srcIdx]
+      out.data[dstIdx + 1] = sheetPng.data[srcIdx + 1]
+      out.data[dstIdx + 2] = sheetPng.data[srcIdx + 2]
+      out.data[dstIdx + 3] = sheetPng.data[srcIdx + 3]
+    }
+  }
+  return out
 }
 
 export function getPixel(png, x, y) {
@@ -86,24 +126,31 @@ export function createTallFeetOverflowPng() {
 }
 
 export function withTempWorkspace(fn) {
-  const tempDir = mkdtempSync(join(tmpdir(), 'taimen-h102-'))
+  const tempDir = mkdtempSync(join(tmpdir(), 'taimen-h103-'))
   try {
+    const inboxDir = join(tempDir, 'art', 'inbox')
+    const sourceDir = join(tempDir, 'art', 'source')
     const outAssetsDir = join(tempDir, 'public', 'assets')
     const ledgerPath = join(tempDir, 'art', 'LEDGER.json')
     const indexPath = join(outAssetsDir, 'index.json')
+    mkdirSync(inboxDir, { recursive: true })
+    mkdirSync(sourceDir, { recursive: true })
     mkdirSync(outAssetsDir, { recursive: true })
-    mkdirSync(join(tempDir, 'art'), { recursive: true })
     writeFileSync(indexPath, '[]\n', 'utf8')
     writeFileSync(ledgerPath, '{"entries":[]}\n', 'utf8')
 
     return fn({
       tempDir,
+      inboxDir,
+      sourceDir,
       outAssetsDir,
       ledgerPath,
       indexPath,
+      exists: (path) => existsSync(path),
       writeJson: (path, data) => writeFileSync(path, JSON.stringify(data, null, 2) + '\n', 'utf8'),
       readJson: (path) => JSON.parse(readFileSync(path, 'utf8')),
       writeRawFile: (path, buf) => writeFileSync(path, buf),
+      writePng: (path, png) => writePngFile(path, png),
       removeFile: (path) => rmSync(path, { force: true }),
       joinPath: (...parts) => join(...parts),
     })
