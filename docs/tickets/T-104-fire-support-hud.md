@@ -1,6 +1,6 @@
 # T-104 HUD 화력 지원 버튼 + 데프콘 1 연출
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -49,10 +49,10 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] 레인 A가 아직 `support`를 넘기지 않아 `tsc`가 깨지는 일이 없다. A 쪽 수정이 필요하면 `## 질문`에 적고 멈춘다. `Hud` 객체 리터럴에 필드가 빠지면 tsc 오류가 나므로, 그래서 `support?: number`와 `fireSupport?()`는 둘 다 선택으로 두고, 없으면 버튼을 끈다. Phase 5가 넘기기 시작하면 Claude가 필수로 바꾼다.
-- [ ] `docs/shots/T-104.png`: `?scene=ui` 데모에서 화력 지원 버튼(켜짐)과 데프콘 1 테두리 점멸 중인 화면(390×844)
-- [ ] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 결과가 위 1번의 세 줄 추가뿐이다
+- [x] `npm run verify` 통과
+- [x] 레인 A가 아직 `support`를 넘기지 않아 `tsc`가 깨지는 일이 없다. A 쪽 수정이 필요하면 `## 질문`에 적고 멈춘다. `Hud` 객체 리터럴에 필드가 빠지면 tsc 오류가 나므로, 그래서 `support?: number`와 `fireSupport?()`는 둘 다 선택으로 두고, 없으면 버튼을 끈다. Phase 5가 넘기기 시작하면 Claude가 필수로 바꾼다.
+- [x] `docs/shots/T-104.png`: `?scene=ui` 데모에서 화력 지원 버튼(켜짐)과 데프콘 1 테두리 점멸 중인 화면(390×844)
+- [x] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 결과가 위 1번의 세 줄 추가뿐이다
 
 디버그 URL: `http://localhost:5173/?scene=ui`
 
@@ -89,6 +89,7 @@
 - [x] 2단계: `src/ui/screens.ts`에 `Hud.support`, `BattleCtl.fireSupport`, `lobby()` 추가 및 화력 지원 버튼·데프콘 1 테두리 점멸/오디오 호출 구현
 - [x] 3단계: `src/ui/style.css`에 `.hud-support-btn`, `.ui-defcon-flash`(3회 점멸 애니메이션), `.ui-demo-controls` 스타일 추가
 - [x] 4단계: `src/ui/demo.ts`에 "화력 지원 켜짐/꺼짐" 및 "데프콘 1 배너" 데모 버튼 추가
+- [x] 5단계: `tests/ui.test.ts`에 `canFireSupport` 4가지 조합 및 `isSameHud` 테스트 추가, `npm run verify` 통과
 
 ## 결과 보고
 
