@@ -48,6 +48,7 @@ shoottrial/
 │     ├─ board.ts          # A  칸 좌표, 드래그·보정·합성, 대기석, 지뢰 구역
 │     ├─ units.ts          # A  아군 행동(카드별 switch)
 │     ├─ enemies.ts        # A  적 행동(종류별 switch) + 보스
+│     ├─ gas.ts            # A  화학탄 예고·가스 칸·제독(M3)
 │     └─ fx.ts             # A  섬광·흔들림·파티클·팝업
 ├─ tests/                  # A  rules.test.ts · (B) save.test.ts · ads.test.ts
 ├─ public/assets/          # D→B  ART.md §4 에셋 계약 표의 파일만

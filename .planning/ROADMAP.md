@@ -134,6 +134,11 @@ Phases execute in numeric order: 1 → 2 → 3
   2. 화학탄 1.5초 전 붉은 예고 → 2×2 가스 칸(20초). 가스 칸 아군은 공격 간격 ×2, 초당 5 피해. 화학병 범위 안 아군은 면역이고 화학병이 3초마다 범위 안 가스를 지운다. 시너지 2명이면 떨어지는 즉시 지운다. 상병 범위 2칸, 병장 인접 피해 ×1.15.
   3. 강화 군견(HP 80, 밀림 ×1.0)이 웨이브 9·10에 나온다. 해금 순서 끝에 화학병이 붙는다.
   4. 튜닝 봇 게이트를 다시 돌려 초행자 중앙값 웨이브 5 이상을 유지하고, god 봇이 화학병 없이도 웨이브 10을 끝낼 수 있음을 기록한다.
+**Plans**: 3 plans (순차: 04-01 → 04-02 → 04-03, 브랜치 kidariseok/m3-core에서 바로)
+Plans:
+- [ ] 04-01-PLAN.md — 화학병·GAS·강화 군견 수치, WaveDef.gas·dogPlus, spawnPlan 강화 군견, 해금 순서, 가스 순수 함수(gasPlan·inChemReach·gasCellsAfterDrop·cleanseCells·chemDamageMult·interval 감속) (TDD)
+- [ ] 04-02-PLAN.md — 전투 연결(gas.ts 예고·가스 칸·감속·피해·면역·제독·시너지·병장 버프·정리, 화학병 사격, 강화 군견 열 옮김·테두리, `?gas=1`, gas_drop·gas_clear) + 헤드리스 확인·스크린샷 M3-04
+- [ ] 04-03-PLAN.md — 튜닝 봇 gate 재측정 → 04-TUNING.md(초행자 중앙값 < 5 또는 god 미완주면 멈추고 보고), 단계 전체 게이트
 
 ### Phase 5: 화력 지원·데프콘 1
 **Goal**: 전투 중 HUD 버튼으로 열을 골라 포격하고(판당 2회), 웨이브 7 진입 때 데프콘 1 연출이 확실히 보인다.
