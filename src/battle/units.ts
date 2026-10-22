@@ -1,5 +1,5 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, CARDS, LAYOUT, UI, type CardKey } from '../data'
+import { ABILITY, CARDS, CARD_KEYS, LAYOUT, UI, type CardKey } from '../data'
 import { allyY, blowerRange, cookReach, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach } from '../rules'
 import type { Board, Unit } from './board'
 import { hurtEnemy, type Enemy } from './enemies'
@@ -95,7 +95,7 @@ export function endWave(allies: Ally[]): void {
 
 // 배치 구역 인원(쓰러졌든 아니든, 계급 무관). 시너지 기준(GDD §5.4)
 export function synergyCounts(allies: Ally[]): Record<CardKey, number> {
-  const counts = { rifle: 0, sniper: 0, blower: 0, cook: 0, miner: 0 }
+  const counts = Object.fromEntries(CARD_KEYS.map((k) => [k, 0])) as Record<CardKey, number>
   for (const a of allies) counts[a.unit.card] += 1
   return counts
 }

@@ -94,10 +94,11 @@ export type SpawnEvent = { t: number; col: number; type: EnemyType }
 export function spawnPlan(wave: number, rand: () => number, defcon1: boolean): SpawnEvent[] {
   const def = WAVES[wave - 1]
   if (!def) return []
-  // (1) 단발 목록: 보병, 군견, RPG병 순으로 이어 붙인다
+  // (1) 단발 목록: 보병, 군견, 강화 군견, RPG병 순으로 이어 붙인다
   const singles: EnemyType[] = [
     ...Array<EnemyType>(def.infantry).fill('infantry'),
     ...Array<EnemyType>(def.dog).fill('dog'),
+    ...Array<EnemyType>(def.dogPlus).fill('dogPlus'),
     ...Array<EnemyType>(def.rpg).fill('rpg'),
   ]
   // (2) Fisher-Yates로 섞는다
