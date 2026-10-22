@@ -1,4 +1,4 @@
-import type { Hud } from './screens'
+import type { Hud, Phase } from './screens'
 
 const CARD_META: Record<string, { name: string; initial: string }> = {
   rifle: { name: '소총수', initial: '소' },
@@ -44,6 +44,10 @@ export function sortSynergies(
   })
 }
 
+export function canFireSupport(phase: Phase, support?: number): boolean {
+  return phase === 'fight' && (support ?? 0) > 0
+}
+
 export function isSameHud(prev: Hud | null, next: Hud): boolean {
   if (!prev) return false
   if (
@@ -54,7 +58,8 @@ export function isSameHud(prev: Hud | null, next: Hud): boolean {
     prev.baseHp !== next.baseHp ||
     prev.phase !== next.phase ||
     prev.prepLeft !== next.prepLeft ||
-    prev.speed !== next.speed
+    prev.speed !== next.speed ||
+    prev.support !== next.support
   ) {
     return false
   }

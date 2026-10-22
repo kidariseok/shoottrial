@@ -1,63 +1,38 @@
-# 에셋 원본 넣기·정리 3단계 사용법 (`art/source/`)
+# 에셋 받은편지함 사용법 (`art/inbox/` → `public/assets/`)
 
-Gemini Argon 이미지나 Figma에서 만든 **마젠타(`#FF00FF`) 배경 원본 그림**을 게임 규격(`docs/ART.md` §4)에 맞춰 `public/assets/`로 변환하고 장부(`art/LEDGER.json`)에 등록하는 안내서입니다.
-
----
-
-## 1단계: `art/source/<키>/` 폴더에 원본 넣기
-
-계약 키 이름(`src/assets.ts` 및 `docs/ART.md` §4 참고, 예: `ally_rifle_idle`, `enemy_inf_walk`, `fx_explosion`)으로 폴더를 만들고, 아래 **두 가지 방법 중 하나**로 PNG 파일을 넣습니다.
-
-1. **프레임별 낱장 파일**: `01.png`, `02.png`, `03.png` … 순서대로 넣기
-2. **가로 한 줄 시트 1장**: `sheet.png` 이름으로 넣기 (프레임 수만큼 가로로 균등 분할해 처리합니다)
-
-### (선택) `meta.json` 함께 넣기
-같은 폴더(`art/source/<키>/meta.json`)에 출처와 생성 도구를 적어 두면 `art/LEDGER.json` 장부에 자동으로 기록됩니다. 생략하면 기본값으로 채워집니다.
-
-```json
-{
-  "tool": "gemini-argon",
-  "prompt": "art/source/ally_rifle_idle/prompt.txt",
-  "source": "https://www.figma.com/design/6RrU20Hv8way6vlYjcTJU3/?node-id=5-18",
-  "license": "proprietary",
-  "edited": true
-}
-```
+Gemini Argon 이미지나 Figma에서 만든 그림을 **`art/inbox/<키>.png`로 저장한 뒤 명령어 한 번**으로 게임 규격(`docs/ART.md` §4)에 맞춰 `public/assets/`로 변환하고 장부(`art/LEDGER.json`)에 등록합니다.
 
 ---
 
-## 2단계: 정리 스크립트 실행하기
+## 한 단계 사용법
 
-터미널에서 아래 명령을 실행합니다.
+1. 그림을 계약 키 이름(`src/assets.ts` 및 `docs/tickets/A-102-art-pack.md` 참고, 예: `ally_rifle_idle.png`, `ally_rifle_attack.png`, `card_rifle.png`, `bg_gate.png`)으로 **`art/inbox/<키>.png`**에 넣습니다.
+2. 터미널에서 아래 명령 한 줄을 실행합니다.
 
 ```bash
-# 특정 키 하나만 변환할 때
-node scripts/assets.mjs ally_rifle_idle
-
-# art/source/ 아래의 모든 키를 한꺼번에 변환할 때
 node scripts/assets.mjs
 ```
 
-### 스크립트가 자동으로 하는 일
-- **마젠타 제거**: `#FF00FF`(± 허용 오차) 배경을 투명하게 바꾸고, 캐릭터 외곽선의 분홍 번짐(1px 테두리)을 정리합니다.
-- **캔버스 정렬**: 각 프레임의 불투명 내용 경계를 찾아 계약 캔버스(예: `128×128`)에 맞춥니다.
-  - **유닛(`ally_*`, `enemy_*`)**: 가로 중앙, **발끝(가장 아래 불투명 픽셀)을 `y=116` 기준선**에 맞춥니다.
-  - **보스·이펙트·카드·아이콘·계급장·타일·배경**: 가로·세로 **정중앙**에 맞춥니다.
-- **크기 초과 방지**: 잘라낸 내용이 계약 캔버스(또는 발끝 기준선 위 높이 116px)보다 크면 **임의로 축소하지 않고 에러와 실제 크기를 출력하며 멈춥니다**. 원본 크기를 조절한 뒤 다시 실행해 주세요.
-- **결과 저장**: 가로 한 줄 시트 `public/assets/<키>.png`를 생성하고, `public/assets/index.json`과 `art/LEDGER.json`을 갱신합니다.
-
 ---
 
-## 3단계: 계약 검사 및 갤러리 화면 확인하기
+## 스크립트가 자동으로 하는 일
 
-변환이 끝나면 계약 검사와 갤러리 화면으로 결과를 확인합니다.
+- **받은편지함 이관**: `art/inbox/<키>.png`를 `art/source/<키>/sheet.png`로 옮깁니다(기존 `sheet.png`가 있으면 `sheet.prev.png`로 백업). 계약에 없는 이름이면 가장 비슷한 키 3개를 알려 주고 멈춥니다.
+- **마젠타 제거 및 프레임 자동 분리**:
+  - `#FF00FF`(± 허용 오차) 배경과 1px 분홍 번짐을 지운 뒤, 세로로 완전히 투명한 열을 경계로 덩어리를 나눕니다.
+  - 간격이 4px 미만인 조각(몸통과 떨어진 총구 등)은 하나로 합치고, 가장 큰 덩어리 면적의 3% 미만인 작은 조각(남은 글자·반짝이)은 버립니다.
+  - 덩어리 수가 계약 허용 프레임 범위 밖이면 찾은 덩어리 수와 각 `x` 범위를 출력하고 실패합니다.
+- **자동 축소 및 캔버스 정렬**:
+  - **유닛(`ally_*`, `enemy_*`)**: 가장 큰 프레임의 내용 높이가 `96px`이 되도록 한 배율로 줄이고 발끝을 `y=116` 기준선에 맞춥니다. 같은 캐릭터의 다른 동작(`_attack` 등)은 먼저 처리된 기준 키(`_idle`·`_walk`·`_run`)의 배율(`art/LEDGER.json`의 `scale`)을 그대로 이어 씁니다.
+  - **카드(`card_*`, 256×320)**: `240×300` 안에 맞추고 정중앙에 둡니다.
+  - **보스·이펙트·지뢰(`boss_*`, `fx_*`, `mine*`)**: 캔버스의 90% 안에 맞추고 정중앙에 둡니다.
+  - **배경(`bg_*`)**: 마젠타를 지우지 않고 `720×1560`을 꽉 채우도록(cover) 줄인 뒤 가운데 기준으로 자릅니다.
+  - 이미 목표 크기보다 작으면 확대하지 않고 그대로 둡니다.
+- **검사 및 갤러리 확인**:
+  - `npm run assets:check`로 계약·장부 대조 검사를 실행할 수 있습니다.
+  - `npm run dev` 실행 후 `http://localhost:5173/?scene=gallery`에서 변환 결과를 눈으로 확인합니다.
 
-```bash
-# 1) 에셋 계약·장부 검사 (높이·너비·프레임 수·알파 채널·장부 대조)
-npm run assets:check
-
-# 2) 개발 서버 실행 후 갤러리에서 눈으로 확인
-npm run dev
-```
-
-브라우저에서 `http://localhost:5173/?scene=gallery` 를 열었을 때, 변환한 에셋이 **빨간 테두리(규격 위반 경고) 없이** 선명하게 보이면 완료입니다.
+### (선택) 고급 옵션: `art/source/<키>/meta.json`
+특정 키에 균등 분할이나 축소 금지가 필요하면 `art/source/<키>/meta.json`에 설정할 수 있습니다.
+- `"split": "even"`: 자동 분리 대신 가로 너비를 프레임 수로 균등 분할
+- `"fit": false`: 자동 축소를 끄고 캔버스보다 크면 에러 발생
