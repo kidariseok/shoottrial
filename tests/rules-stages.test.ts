@@ -11,8 +11,9 @@ describe('GDD 수치 고정', () => {
       dog: { name: '군견', hp: 40, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0 },
       rpg: { name: 'RPG병', hp: 50, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3 },
       boss: { name: '장갑차', hp: 1200, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0 },
+      dogPlus: { name: '강화 군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0 },
     }
-    expect([...ENEMY_KEYS]).toEqual(['infantry', 'dog', 'rpg', 'boss'])
+    expect([...ENEMY_KEYS]).toEqual(['infantry', 'dog', 'rpg', 'boss', 'dogPlus'])
     for (const [k, v] of Object.entries(gdd)) {
       const e = ENEMIES[k as keyof typeof ENEMIES]
       expect({
@@ -29,7 +30,7 @@ describe('GDD 수치 고정', () => {
   })
   it('적 색은 서로 다르고 붉은 계열이 아니다', () => {
     const colors = ENEMY_KEYS.map((k) => ENEMIES[k].color)
-    expect(new Set(colors).size).toBe(4)
+    expect(new Set(colors).size).toBe(ENEMY_KEYS.length)
     for (const c of colors) {
       const r = (c >> 16) & 0xff
       const g = (c >> 8) & 0xff
@@ -38,7 +39,7 @@ describe('GDD 수치 고정', () => {
     }
   })
   it('적 크기(칸 대비 비율)', () => {
-    expect(ENEMY_KEYS.map((k) => ENEMIES[k].size)).toEqual([0.55, 0.45, 0.55, 0.9])
+    expect(ENEMY_KEYS.map((k) => ENEMIES[k].size)).toEqual([0.55, 0.45, 0.55, 0.9, 0.45])
   })
   it('보스 충격파·군견 열 변경', () => {
     expect(BOSS).toEqual({ shockStun: 1.5, shockY: 4 })
@@ -106,12 +107,14 @@ describe('GDD 수치 고정', () => {
     expect(STAGE1).toEqual({ spawnGap: 1.2, convoySize: 5, convoyGap: 0.5 })
   })
   it('§5.7 웨이브 표 10행', () => {
-    const w = (infantry: number, dog: number, rpg: number, boss = 0, convoys = 0, flag = false) => ({
+    const w = (infantry: number, dog: number, rpg: number, boss = 0, convoys = 0, flag = false, dogPlus = 0, gas = 0) => ({
       infantry,
       dog,
+      dogPlus,
       rpg,
       boss,
       convoys,
+      gas,
       flag,
     })
     expect(WAVES).toEqual([
@@ -121,10 +124,10 @@ describe('GDD 수치 고정', () => {
       w(10, 4, 0),
       w(10, 3, 2, 1, 0, true),
       w(12, 6, 3, 0, 1),
-      w(14, 6, 4),
+      w(14, 6, 4, 0, 0, false, 0, 1),
       w(16, 8, 4),
-      w(18, 8, 6, 0, 2),
-      w(20, 10, 6, 2, 0, true),
+      w(18, 4, 6, 0, 2, false, 4, 1),
+      w(20, 5, 6, 2, 0, true, 5, 2),
     ])
   })
 })
@@ -165,8 +168,8 @@ describe('spawnPlan', () => {
       1: [6, 0, 0, 0],
       5: [10, 3, 2, 1],
       6: [17, 6, 3, 0],
-      9: [28, 8, 6, 0],
-      10: [20, 10, 6, 2],
+      9: [28, 4, 6, 0],
+      10: [20, 5, 6, 2],
     }
     for (const [w, [inf, dog, rpg, boss]] of Object.entries(want)) {
       const ev = spawnPlan(Number(w), createRng(7), false)
@@ -175,7 +178,7 @@ describe('spawnPlan', () => {
     for (let w = 1; w <= WAVES.length; w++) {
       const d = WAVES[w - 1]!
       const ev = spawnPlan(w, createRng(3), false)
-      expect(ev).toHaveLength(d.infantry + d.convoys * STAGE1.convoySize + d.dog + d.rpg + d.boss)
+      expect(ev).toHaveLength(d.infantry + d.convoys * STAGE1.convoySize + d.dog + d.dogPlus + d.rpg + d.boss)
     }
   })
   it('데프콘 1은 출현 간격 x0.7, 아니면 1.2', () => {

@@ -97,6 +97,9 @@ describe('nextUnlock', () => {
   it('취사병까지 해금이면 지뢰설치병', () => {
     expect(nextUnlock(['cook', 'blower', 'rifle', 'sniper'])).toBe('miner')
   })
+  it('지뢰설치병까지 해금이면 화학병', () => {
+    expect(nextUnlock(['rifle', 'sniper', 'blower', 'cook', 'miner'])).toBe('chem')
+  })
   it('모두 해금이면 null', () => {
     expect(nextUnlock([...CARD_KEYS])).toBeNull()
   })
@@ -127,7 +130,7 @@ describe('parseUnlocked', () => {
 describe('GDD 수치 고정 (3단계)', () => {
   it('§7 해금', () => {
     expect([...UNLOCK.base].sort()).toEqual(['blower', 'rifle', 'sniper'])
-    expect(UNLOCK.order).toEqual(['cook', 'miner'])
+    expect(UNLOCK.order).toEqual(['cook', 'miner', 'chem'])
     expect(UNLOCK.atWave).toBe(5)
   })
   it('§10·§4.2 보상', () => {
