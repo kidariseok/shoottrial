@@ -376,7 +376,7 @@ Extend the attached top-down pixel art map vertically to a 9:19.5 portrait ratio
     - enemy_inf_attack 2번째 프레임 바지 무늬, 보병·RPG 걷기 4프레임이 거의 같음
     - 저격수 공격 2번째 프레임 자주색 조각, fx_explosion 빨간 조각, fx_heal 옅은 분홍 줄
   - 수동 정리 이력: ally_miner_idle 찌꺼기 제거, fx_muzzle 워터마크 제거. fx_explosion·fx_flame·fx_heal은 meta.json `split: even`
-- [ ] 0단계 목업 승인(bg_gate 길 넓이 결정 전에 필요)
+- [x] 2026-10-23 0단계: 사용자가 배경 길을 **넓힌다**로 결정했다(G묶음 프롬프트 그대로: 흙길이 화면 폭의 약 3/4). 화풍은 이미 이 결로 생산 중이라 승인으로 본다.
 - [ ] A묶음 7장
 - [ ] B묶음 12장
 - [ ] C묶음 6장
