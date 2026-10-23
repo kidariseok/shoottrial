@@ -1,8 +1,110 @@
-import type { Scene, GameObjects } from 'phaser'
-import { ART, LAYOUT, UI } from '../data'
+import { BlendModes, type Scene, type GameObjects, type Types } from 'phaser'
+import { ART, FX, LAYOUT, UI } from '../data'
 import { playFx } from './art'
 
-// 도형·트윈만 쓰는 공통 연출. 피·시체 표현은 쓰지 않는다
+// 도형·트윈·파티클만 쓰는 공통 연출. 피·시체 표현은 쓰지 않는다
+
+// ---- 파티클 ----
+// 연출 종류마다 이미터 하나를 만들어 두고 explode로 재사용한다(Phaser가 풀링한다)
+type Kind = keyof typeof FX.kinds
+type Emitters = Record<Kind, GameObjects.Particles.ParticleEmitter>
+const KINDS = Object.keys(FX.kinds) as Kind[]
+const emitters = new WeakMap<Scene, Emitters>()
+// ponytail: ?fx=low 는 개수 절반만 줄인다(저사양 대비), 설정 화면 연결은 게이트 때 debug.ts로
+const low = new URLSearchParams(location.search).get('fx') === FX.lowValue
+
+// 파티클 텍스처 4개를 코드로 한 번 만든다(흰 원·작은 사각·부드러운 원·십자)
+function makeTextures(scene: Scene): void {
+  if (scene.textures.exists('pfx_dot')) return
+  const { dot, square, glow, glowSteps, plus, plusThick } = FX.tex
+  const g = scene.make.graphics({}, false)
+  const bake = (key: string, size: number) => {
+    g.generateTexture(key, size, size)
+    g.clear()
+  }
+  g.fillStyle(FX.tex.color).fillCircle(dot, dot, dot)
+  bake('pfx_dot', dot * 2)
+  g.fillStyle(FX.tex.color).fillRect(0, 0, square * 2, square * 2)
+  bake('pfx_square', square * 2)
+  // 가운데가 가장 밝은 부드러운 원: 반지름을 줄이며 옅게 겹쳐 그린다
+  for (let i = 0; i < glowSteps; i++) g.fillStyle(FX.tex.color, 1 / glowSteps).fillCircle(glow, glow, (glow * (glowSteps - i)) / glowSteps)
+  bake('pfx_glow', glow * 2)
+  g.fillStyle(FX.tex.color).fillRect(0, plus - plusThick / 2, plus * 2, plusThick).fillRect(plus - plusThick / 2, 0, plusThick, plus * 2)
+  bake('pfx_plus', plus * 2)
+  g.destroy()
+}
+
+// 씬마다 이미터 묶음. 씬이 다시 시작되면(이미터가 파괴됨) 새로 만든다
+function setOf(scene: Scene): Emitters {
+  const have = emitters.get(scene)
+  if (have && have.spark.scene) return have
+  makeTextures(scene)
+  const made = {} as Emitters
+  for (const k of KINDS) {
+    const kind = FX.kinds[k]
+    made[k] = scene.add
+      .particles(0, 0, `pfx_${kind.tex}`, { ...(kind.cfg as Types.GameObjects.Particles.ParticleEmitterConfig), emitting: false })
+      .setDepth(kind.over ? FX.depthOver : FX.depthUnder)
+  }
+  emitters.set(scene, made)
+  return made
+}
+
+// 지금 살아 있는 파티클 수(상한 계산, 헤드리스 측정)
+export function aliveParticles(scene: Scene): number {
+  return KINDS.reduce((sum, k) => sum + setOf(scene)[k].getAliveParticleCount(), 0)
+}
+
+// 파티클 한 묶음. n을 안 주면 종류별 기본 개수. 상한을 넘으면 남은 자리만큼만 낸다
+export function burst(scene: Scene, kind: Kind, x: number, y: number, n: number = FX.kinds[kind].n): void {
+  const count = Math.min(Math.round(n * (low ? FX.lowScale : 1)), FX.maxParticles - aliveParticles(scene))
+  if (count > 0) setOf(scene)[kind].explode(count, x, y)
+}
+
+// 가산 혼합 부드러운 빛이 커지며 사라진다(총구 섬광·폭발 중심)
+function glowFlash(scene: Scene, x: number, y: number, s: { color: number; from: number; to: number; ms: number; alpha: number }): void {
+  setOf(scene) // 텍스처 보장
+  const g = scene.add.image(x, y, 'pfx_glow').setTint(s.color).setBlendMode(BlendModes.ADD).setScale(s.from).setAlpha(s.alpha).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: g, scale: s.to, alpha: 0, duration: s.ms, onComplete: () => g.destroy() })
+}
+
+// 충격파 고리: 반지름이 커지며 사라진다(선 굵기는 그대로)
+function ring(scene: Scene, x: number, y: number, s: { r: number; lineW: number; color: number; scale: number; ms: number; alpha: number }): void {
+  const c = scene.add.circle(x, y, s.r).setStrokeStyle(s.lineW, s.color, s.alpha).setBlendMode(BlendModes.ADD).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: c, radius: s.r * s.scale, alpha: 0, duration: s.ms, onComplete: () => c.destroy() })
+}
+
+// ---- 히트스톱 ----
+// 큰 사건 때 전투 dt를 잠깐 0으로 만든다. 실제 시간 기준이라 2배속이어도 같다
+const stop = { left: 0 }
+export const hitStop = (): void => {
+  stop.left = FX.hitStopSec
+}
+export const resetStop = (): void => {
+  stop.left = 0
+}
+// 정지 중이면 true(남은 시간을 real초만큼 줄인다). 호출한 쪽이 dt를 0으로 쓴다
+export function stopping(real: number): boolean {
+  if (stop.left <= 0) return false
+  stop.left -= real
+  return true
+}
+
+// 진급: 계급 고리 빛 + 별 파티클 + 히트스톱
+export function promoteFx(scene: Scene, x: number, y: number): void {
+  ring(scene, x, y, FX.ring.rank)
+  burst(scene, 'star', x, y)
+  hitStop()
+}
+
+// 지뢰 연계 팝업: 노란 글자가 위로 떠오르며 사라진다
+export function comboText(scene: Scene, x: number, y: number): void {
+  const t = scene.add
+    .text(x, y, UI.text.combo, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.popupColor })
+    .setOrigin(0.5)
+    .setDepth(UI.fx.dragDepth)
+  scene.tweens.add({ targets: t, y: y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => t.destroy() })
+}
 
 // 피격 흰 번쩍임: 알파가 내려가며 사라진다
 export function hitFlash(scene: Scene, x: number, y: number, w: number, h: number): void {
@@ -23,6 +125,7 @@ export function dmgText(scene: Scene, x: number, y: number, amount: number): voi
 // 스프라이트면 ART.fallAngle만큼 기울어지며 쓰러진다
 export function fall(scene: Scene, view: GameObjects.Container): void {
   const angle = view.getData('sprite') ? ART.fallAngle : view.angle
+  burst(scene, 'dust', view.x, view.y)
   scene.tweens.add({ targets: view, alpha: 0, angle, y: view.y + UI.fx.fallSink, duration: UI.fx.fallMs, onComplete: () => view.destroy() })
 }
 
@@ -39,42 +142,57 @@ export function shake(scene: Scene, kind: 'light' | 'heavy'): void {
   scene.cameras.main.shake(ms, intensity)
 }
 
-// 총구 섬광: 노란 작은 원이 번쩍였다 사라진다
+// 총구 섬광: 가산 빛이 번쩍이고 탄피가 튄다. 그림 이펙트가 있으면 그 위에 탄피만 얹는다
 export function muzzle(scene: Scene, x: number, y: number): void {
-  if (playFx(scene, 'fx_muzzle', x, y)) return
-  const c = scene.add.circle(x, y, UI.fx.muzzleR, UI.colors.muzzle).setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: c, alpha: 0, duration: UI.fx.muzzleMs, onComplete: () => c.destroy() })
+  if (!playFx(scene, 'fx_muzzle', x, y)) glowFlash(scene, x, y, FX.muzzle)
+  burst(scene, 'casing', x, y)
 }
 
-// 탄 궤적: 노랑 가는 선이 delaySec 뒤 나타나 짧게 사라진다
+// 탄 궤적: 금색 가산 선 + 끝으로 날아가는 빛 알갱이. delaySec 뒤 나타나 짧게 사라지고, 닿는 자리에 불꽃이 튄다
 export function tracer(scene: Scene, x0: number, y0: number, x1: number, y1: number, delaySec: number): void {
-  const l = scene.add.line(0, 0, x0, y0, x1, y1, UI.colors.tracer).setOrigin(0, 0).setLineWidth(UI.fx.tracerW).setDepth(UI.fx.fxDepth).setVisible(false)
+  setOf(scene) // 텍스처 보장
+  const l = scene.add.line(0, 0, x0, y0, x1, y1, UI.colors.tracer).setOrigin(0, 0).setLineWidth(UI.fx.tracerW).setBlendMode(BlendModes.ADD).setDepth(UI.fx.fxDepth).setVisible(false)
+  const head = scene.add.image(x0, y0, 'pfx_glow').setTint(FX.tracer.headColor).setBlendMode(BlendModes.ADD).setScale(FX.tracer.headScale).setDepth(UI.fx.fxDepth).setVisible(false)
+  const delay = delaySec * UI.fx.msPerSec
+  scene.tweens.add({ targets: l, alpha: 0, delay, duration: UI.fx.tracerMs, onStart: () => l.setVisible(true), onComplete: () => l.destroy() })
   scene.tweens.add({
-    targets: l,
-    alpha: 0,
-    delay: delaySec * UI.fx.msPerSec,
+    targets: head,
+    x: x1,
+    y: y1,
+    delay,
     duration: UI.fx.tracerMs,
-    onStart: () => l.setVisible(true),
-    onComplete: () => l.destroy(),
+    onStart: () => head.setVisible(true),
+    onComplete: () => {
+      head.destroy()
+      burst(scene, 'spark', x1, y1)
+    },
   })
 }
 
-// 저격 흰 선: 저격수에서 마지막 관통 대상까지 굵은 선(대각선 가능)
+// 저격 빛줄기: 금빛 굵은 바깥 선 + 흰 심지(둘 다 가산). 저격수에서 마지막 관통 대상까지(대각선 가능)
 export function snipeLine(scene: Scene, x0: number, y0: number, x1: number, y1: number): void {
-  const l = scene.add.line(0, 0, x0, y0, x1, y1, UI.colors.snipe).setOrigin(0, 0).setLineWidth(UI.fx.snipeW).setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: l, alpha: 0, duration: UI.fx.snipeMs, onComplete: () => l.destroy() })
+  const outer = scene.add.line(0, 0, x0, y0, x1, y1, FX.snipe.outerColor, FX.snipe.outerAlpha).setOrigin(0, 0).setLineWidth(FX.snipe.outerW)
+  const core = scene.add.line(0, 0, x0, y0, x1, y1, UI.colors.snipe).setOrigin(0, 0).setLineWidth(UI.fx.snipeW)
+  for (const l of [outer, core]) {
+    l.setBlendMode(BlendModes.ADD).setDepth(UI.fx.fxDepth)
+    scene.tweens.add({ targets: l, alpha: 0, duration: FX.snipe.ms, onComplete: () => l.destroy() })
+  }
 }
 
-// 송풍 파동: 청백색 띠가 제설병에서 위로 번지며 사라진다
-export function windWave(scene: Scene, x: number, y0: number, y1: number): void {
-  if (playFx(scene, 'fx_wind', x, (y0 + y1) / 2)) return
-  const r = scene.add.rectangle(x, y0, UI.fx.windW, UI.fx.windH, UI.colors.wind, UI.fx.windAlpha).setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: r, y: y1, alpha: 0, duration: UI.fx.windMs, onComplete: () => r.destroy() })
+// 송풍 파동: 청백색 띠가 위로 번지고, 부채꼴 눈보라가 퍼진다. burning이면(상병 화염) 주황 불티가 섞인다
+export function windWave(scene: Scene, x: number, y0: number, y1: number, burning: boolean): void {
+  if (!playFx(scene, 'fx_wind', x, (y0 + y1) / 2)) {
+    const r = scene.add.rectangle(x, y0, UI.fx.windW, UI.fx.windH, UI.colors.wind, UI.fx.windAlpha).setBlendMode(BlendModes.ADD).setDepth(UI.fx.fxDepth)
+    scene.tweens.add({ targets: r, y: y1, alpha: 0, duration: UI.fx.windMs, onComplete: () => r.destroy() })
+  }
+  burst(scene, 'snow', x, y0)
+  if (burning) burst(scene, 'ember', x, y0)
 }
 
 // 회복 숫자: 초록 "+n"이 위로 떠오르며 사라진다
 export function healText(scene: Scene, x: number, y: number, amount: number): void {
   playFx(scene, 'fx_heal', x, y) // 숫자는 그대로 둔다
+  burst(scene, 'plus', x, y)
   const t = scene.add
     .text(x, y, `+${Math.round(amount)}`, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.healColor })
     .setOrigin(0.5)
@@ -88,13 +206,14 @@ export function reviveFlash(scene: Scene, x: number, y: number, w: number, h: nu
   scene.tweens.add({ targets: r, scale: UI.fx.reviveScale, alpha: 0, duration: UI.fx.reviveMs, onComplete: () => r.destroy() })
 }
 
-// 지뢰 폭발: 열 폭 × h 청백색 사각형이 번쩍이고 가운데 원이 커지며 사라진다. 피·불꽃 표현 없음
-export function explosion(scene: Scene, x: number, y: number, h: number): void {
-  if (playFx(scene, 'fx_explosion', x, y)) return
-  const r = scene.add.rectangle(x, y, LAYOUT.cell, h, UI.colors.explosion, UI.fx.explodeAlpha).setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: r, alpha: 0, duration: UI.fx.explodeMs, onComplete: () => r.destroy() })
-  const c = scene.add.circle(x, y, UI.fx.explodeCoreR, UI.colors.explosion).setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: c, scale: UI.fx.explodeCoreScale, alpha: 0, duration: UI.fx.explodeMs, onComplete: () => c.destroy() })
+// 폭발(지뢰·화력 지원·RPG): 중심 번쩍임 + 충격파 고리 + 불꽃·파편·연기. 그림 이펙트가 있으면 그 위에 얹는다. 피 표현 없음
+export function explosion(scene: Scene, x: number, y: number): void {
+  playFx(scene, 'fx_explosion', x, y)
+  glowFlash(scene, x, y, FX.ring.flash)
+  ring(scene, x, y, FX.ring.blast)
+  burst(scene, 'fire', x, y)
+  burst(scene, 'debris', x, y)
+  burst(scene, 'smoke', x, y)
 }
 
 // 열 세로 띠(화력 지원 강조·예고선). 지우려면 호출한 쪽이 destroy한다. x = 열 중심, 폭·색·알파는 호출한 쪽이 정한다

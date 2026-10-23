@@ -1,9 +1,9 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, ART, BATTLE, BOSS, COMBAT, DOG, ENEMIES, GRID, LAYOUT, MINES, UI, type EnemyType } from '../data'
+import { ABILITY, ART, BATTLE, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
 import { artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
 import { addSprite, hasArt, hitSprite, playAct, tickHit } from './art'
 import type { Board } from './board'
-import { dmgText, explosion, hitFlash, laneFlash, shake } from './fx'
+import { comboText, dmgText, explosion, hitFlash, hitStop, laneFlash, shake } from './fx'
 import { damageAlly, type Ally } from './units'
 
 // 적 한 마리의 전투 상태. y는 칸 단위 중심 위치(0 = 적 진입 구역 맨 위)
@@ -61,10 +61,13 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
     if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
     view.add(body)
   }
-  // 취약 표시: 몸통 크기 붉은 테두리(임시, 07-02에서 다듬는다)
-  const vulnBox = scene.add.rectangle(0, 0, size, size).setStrokeStyle(UI.enemyStroke, UI.colors.vulnStroke).setVisible(false)
-  view.add(vulnBox)
-  view.setData('vulnBox', vulnBox)
+  // 취약 표식: 체력바 위 붉은 아래 화살표(코드 도형). 취약 시간 동안 깜빡인다
+  const { w, h, color, gap } = FX.vuln
+  const mark = scene.add
+    .triangle(0, -size / 2 - UI.enemyBar.gap - UI.enemyBar.h - gap - h / 2, 0, 0, w, 0, w / 2, h, color)
+    .setVisible(false)
+  view.add(mark)
+  view.setData('vulnMark', mark)
   view.add(bar)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
   return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, vuln: 0, pushedAt: -Infinity, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
@@ -101,7 +104,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
     }
     // 0. 취약 시간 감소, 표시 갱신
     e.vuln = Math.max(0, e.vuln - dt)
-    ;(e.view.getData('vulnBox') as GameObjects.Rectangle).setVisible(e.vuln > 0)
+    ;(e.view.getData('vulnMark') as GameObjects.Triangle).setVisible(e.vuln > 0 && Math.floor(e.vuln * FX.vuln.blinkHz) % 2 === 0)
     // 1. 화상
     if (e.burn > 0) {
       e.hp -= damageTaken(ABILITY.burnDps * dt, e.vuln)
@@ -141,6 +144,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       if (e.ready >= ENEMIES[e.type].interval) {
         e.ready -= ENEMIES[e.type].interval
         damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)
+        if (e.type === 'rpg') explosion(ctx.scene, foe.view.x, foe.view.y) // RPG 폭발
         if (e.type !== 'boss') playAct(e.view, artKey('enemy', e.type, 'act')) // 때리는 순간 1회. 보스는 공격 그림이 없어 건너뛴다(없는 키로 artKey가 던지는 것을 막는다)
       }
     } else {
@@ -166,13 +170,17 @@ export function tickMines(ctx: { scene: Scene; board: Board; enemies: Enemy[]; c
     for (const e of live) {
       if (!inBlast(e.y, m.row)) continue
       const combo = pushMult(e.pushedAt, ctx.clock)
-      if (combo > 1) ctx.log({ e: 'combo_mine', wave: ctx.wave })
+      if (combo > 1) {
+        ctx.log({ e: 'combo_mine', wave: ctx.wave })
+        comboText(ctx.scene, e.view.x, e.view.y - LAYOUT.cell / 2)
+      }
       hurtEnemy(ctx.scene, e, mineDamage(e.type, m.anti) * combo)
     }
     ctx.board.detonate(m.col, m.row)
     const p = ctx.board.toScreen(m.col, GRID.mineTop + m.row + 0.5)
-    explosion(ctx.scene, p.x, p.y, (1 + 2 * MINES.blast) * LAYOUT.cell)
+    explosion(ctx.scene, p.x, p.y)
     shake(ctx.scene, 'heavy')
+    hitStop()
   }
 }
 

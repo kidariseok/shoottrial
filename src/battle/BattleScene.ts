@@ -10,7 +10,7 @@ import { armGas, clearGas, createGas, tickGas, type Gas } from './gas'
 import { createBoard, deployIndex, type Board } from './board'
 import { drawLog } from './log'
 import { hurtEnemy, removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
-import { colBand, explosion, fall, laneFlash, shake } from './fx'
+import { colBand, explosion, fall, hitStop, laneFlash, resetStop, shake, stopping } from './fx'
 import { loadRuns, readKey, removeKey, saveRun } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
@@ -105,6 +105,7 @@ export class BattleScene extends Scene {
     this.runEvents = []
     this.wallSec = 0
     this.vulnKills = 0
+    resetStop()
     this.hudKey = ''
     this.hudCalls = 0
     this.tweens.resumeAll()
@@ -380,8 +381,9 @@ export class BattleScene extends Scene {
       hurtEnemy(this, e, SUPPORT.damage)
       if (e.hp <= 0) kills += 1
     }
-    for (let r = 0; r < GRID.lineY; r++) explosion(this, this.board.toScreen(col, r + 0.5).x, this.board.toScreen(col, r + 0.5).y, LAYOUT.cell)
+    for (let r = 0; r < GRID.lineY; r++) explosion(this, this.board.toScreen(col, r + 0.5).x, this.board.toScreen(col, r + 0.5).y)
     shake(this, 'heavy')
+    hitStop()
     this.log({ e: 'fire_support', wave: this.wave, col, kills })
   }
 
@@ -402,7 +404,7 @@ export class BattleScene extends Scene {
     if (this.logOnly || !this.ready || this.result || this.paused || this.modal) return
     const real = Math.min(delta / 1000, BATTLE.maxDt)
     this.wallSec += real
-    const dt = real * this.speed
+    const dt = stopping(real) ? 0 : real * this.speed // 히트스톱 중에는 전투 시간이 흐르지 않는다
     switch (this.phase) {
       case 'prep':
         this.prepLeft -= dt
@@ -450,6 +452,11 @@ export class BattleScene extends Scene {
       if (e.hp <= 0) {
         this.kills += 1
         if (e.vuln > 0) this.vulnKills += 1
+        if (e.type === 'boss') {
+          explosion(this, e.view.x, e.view.y) // 보스 처치: 큰 폭발 + 흔들림 + 히트스톱
+          shake(this, 'heavy')
+          hitStop()
+        }
         this.tweens.killTweensOf(e.view)
         fall(this, e.view)
         return false

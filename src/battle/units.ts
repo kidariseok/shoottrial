@@ -1,10 +1,10 @@
-import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, CARDS, CARD_KEYS, COMBAT, LAYOUT, UI, type CardKey } from '../data'
+import { BlendModes, type Scene, type GameObjects } from 'phaser'
+import { ABILITY, CARDS, CARD_KEYS, COMBAT, FX, LAYOUT, UI, type CardKey } from '../data'
 import { allyDamageTaken, allyY, artKey, blowerCone, blowerRange, chemDamageMult, cookReach, dist, gasHits, healOrder, interval, knockback, onRay, pickTarget, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
 import { hitSprite, playAct, tickHit } from './art'
 import { hurtEnemy, type Enemy } from './enemies'
-import { dmgText, flame, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
+import { burst, dmgText, flame, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
 
 // 배치 카드의 전투 상태. Unit 객체가 키라 이동·교환은 상태가 따라간다
 export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number; revived: boolean }
@@ -48,13 +48,14 @@ function drawBar(ally: Ally): void {
   bar.fillStyle(ratio <= lowRatio ? low : ok).fillRect(-w / 2, y, w * ratio, h)
 }
 
-// 도발 고리(임시, 07-02에서 다듬는다): 제설병 카드 발밑 노란 타원. 전투 중에만 있고 endWave가 지운다
+// 도발 고리: 제설병 카드 발밑 금색 가산 고리가 천천히 맥동한다. 전투 중에만 있고 endWave가 지운다
 function ensureRing(ally: Ally): void {
   if (ally.view.getData('ring')) return
-  const { y, w, h, lineW } = UI.taunt
-  const ring = ally.view.scene.add.ellipse(0, y, w, h).setStrokeStyle(lineW, UI.colors.tauntRing)
+  const { y, w, h, lineW, color, alpha, scale, ms } = FX.taunt
+  const ring = ally.view.scene.add.ellipse(0, y, w, h).setStrokeStyle(lineW, color, alpha).setBlendMode(BlendModes.ADD)
   ally.view.add(ring)
   ally.view.setData('ring', ring)
+  ally.view.scene.tweens.add({ targets: ring, scale, alpha: 0, duration: ms, yoyo: true, repeat: -1 })
 }
 
 // 살아 있는 화학병만(쓰러진 화학병은 면역·제독·버프에서 빠진다)
@@ -108,7 +109,9 @@ export function endWave(allies: Ally[]): void {
     c.cd = 0
     c.revived = false
     a.view.setAlpha(1)
-    ;(a.view.getData('ring') as GameObjects.Ellipse | undefined)?.destroy()
+    const ring = a.view.getData('ring') as GameObjects.Ellipse | undefined
+    if (ring) a.view.scene.tweens.killTweensOf(ring) // 맥동 트윈을 끊고 지운다
+    ring?.destroy()
     a.view.setData('ring', undefined)
     drawBar(a)
   }
@@ -173,7 +176,9 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         const atk = stats('sniper', rank).atk * chemDamageMult(chems, a.col, a.row)
         targets.forEach((e, k) => {
           const dmg = sniperDamage(atk, k, rank, tier)
-          if (dmg > 0) hurtEnemy(scene, e, dmg)
+          if (dmg <= 0) return
+          hurtEnemy(scene, e, dmg)
+          burst(scene, 'spark', e.view.x, e.view.y) // 관통한 적마다 불꽃
         })
         act()
         if (rank >= ABILITY.sergeant) first.stun = Math.max(first.stun, ABILITY.sniperStun)
@@ -194,6 +199,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
             e.knockLeft += knockback(e.type, rank, counts.blower)
             e.ready = 0
             e.pushedAt = ctx.clock
+            burst(scene, 'dustTail', e.view.x, e.view.y) // 밀린 적 뒤로 먼지 꼬리
             // 화상은 중첩 없이 갱신(대입)
             if (rank >= ABILITY.corporal) {
               e.burn = ABILITY.burnSec
@@ -204,7 +210,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
           e.vuln = COMBAT.vulnSec
         }
         act()
-        windWave(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
+        windWave(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y, rank >= ABILITY.corporal)
         c.cd = iv
         break
       }
