@@ -176,6 +176,7 @@ export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battl
 - 상점 카드를 누르면 `onBuy(i)` → A가 보급을 차감하고 대기석에 넣는다.
 - 전투 중 안드로이드 뒤로가기 → B가 `ctl.pause()` 후 일시정지 모달을 띄운다(로비에서는 종료 확인 모달).
 - A는 해금·최고 기록 저장에 B의 `save.ts`(`load()`/`save()`)를 import해 쓴다(06-02부터). `?scene=log`는 B의 `main.ts`가 `battle` 씬으로 시작하고, A가 그 안에서 기록 화면을 그린다.
+- **M4(2026-10-23)**: A는 전투 소리를 위해 B의 `audio.ts`에서 `playSfx(key)`·`playBgm(key | null)`만 import해 부른다(T-106이 제공). 생활관 배경음·버튼 클릭음은 B가 한다.
 - **M3 변경(2026-10-22)**: `Hud.support`와 `BattleCtl.fireSupport()`를 더했다. B는 전투 단계이고 `support > 0`일 때만 버튼을 켠다(T-104).
 - 광고 슬롯 중 `revive`는 `askRevive`, `unlock`은 로비(B)가 처리한다. `reroll`·`supply`만 `ctl`을 거친다.
 
