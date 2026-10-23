@@ -154,5 +154,5 @@ Plans:
 **Requirements**: SPR-01, SPR-02, SAVE-01
 **Plans**: 2 plans
 - [x] 06-01-PLAN.md — 실제 그림 키만 스프라이트·애니메이션(아군·적·보스·이펙트·배경), 피격 틴트·그림자·계급은 코드, `?art=0`
-- [ ] 06-02 — save.ts 이전(SAVE-01). **T-105(로비·save.ts 수정) 머지 뒤** 작성
+- [ ] 06-02-PLAN.md — 해금·최고 기록·판 수·이름을 save.ts로(처음 한 번 d2_unlocked 이전), 결과 "생활관" → ui.lobby()
 
