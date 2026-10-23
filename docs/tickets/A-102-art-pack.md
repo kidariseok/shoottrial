@@ -377,10 +377,29 @@ Extend the attached top-down pixel art map vertically to a 9:19.5 portrait ratio
     - 저격수 공격 2번째 프레임 자주색 조각, fx_explosion 빨간 조각, fx_heal 옅은 분홍 줄
   - 수동 정리 이력: ally_miner_idle 찌꺼기 제거, fx_muzzle 워터마크 제거. fx_explosion·fx_flame·fx_heal은 meta.json `split: even`
 - [x] 2026-10-23 0단계: 사용자가 배경 길을 **넓힌다**로 결정했다(G묶음 프롬프트 그대로: 흙길이 화면 폭의 약 3/4). 화풍은 이미 이 결로 생산 중이라 승인으로 본다.
-- [ ] A묶음 7장
-- [ ] B묶음 12장
-- [ ] C묶음 6장
-- [ ] D묶음 2장
-- [ ] E묶음 6장
-- [ ] F묶음 8장
-- [ ] G묶음 1장
+- [x] 2026-10-23 Claude: 임시본 19장을 Gemini Argon(보통)으로 모두 다시 만들어 반영했다. 브랜치: `kidariseok/m4-core`
+  - 반영 결과: `node scripts/assets.mjs` 33개 전부 성공, `npm run assets:check`(35키)·`tests/assets*.test.ts`(16개) 통과
+  - 새로 만든 것
+    - C: enemy_rpg_fire(걷기 시트와 배율 0.225 공유, 모자 크기가 같아 크기 조정 없이 처리)
+    - D: boss_apc_hull, boss_apc_turret(포탑은 차체와 별개로 단독 생성)
+    - E: card 6장(글자·패치 없음, 3:4)
+    - F: fx_explosion·muzzle·wind·flame·heal·gas, mine·mine_at
+    - G: bg_gate(9:16, 길 약 3/4 폭)
+  - 도구 변경(`scripts/assets.mjs`): `removeConnectedMagentaHalo` 추가(배경과 이어진 마젠타 계열만 제거), 가장자리 번짐 정리 1겹→3겹(`DEFAULT_FRINGE_PASSES = 3`). 마젠타 번짐 측정 0.0%
+  - 수동 정리
+    - 오른쪽 아래 Gemini 워터마크를 칠해 지운 뒤 ingest(fx_flame·fx_gas는 모서리가 잘려 원본 그대로 다시 처리)
+    - `art/source/fx_explosion/meta.json`, `fx_heal/meta.json`에 `{"split":"even"}`(파편이 갈라져 잡힘). fx_flame은 meta 삭제
+  - 남은 이슈
+    - enemy_inf_attack 2번째 프레임 바지가 위장무늬, 보병·RPG병 걷기 네 프레임이 거의 같은 포즈(ChatGPT 결과)
+    - 저격수 공격 2번째 프레임의 자주색 조각, fx_explosion 3·4번째 프레임 사이 빨간 조각, fx_heal 마지막 프레임이 작고 흩어짐
+    - 취사병 카드 오른쪽에 옅은 자주색 김
+    - 갤러리(`?scene=gallery`)에서 대기 시트가 `frames: 1`로 표시됨: 레인 A(`src/battle/art.ts`) 쪽 계약 문제
+    - 게임 안에서 새 그림이 제대로 보이는지는 아직 확인하지 않았다(`?scene=battle` 확인 필요)
+  - 다음: 위 남은 이슈 중 거슬리는 장만 Gemini Argon으로 다시 뽑기, 게임 화면 확인
+- [x] A묶음 7장
+- [x] B묶음 12장
+- [x] C묶음 6장
+- [x] D묶음 2장
+- [x] E묶음 6장
+- [x] F묶음 8장
+- [x] G묶음 1장
