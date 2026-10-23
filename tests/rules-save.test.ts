@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { CARD_KEYS, UNLOCK } from '../src/data'
 import { afterRun, mergeUnlocked } from '../src/rules'
 
-const base = [...UNLOCK.base]
+const base = ['rifle', 'sniper', 'blower'] // CARD_KEYS 순서
 
 describe('mergeUnlocked: save.unlocked + 예전 d2_unlocked', () => {
   it('빈 save + ["cook"] -> 기본 3 + cook', () => {
@@ -15,7 +15,7 @@ describe('mergeUnlocked: save.unlocked + 예전 d2_unlocked', () => {
   })
   it('중복 없이 합치고 CARD_KEYS 순서', () => {
     const r = mergeUnlocked(['miner', 'cook'], '["cook","miner"]')
-    expect(r).toEqual(CARD_KEYS.filter((k) => base.includes(k) || k === 'cook' || k === 'miner'))
+    expect(r).toEqual(CARD_KEYS.filter((k) => UNLOCK.base.includes(k) || k === 'cook' || k === 'miner'))
     expect(new Set(r).size).toBe(r.length)
   })
   it('모르는 id는 버린다', () => {
