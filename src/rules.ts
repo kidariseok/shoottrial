@@ -392,6 +392,17 @@ export function parseUnlocked(raw: string | null): CardKey[] {
   return CARD_KEYS.filter((c) => UNLOCK.base.includes(c) || list.includes(c))
 }
 
+// save.unlocked + 예전 d2_unlocked(처음 한 번 옮길 값) -> 해금 목록. 기본 포함, 모르는 id는 버리고 CARD_KEYS 순서
+export function mergeUnlocked(saveList: readonly string[], legacyRaw: string | null): CardKey[] {
+  const legacy = parseUnlocked(legacyRaw)
+  return CARD_KEYS.filter((c) => legacy.includes(c) || saveList.includes(c))
+}
+
+// 판이 끝난 뒤의 최고 웨이브·판 수
+export function afterRun(prev: { bestWave: number; runs: number }, wave: number): { bestWave: number; runs: number } {
+  return { bestWave: Math.max(prev.bestWave, wave), runs: prev.runs + 1 }
+}
+
 // ---- 5단계: 화력 지원 ----
 
 // x(월드·논리 좌표) -> 열 0~4. 판 밖(왼쪽 여백·오른쪽 끝 너머)은 -1. 열 경계 x는 오른쪽 열
