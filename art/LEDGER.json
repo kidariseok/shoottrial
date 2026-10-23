@@ -86,7 +86,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.138058
+      "scale": 0.126582
     },
     {
       "id": "card_sniper",
@@ -97,7 +97,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.148976
+      "scale": 0.126957
     },
     {
       "id": "card_blower",
@@ -108,7 +108,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.12931
+      "scale": 0.129534
     },
     {
       "id": "ally_cook_attack",
@@ -130,7 +130,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.132159
+      "scale": 0.128096
     },
     {
       "id": "ally_miner_idle",
@@ -163,7 +163,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.134831
+      "scale": 0.128645
     },
     {
       "id": "ally_chem_idle",
@@ -196,7 +196,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.135074
+      "scale": 0.127986
     },
     {
       "id": "enemy_inf_walk",
@@ -262,7 +262,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.105785
+      "scale": 0.225352
     },
     {
       "id": "boss_apc_hull",
@@ -273,7 +273,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.15309
+      "scale": 0.118397
     },
     {
       "id": "boss_apc_turret",
@@ -284,7 +284,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.077057
+      "scale": 0.077628
     },
     {
       "id": "fx_muzzle",
@@ -295,7 +295,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.047291
+      "scale": 0.059138
     },
     {
       "id": "fx_wind",
@@ -306,7 +306,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.180848
+      "scale": 0.159557
     },
     {
       "id": "fx_flame",
@@ -317,7 +317,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.186408
+      "scale": 0.16732
     },
     {
       "id": "fx_explosion",
@@ -328,7 +328,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.271698
+      "scale": 0.538318
     },
     {
       "id": "fx_heal",
@@ -339,7 +339,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.27234
+      "scale": 0.121008
     },
     {
       "id": "fx_gas",
@@ -350,7 +350,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.467343
+      "scale": 0.402797
     },
     {
       "id": "mine",
@@ -361,7 +361,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.049612
+      "scale": 0.031964
     },
     {
       "id": "mine_at",
@@ -372,7 +372,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.053039
+      "scale": 0.030236
     },
     {
       "id": "bg_gate",
@@ -383,7 +383,7 @@
       "license": "proprietary",
       "edited": true,
       "checked": "2026-10-23",
-      "scale": 0.513158
+      "scale": 0.56686
     }
   ]
 }
