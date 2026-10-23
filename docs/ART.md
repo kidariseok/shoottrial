@@ -135,6 +135,7 @@ character centered with feet on the same baseline
 | `mine` / `mine_at` | 64×64 | 1 | M3 |
 | `rank_1` ~ `rank_4` | 48×48 | 1(이등병 작대기 1 ~ 병장 4, 가상 디자인) | M3 |
 | `bg_gate` | 720×1560 | 1 | M3 |
+| `bg_barracks` | 720×1280 | 1(생활관 내부 위에서 본 그림, 걷는 로비 배경, A-103) | M5 |
 | `tile_deploy` / `tile_mine` / `tile_hover` | 128×128 | 1 | M3 |
 | `ui_*` | Figma 프레임 기준 | — | M3 |
 

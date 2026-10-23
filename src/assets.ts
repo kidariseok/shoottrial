@@ -55,6 +55,7 @@ const FX_AND_BOARD_CONTRACTS: AssetContract[] = [
   { key: 'rank_3', w: 48, h: 48, frames: 1, color: '#d0d0d0', label: 'rank_3' },
   { key: 'rank_4', w: 48, h: 48, frames: 1, color: '#ffd700', label: 'rank_4' },
   { key: 'bg_gate', w: 720, h: 1560, frames: 1, color: '#1e252b', label: 'bg_gate' },
+  { key: 'bg_barracks', w: 720, h: 1280, frames: 1, color: '#2a2f26', label: 'bg_barracks' },
   { key: 'tile_deploy', w: 128, h: 128, frames: 1, color: '#2e3b2e', label: 'tile_deploy' },
   { key: 'tile_mine', w: 128, h: 128, frames: 1, color: '#3b2e2e', label: 'tile_mine' },
   { key: 'tile_hover', w: 128, h: 128, frames: 1, color: '#3e4e5e', label: 'tile_hover' },
