@@ -59,10 +59,10 @@ export function tracer(scene: Scene, x0: number, y0: number, x1: number, y1: num
   })
 }
 
-// 저격 흰 선: 저격수에서 열 맨 위까지 굵은 세로 선
-export function snipeLine(scene: Scene, x: number, y0: number, y1: number): void {
-  const r = scene.add.rectangle(x, (y0 + y1) / 2, UI.fx.snipeW, Math.abs(y0 - y1), UI.colors.snipe).setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: r, alpha: 0, duration: UI.fx.snipeMs, onComplete: () => r.destroy() })
+// 저격 흰 선: 저격수에서 마지막 관통 대상까지 굵은 선(대각선 가능)
+export function snipeLine(scene: Scene, x0: number, y0: number, x1: number, y1: number): void {
+  const l = scene.add.line(0, 0, x0, y0, x1, y1, UI.colors.snipe).setOrigin(0, 0).setLineWidth(UI.fx.snipeW).setDepth(UI.fx.fxDepth)
+  scene.tweens.add({ targets: l, alpha: 0, duration: UI.fx.snipeMs, onComplete: () => l.destroy() })
 }
 
 // 송풍 파동: 청백색 띠가 제설병에서 위로 번지며 사라진다

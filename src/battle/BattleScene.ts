@@ -66,6 +66,7 @@ export class BattleScene extends Scene {
   public runEvents: LogEvent[] = []
   public logOnly = false // ?scene=log: 판 없이 기록 표만
   public wallSec = 0 // 일시정지·모달을 뺀 실제 경과 초(배속 무관)
+  public vulnKills = 0 // 이번 웨이브에 취약 상태로 죽은 적 수(웨이브 끝에 vuln_kill로 기록)
 
   constructor() {
     super('battle')
@@ -103,6 +104,7 @@ export class BattleScene extends Scene {
     this.shopKey = ''
     this.runEvents = []
     this.wallSec = 0
+    this.vulnKills = 0
     this.hudKey = ''
     this.hudCalls = 0
     this.tweens.resumeAll()
@@ -114,7 +116,14 @@ export class BattleScene extends Scene {
 
   // 웨이브 클리어 기록. 정산 수입을 더하기 전 값이다
   private clearWave() {
+    this.flushVulnKills()
     this.log({ e: 'wave_clear', wave: this.wave, base_hp: Math.max(0, this.baseHp), supply: this.supply })
+  }
+
+  // 취약 처치 수를 기록하고 0으로 되돌린다(없으면 기록하지 않는다)
+  private flushVulnKills() {
+    if (this.vulnKills > 0) this.log({ e: 'vuln_kill', wave: this.wave, n: this.vulnKills })
+    this.vulnKills = 0
   }
 
   preload() {
@@ -428,9 +437,9 @@ export class BattleScene extends Scene {
     const reached = tickEnemies({ scene: this, board: this.board, enemies: this.enemies, allies, dogRand: this.dogRand }, dt)
     for (const e of reached) this.reachLine(e)
     tickGas({ scene: this, board: this.board, gas: this.gas, allies, wave: this.wave, log: (ev) => this.log(ev) }, this.clock, dt)
-    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: this.gas.cells }, dt)
+    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: this.gas.cells, clock: this.clock }, dt)
     // 지뢰: 아군 사격 뒤, 정리 전(터진 지뢰의 사망도 같은 틱 정리가 센다)
-    tickMines({ scene: this, board: this.board, enemies: this.enemies })
+    tickMines({ scene: this, board: this.board, enemies: this.enemies, clock: this.clock, wave: this.wave, log: (ev) => this.log(ev) })
     this.tickSupport(dt)
     // 4. 정리
     this.enemies = this.enemies.filter((e) => {
@@ -440,6 +449,7 @@ export class BattleScene extends Scene {
       }
       if (e.hp <= 0) {
         this.kills += 1
+        if (e.vuln > 0) this.vulnKills += 1
         this.tweens.killTweensOf(e.view)
         fall(this, e.view)
         return false
@@ -515,6 +525,7 @@ export class BattleScene extends Scene {
   private finish(win: boolean) {
     if (this.result) return
     this.result = win ? 'win' : 'lose'
+    this.flushVulnKills() // 지는 웨이브의 취약 처치도 남긴다(이긴 판은 clearWave가 이미 비웠다)
     this.endSupport()
     clearGas(this.gas)
     const kind: RunResult = this.gaveUp ? 'quit' : win ? 'win' : 'lose'

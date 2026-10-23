@@ -499,6 +499,8 @@ export type LogEvent =
   | { e: 'gas_drop'; wave: number; col: number; row: number }
   | { e: 'gas_clear'; n: number }
   | { e: 'fire_support'; wave: number; col: number; kills: number }
+  | { e: 'combo_mine'; wave: number } // 밀린 적이 지뢰에 맞음(적 1마리당 1건)
+  | { e: 'vuln_kill'; wave: number; n: number } // 그 웨이브에 취약 상태로 죽은 적 수
 export type PlayRun = { t: number; result: RunResult; wave: number; sec: number; events: LogEvent[] }
 export type LogSummary = {
   runs: number

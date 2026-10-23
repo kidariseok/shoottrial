@@ -1,6 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, CARDS, CARD_KEYS, LAYOUT, UI, type CardKey } from '../data'
-import { allyY, artKey, blowerRange, chemDamageMult, cookReach, gasHits, inRange, interval, knockback, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
+import { ABILITY, CARDS, CARD_KEYS, COMBAT, LAYOUT, UI, type CardKey } from '../data'
+import { allyDamageTaken, allyY, artKey, blowerCone, blowerRange, chemDamageMult, cookReach, dist, gasHits, healOrder, interval, knockback, onRay, pickTarget, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
 import { hitSprite, playAct, tickHit } from './art'
 import { hurtEnemy, type Enemy } from './enemies'
@@ -8,8 +8,9 @@ import { dmgText, flame, healText, hitFlash, muzzle, reviveFlash, shake, snipeLi
 
 // 배치 카드의 전투 상태. Unit 객체가 키라 이동·교환은 상태가 따라간다
 export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number; revived: boolean }
-// alive는 combat.alive의 사본(rules.frontAlly가 alive 필드를 읽는다). collectAllies가 매번 채운다
-export type Ally = { unit: Unit; combat: Combat; col: number; row: number; alive: boolean; y: number; view: GameObjects.Container }
+// alive는 combat.alive의 사본(rules.engageTarget이 alive 필드를 읽는다). collectAllies가 매번 채운다
+// taunt: 제설병은 살아 있는 동안 늘 도발 중이다(GDD §5.2)
+export type Ally = { unit: Unit; combat: Combat; col: number; row: number; alive: boolean; y: number; taunt: boolean; view: GameObjects.Container }
 
 const states = new WeakMap<Unit, Combat>()
 
@@ -27,7 +28,7 @@ function combatOf(unit: Unit): Combat {
 export function collectAllies(board: Board): Ally[] {
   return board.deployed().map((d) => {
     const combat = combatOf(d.unit)
-    return { unit: d.unit, combat, col: d.col, row: d.row, alive: combat.alive, y: allyY(d.row), view: d.view }
+    return { unit: d.unit, combat, col: d.col, row: d.row, alive: combat.alive, y: allyY(d.row), taunt: d.unit.card === 'blower', view: d.view }
   })
 }
 
@@ -47,15 +48,25 @@ function drawBar(ally: Ally): void {
   bar.fillStyle(ratio <= lowRatio ? low : ok).fillRect(-w / 2, y, w * ratio, h)
 }
 
+// 도발 고리(임시, 07-02에서 다듬는다): 제설병 카드 발밑 노란 타원. 전투 중에만 있고 endWave가 지운다
+function ensureRing(ally: Ally): void {
+  if (ally.view.getData('ring')) return
+  const { y, w, h, lineW } = UI.taunt
+  const ring = ally.view.scene.add.ellipse(0, y, w, h).setStrokeStyle(lineW, UI.colors.tauntRing)
+  ally.view.add(ring)
+  ally.view.setData('ring', ring)
+}
+
 // 살아 있는 화학병만(쓰러진 화학병은 면역·제독·버프에서 빠진다)
 export function chemsOf(allies: Ally[]): Chem[] {
   return allies.filter((a) => a.unit.card === 'chem' && a.combat.alive).map((a) => ({ col: a.col, row: a.row, rank: a.unit.rank }))
 }
 
 // 쓰러졌으면 true. quiet이면 번쩍임·숫자를 건너뛴다(매 틱 가스 피해용)
-export function damageAlly(scene: Scene, ally: Ally, dmg: number, quiet = false): boolean {
+export function damageAlly(scene: Scene, ally: Ally, base: number, quiet = false): boolean {
   const c = ally.combat
   if (!c.alive) return false
+  const dmg = allyDamageTaken(base, ally.unit.card) // 제설병은 덜 아프다
   c.hp -= dmg
   if (!quiet) {
     if (!hitSprite(ally.view)) hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
@@ -97,6 +108,8 @@ export function endWave(allies: Ally[]): void {
     c.cd = 0
     c.revived = false
     a.view.setAlpha(1)
+    ;(a.view.getData('ring') as GameObjects.Ellipse | undefined)?.destroy()
+    a.view.setData('ring', undefined)
     drawBar(a)
   }
 }
@@ -108,19 +121,15 @@ export function synergyCounts(allies: Ally[]): Record<CardKey, number> {
   return counts
 }
 
-// 같은 열에서 사거리 안의 살아 있는 적, 가까운(y가 큰) 순. 다른 열은 보지 않는다(LANE-01)
-function ahead(enemies: Enemy[], a: Ally, range: number): Enemy[] {
-  return enemies.filter((e) => e.hp > 0 && !e.gone && e.col === a.col && inRange(a.y, e.y, range)).sort((p, q) => q.y - p.y)
-}
-
 // 아군 한 틱. allies는 이번 틱에 한 번 모은 배열(ally.alive는 사본이라 combat.alive를 읽는다)
-export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean; gas: number[][] }, dt: number): void {
+export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean; gas: number[][]; clock: number }, dt: number): void {
   const { scene, enemies, allies } = ctx
   const counts = synergyCounts(allies)
   const chems = chemsOf(allies)
   for (const a of allies) {
     const c = a.combat
     tickHit(a.view, dt)
+    if (a.taunt && c.alive) ensureRing(a)
     if (!c.alive) continue
     if (c.stun > 0) {
       c.stun -= dt
@@ -137,7 +146,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
       case 'rifle':
       case 'miner':
       case 'chem': {
-        const target = ahead(enemies, a, CARDS[card].range)[0]
+        const target = pickTarget(a, enemies, CARDS[card].range)
         if (!target) break
         const atk = stats(card, rank).atk * chemDamageMult(chems, a.col, a.row)
         const shots = card === 'rifle' && rank >= ABILITY.corporal ? ABILITY.burstCount : 1
@@ -153,8 +162,13 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         break
       }
       case 'sniper': {
-        const targets = ahead(enemies, a, CARDS.sniper.range)
-        if (targets.length === 0) break
+        // 가장 가까운 적을 향해 쏘고, 그 사선(폭 pierceWidth) 위 뒤쪽 적을 가까운 순으로 관통한다
+        const first = pickTarget(a, enemies, CARDS.sniper.range)
+        if (!first) break
+        const behind = enemies
+          .filter((e) => e !== first && e.hp > 0 && !e.gone && onRay(a, first, e, COMBAT.pierceWidth))
+          .sort((p, q) => dist(a, p) - dist(a, q))
+        const targets = [first, ...behind]
         const tier = synergyTier('sniper', counts.sniper)
         const atk = stats('sniper', rank).atk * chemDamageMult(chems, a.col, a.row)
         targets.forEach((e, k) => {
@@ -162,25 +176,32 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
           if (dmg > 0) hurtEnemy(scene, e, dmg)
         })
         act()
-        const first = targets[0]
-        if (first && rank >= ABILITY.sergeant) first.stun = Math.max(first.stun, ABILITY.sniperStun)
-        snipeLine(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
+        if (rank >= ABILITY.sergeant) first.stun = Math.max(first.stun, ABILITY.sniperStun)
+        const last = targets[targets.length - 1] as Enemy
+        snipeLine(scene, a.view.x, my, last.view.x, last.view.y)
         shake(scene, 'light')
         c.cd = iv
         break
       }
       case 'blower': {
-        const targets = ahead(enemies, a, blowerRange(counts.blower)).filter((e) => !e.knocked)
+        // 부채꼴: 안의 적 전부 피해 + 취약. 아직 안 밀린 적만 민다(적마다 1회)
+        const targets = blowerCone(a, enemies, blowerRange(counts.blower))
         if (targets.length === 0) break
+        const atk = stats('blower', rank).atk * chemDamageMult(chems, a.col, a.row)
         for (const e of targets) {
-          e.knocked = true
-          e.knockLeft += knockback(e.type, rank, counts.blower)
-          e.ready = 0
-          // 화상은 중첩 없이 갱신(대입)
-          if (rank >= ABILITY.corporal) {
-            e.burn = ABILITY.burnSec
-            flame(scene, e.view.x, e.view.y)
+          if (!e.knocked) {
+            e.knocked = true
+            e.knockLeft += knockback(e.type, rank, counts.blower)
+            e.ready = 0
+            e.pushedAt = ctx.clock
+            // 화상은 중첩 없이 갱신(대입)
+            if (rank >= ABILITY.corporal) {
+              e.burn = ABILITY.burnSec
+              flame(scene, e.view.x, e.view.y)
+            }
           }
+          hurtEnemy(scene, e, atk) // 취약은 이 피해 뒤에 건다(첫 타는 부풀리지 않는다)
+          e.vuln = COMBAT.vulnSec
         }
         act()
         windWave(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y)
@@ -190,9 +211,11 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
       case 'cook': {
         const reach = cookReach(rank, counts.cook)
         let acted = false
-        for (const b of allies) {
-          if (b === a || !b.combat.alive || b.combat.hp >= b.combat.maxHp) continue
-          if (!withinReach(b.col - a.col, b.row - a.row, reach)) continue
+        // ponytail: 범위 안 다친 아군 모두를 낮은 HP 비율 순(같으면 제설병)으로 치료한다. 한 번에 한 명만으로 줄이는 것은 G1 뒤 결정
+        const hurt = allies
+          .filter((b) => b !== a && b.combat.alive && b.combat.hp < b.combat.maxHp && withinReach(b.col - a.col, b.row - a.row, reach))
+          .map((b) => ({ b, hp: b.combat.hp, maxHp: b.combat.maxHp, taunt: b.taunt }))
+        for (const { b } of healOrder(hurt)) {
           b.combat.hp = Math.min(b.combat.maxHp, b.combat.hp + ABILITY.cookHeal)
           drawBar(b)
           healText(scene, b.view.x, b.view.y, ABILITY.cookHeal)

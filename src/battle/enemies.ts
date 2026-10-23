@@ -1,6 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, ART, BATTLE, BOSS, DOG, ENEMIES, GRID, LAYOUT, MINES, UI, type EnemyType } from '../data'
-import { artKey, blockY, frontAlly, inBlast, inRange, mineDamage, mineTriggered, pickDogLane, waveHp, type SpawnEvent } from '../rules'
+import { ABILITY, ART, BATTLE, BOSS, COMBAT, DOG, ENEMIES, GRID, LAYOUT, MINES, UI, type EnemyType } from '../data'
+import { artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
 import { addSprite, hasArt, hitSprite, playAct, tickHit } from './art'
 import type { Board } from './board'
 import { dmgText, explosion, hitFlash, laneFlash, shake } from './fx'
@@ -16,6 +16,8 @@ export type Enemy = {
   ready: number // 공격 준비 누적 초. 막혀서 멈춘 동안만 쌓이고, 걷거나 밀리면 0
   stun: number // 남은 기절 초
   burn: number // 남은 화상 초
+  vuln: number // 남은 취약 초(받는 피해 x COMBAT.vulnMult)
+  pushedAt: number // 마지막으로 밀린 전투 시각(초). 안 밀렸으면 -Infinity. 지뢰 연계 판정용
   knockLeft: number // 남은 밀려남 칸(02-05가 채운다)
   knocked: boolean // 제설병에게 이미 밀렸다. 적마다 1회만 밀린다(제설병 단독 열 교착 방지, 03-06)
   dogMoved: boolean
@@ -59,37 +61,32 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
     if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
     view.add(body)
   }
+  // 취약 표시: 몸통 크기 붉은 테두리(임시, 07-02에서 다듬는다)
+  const vulnBox = scene.add.rectangle(0, 0, size, size).setStrokeStyle(UI.enemyStroke, UI.colors.vulnStroke).setVisible(false)
+  view.add(vulnBox)
+  view.setData('vulnBox', vulnBox)
   view.add(bar)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
-  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
+  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, vuln: 0, pushedAt: -Infinity, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
 }
 
 // 제거 판정은 호출한 쪽이 hp <= 0으로 거른다
-export function hurtEnemy(scene: Scene, e: Enemy, dmg: number): void {
+// 취약 중이면 피해가 커진다(damageTaken). 숫자도 늘어난 값을 보여 준다
+export function hurtEnemy(scene: Scene, e: Enemy, base: number): void {
+  const dmg = damageTaken(base, e.vuln)
   e.hp -= dmg
   if (!hitSprite(e.view)) hitFlash(scene, e.view.x, e.view.y, bodySize(e.type), bodySize(e.type))
   dmgText(scene, e.view.x, e.view.y, dmg)
   drawBar(e)
 }
 
-// 보스 충격파: 한 보스당 한 번, 같은 열 살아 있는 아군 전원 기절
+// 보스 충격파: 한 보스당 한 번(교전에 들어서거나 배치 구역에 들어설 때), 같은 열 살아 있는 아군 전원 기절
 function shockwave(ctx: Ctx, e: Enemy): void {
   if (e.shocked) return
   e.shocked = true
   for (const a of ctx.allies) if (a.col === e.col && a.combat.alive) a.combat.stun = Math.max(a.combat.stun, BOSS.shockStun)
   laneFlash(ctx.scene, ctx.board.toScreen(e.col, 0).x, ctx.board.toScreen(e.col, 0).y, ctx.board.worldY(LAYOUT.lineY))
   shake(ctx.scene, 'heavy')
-}
-
-// 이 적이 맨 앞 아군에게 막혔는가(RPG병은 사거리 안에서 멈춘다)
-function blocked(e: Enemy, front: Ally | null): boolean {
-  if (!front) return false
-  switch (e.type) {
-    case 'rpg':
-      return inRange(front.y, e.y, ENEMIES.rpg.range)
-    default:
-      return e.y >= blockY(front.row)
-  }
 }
 
 // 방어선(y >= GRID.lineY)에 닿은 적들을 돌려준다. 방어선 처리는 호출한 쪽 몫
@@ -102,9 +99,12 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       const p = ctx.board.toScreen(e.col, e.y)
       e.view.y = p.y
     }
+    // 0. 취약 시간 감소, 표시 갱신
+    e.vuln = Math.max(0, e.vuln - dt)
+    ;(e.view.getData('vulnBox') as GameObjects.Rectangle).setVisible(e.vuln > 0)
     // 1. 화상
     if (e.burn > 0) {
-      e.hp -= ABILITY.burnDps * dt
+      e.hp -= damageTaken(ABILITY.burnDps * dt, e.vuln)
       e.burn -= dt
       drawBar(e)
       if (e.hp <= 0) continue
@@ -132,15 +132,15 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       e.col = pickDogLane(e.col, counts, ctx.dogRand)
       ctx.scene.tweens.add({ targets: e.view, x: ctx.board.toScreen(e.col, e.y).x, duration: DOG.laneMs })
     }
-    // 6. 막힘 판정
-    const front = frontAlly(ctx.allies, e.col)
-    if (blocked(e, front) && front) {
-      // 7. 막혔으면 충격파(보스) 후 공격 준비
+    // 6. 교전 판정: 근접 거리(RPG병은 사거리) 안 아군 중 도발 우선, 가까운 순. 없으면 계속 걷는다
+    const foe = engageTarget(e, ctx.allies, e.type === 'rpg' ? ENEMIES.rpg.range : COMBAT.meleeReach)
+    if (foe) {
+      // 7. 교전 중이면 충격파(보스) 후 공격 준비
       if (e.type === 'boss') shockwave(ctx, e)
       e.ready += dt
       if (e.ready >= ENEMIES[e.type].interval) {
         e.ready -= ENEMIES[e.type].interval
-        damageAlly(ctx.scene, front, ENEMIES[e.type].dmg)
+        damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)
         playAct(e.view, artKey('enemy', e.type, 'act')) // 막혀서 때리는 순간 1회
       }
     } else {
@@ -157,14 +157,17 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
 }
 
 // 묻힌 지뢰: 같은 열 적 중심이 지뢰 칸 윗변에 닿으면 터져 그 칸과 위아래 blast칸의 같은 열 적 전부에게 피해
+// 제설병에게 밀린 지 minePushSec 안인 적은 피해가 커진다(연계, combo_mine 기록). clock은 전투 시각(초)
 // 사망 처리는 호출한 쪽 정리 단계가 한다
-export function tickMines(ctx: { scene: Scene; board: Board; enemies: Enemy[] }): void {
+export function tickMines(ctx: { scene: Scene; board: Board; enemies: Enemy[]; clock: number; wave: number; log: (ev: LogEvent) => void }): void {
   for (const m of ctx.board.mines()) {
     const live = ctx.enemies.filter((e) => e.col === m.col && e.hp > 0 && !e.gone)
     if (!live.some((e) => mineTriggered(e.y, m.row))) continue
     for (const e of live) {
       if (!inBlast(e.y, m.row)) continue
-      hurtEnemy(ctx.scene, e, mineDamage(e.type, m.anti))
+      const combo = pushMult(e.pushedAt, ctx.clock)
+      if (combo > 1) ctx.log({ e: 'combo_mine', wave: ctx.wave })
+      hurtEnemy(ctx.scene, e, mineDamage(e.type, m.anti) * combo)
     }
     ctx.board.detonate(m.col, m.row)
     const p = ctx.board.toScreen(m.col, GRID.mineTop + m.row + 0.5)
