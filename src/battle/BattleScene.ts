@@ -1,7 +1,8 @@
 import { Scene, type GameObjects, type Input } from 'phaser'
-import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, GRID, LAYOUT, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
+import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { colAt, defconOf, gasPlan, hasAntiTank, income, mineTokens, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
+import { afterRun, colAt, defconOf, gasPlan, hasAntiTank, income, mineTokens, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
+import { defaultSave, load, save, type Save } from '../save'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { art, loadArt, setupArt } from './art'
@@ -10,7 +11,7 @@ import { createBoard, deployIndex, type Board } from './board'
 import { drawLog } from './log'
 import { hurtEnemy, removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { colBand, explosion, fall, laneFlash, shake } from './fx'
-import { loadRuns, loadUnlocked, saveRun, saveUnlocked } from './persist'
+import { loadRuns, readKey, removeKey, saveRun } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { collectAllies, endWave, startWave, tickAllies } from './units'
 
@@ -52,6 +53,8 @@ export class BattleScene extends Scene {
   private hudKey = ''
   public store!: Shop
   public unlocked: CardKey[] = []
+  public ready = false // save 로드가 끝나 판이 만들어졌는가(헤드리스가 기다린다)
+  public sv: Save = defaultSave() // 읽어 온 저장 내용(해금·최고 기록·이름)
   public pool: CardKey[] = [] // 이 준비 단계의 상점 풀(해금이 생겨도 현재 단계에는 반영하지 않는다)
   public newUnlock: CardKey | null = null
   public modal = false // 부활 제안이 떠 있는 동안 전투 정지
@@ -139,8 +142,29 @@ export class BattleScene extends Scene {
     this.gasRand = createRng(base + RUN.gasSeed)
     // ponytail: 게이트 때 debug.ts로 옮긴다
     this.gasExtra = Number(new URLSearchParams(location.search).get('gas') ?? 0) || 0
-    this.unlocked = loadUnlocked(debug.unlock === 'all')
     this.store = createShop(base + 2)
+    this.ready = false
+    this.events.once('shutdown', () => {
+      ui.bindBattle(null)
+      ui.cardInfo(null)
+    })
+    // 로드가 끝나기 전에는 판을 만들지 않는다. 실패해도 기본 저장으로 진행한다
+    load()
+      .catch(() => defaultSave())
+      .then((sv) => this.begin(sv, dy))
+  }
+
+  // 저장을 읽은 뒤 판 만들기(보드·신병·덱·첫 상점)
+  private begin(sv: Save, dy: number) {
+    this.sv = sv
+    const legacy = readKey(LOG.unlockedKey) // 예전 d2_unlocked: 처음 한 번 save로 옮기고 지운다
+    const merged = mergeUnlocked(sv.unlocked, legacy)
+    sv.unlocked = merged
+    if (legacy !== null) {
+      removeKey(LOG.unlockedKey)
+      void save(sv).catch(() => {})
+    }
+    this.unlocked = debug.unlock === 'all' ? [...CARD_KEYS] : merged
 
     this.board = createBoard(this, {
       dy,
@@ -154,7 +178,7 @@ export class BattleScene extends Scene {
       },
     })
     // 신병을 먼저 놓아야 디버그 덱이 같은 칸을 차지하지 않는다
-    this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: ROOKIE.name })
+    this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: sv.name || ROOKIE.name })
     this.gas = createGas(this, this.board)
     this.board.dealDeck(debug.deck ?? [])
 
@@ -171,10 +195,7 @@ export class BattleScene extends Scene {
     this.input.on('pointerdown', (p: Input.Pointer) => {
       if (this.picking > 0) this.pickColumn(colAt(p.worldX))
     })
-    this.events.once('shutdown', () => {
-      ui.bindBattle(null)
-      ui.cardInfo(null)
-    })
+    this.ready = true
     this.startPrep()
     this.syncHud()
   }
@@ -234,7 +255,8 @@ export class BattleScene extends Scene {
     const next = nextUnlock(this.unlocked)
     if (!next) return
     this.unlocked = CARD_KEYS.filter((k) => this.unlocked.includes(k) || k === next)
-    saveUnlocked(this.unlocked)
+    this.sv.unlocked = this.unlocked
+    void save(this.sv).catch(() => {})
     this.newUnlock = next
     this.log({ e: 'unlock', card: next, via: 'wave5' })
     ui.banner(`${UI.text.bannerUnlock}: ${CARDS[next].name}`, 'info')
@@ -368,7 +390,7 @@ export class BattleScene extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (this.logOnly || this.result || this.paused || this.modal) return
+    if (this.logOnly || !this.ready || this.result || this.paused || this.modal) return
     const real = Math.min(delta / 1000, BATTLE.maxDt)
     this.wallSec += real
     const dt = real * this.speed
@@ -499,15 +521,19 @@ export class BattleScene extends Scene {
     const sec = Math.round(this.wallSec)
     this.log({ e: 'run_end', result: kind, wave: this.wave, sec })
     saveRun({ t: Date.now(), result: kind, wave: this.wave, sec, events: this.runEvents })
+    Object.assign(this.sv, afterRun(this.sv, this.wave))
+    void save(this.sv).catch(() => {})
     this.board.setPhase('settle')
     this.syncShop()
     this.syncHud()
     ui.bindBattle(null)
-    // ponytail: M3 로비가 생기면 onLobby를 로비 씬으로
     ui.result(
       { win, wave: this.wave, kills: this.kills, unlocked: this.newUnlock ?? undefined },
       () => this.scene.restart(),
-      () => this.scene.restart(),
+      () => {
+        this.scene.stop()
+        ui.lobby()
+      },
     )
   }
 

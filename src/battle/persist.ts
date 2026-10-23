@@ -1,6 +1,6 @@
-// ponytail: T-101의 save.ts가 생기면 save.unlocked로 옮긴다. 그때까지 M2는 A가 localStorage를 직접 읽고 쓴다(CONTEXT)
-import { CARD_KEYS, LOG, type CardKey } from '../data'
-import { parsePlayLog, parseUnlocked, pushRun, type PlayRun } from '../rules'
+// 해금·최고 기록·이름은 src/save.ts(save.unlocked 등). 여기에는 판 기록 d2_playlog(측정용, TECH §5)와 예전 d2_unlocked 정리만 남는다
+import { LOG } from '../data'
+import { parsePlayLog, pushRun, type PlayRun } from '../rules'
 
 // 막힌 저장소(사생활 보호 모드 등)에서도 판은 시작해야 하므로 실패는 조용히 넘긴다
 export function readKey(key: string): string | null {
@@ -19,12 +19,12 @@ export function writeKey(key: string, value: string): void {
   }
 }
 
-export function loadUnlocked(all: boolean): CardKey[] {
-  return all ? [...CARD_KEYS] : parseUnlocked(readKey(LOG.unlockedKey))
-}
-
-export function saveUnlocked(list: readonly CardKey[]): void {
-  writeKey(LOG.unlockedKey, JSON.stringify(list))
+export function removeKey(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // 지우지 못해도 다음 실행에 다시 합칠 뿐이다
+  }
 }
 
 // 판 기록 d2_playlog. 깨진 저장값은 빈 기록으로 읽고, 쓰기 실패는 조용히 넘긴다

@@ -358,7 +358,25 @@ Extend the attached top-down pixel art map vertically to a 9:19.5 portrait ratio
 ## 진행 기록
 
 - [x] 2026-10-21 Claude: 목업(Figma `37:2`), 참조 그림(`art/ref/`, gitignore), 프롬프트 묶음 작성
-- [ ] 0단계 목업 승인
+- [x] 2026-10-22 소총수 대기·공격, 저격수·송풍기병 대기·공격, 취사병 대기 반영(PR #20, #25). 테스트가 inbox를 옮기던 버그 수정(PR #23)
+- [x] 2026-10-23 그림 세션 브리핑 반영(PR #27)
+  - 반영 완료: A1~A7 기준 시트(art/ref), B 아군 대기·공격 12장(소총수는 사용자 원본), C 적 5장(ChatGPT)
+  - **임시본 19장**(Flash-Lite, 다시 만들 것): enemy_rpg_fire, boss_apc_hull·turret, card 6장, fx 6장, mine·mine_at, bg_gate
+  - 확립된 방법
+    - 모델: Gemini 4 Argon, 사고 수준 "보통"(새 채팅마다 다시 맞춘다). Flash-Lite는 쓰지 않는다.
+    - 비율: 시트 16:9, 카드 3:4, 배경 9:16, 차체·지뢰 1:1
+  - 프롬프트에 덧붙이는 문구
+    - 공통: `No panel borders, no boxes, no divider lines, wide empty magenta gaps`
+    - 이펙트: `no pink/purple/magenta tint`
+    - 카드: `plain blank sleeves, no badges/patches/flags/name tags`
+  - 주의
+    - "원본 크기 다운로드"는 다시 그려져 내용이 바뀔 수 있다(포탑이 차체와 합쳐진 적 있음). 받은 파일을 꼭 연다.
+    - 같은 캐릭터 쌍은 같은 도구로 만든다(배율 공유). enemy_rpg_fire는 enemy_rpg_walk(ChatGPT 1672px)와 쌍이라 1672px 너비로 맞춘다.
+  - 남은 문제
+    - enemy_inf_attack 2번째 프레임 바지 무늬, 보병·RPG 걷기 4프레임이 거의 같음
+    - 저격수 공격 2번째 프레임 자주색 조각, fx_explosion 빨간 조각, fx_heal 옅은 분홍 줄
+  - 수동 정리 이력: ally_miner_idle 찌꺼기 제거, fx_muzzle 워터마크 제거. fx_explosion·fx_flame·fx_heal은 meta.json `split: even`
+- [x] 2026-10-23 0단계: 사용자가 배경 길을 **넓힌다**로 결정했다(G묶음 프롬프트 그대로: 흙길이 화면 폭의 약 3/4). 화풍은 이미 이 결로 생산 중이라 승인으로 본다.
 - [ ] A묶음 7장
 - [ ] B묶음 12장
 - [ ] C묶음 6장
