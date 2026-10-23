@@ -90,7 +90,7 @@ A4 화학병
 Character reference sheet in exactly the same chibi pixel art style as the attached soldier sheet (same head-to-body ratio, outline thickness, palette and shading). A young South Korean army CBRN soldier: olive protective suit over the uniform, full-face gas mask with round eye lenses, ballistic helmet, a decontamination sprayer tank on the back with a hose, and a compact carbine. Show the same character three times in one horizontal row: front view, back view, right side view. Clean dark navy outline, light from top-left, no text, no letters, no logos, no blood. Solid flat magenta (#FF00FF) background, no gradient, no floor, no shadow.
 ```
 
-A5 북한군 보병
+A5 북방연합군(가상 적국) 보병
 ```
 Character reference sheet in exactly the same chibi pixel art style as the attached soldier sheet (same head-to-body ratio, outline thickness and shading), but a fictional enemy soldier: brown-olive uniform, soft cap with a plain star-less badge, plain brown shoulder boards with no markings, canvas ammo pouches, an old-style assault rifle. Grim serious face. Show the same character three times in one horizontal row: front view, back view, right side view. Clean dark navy outline, light from top-left, no text, no letters, no flags, no real insignia, no blood. Solid flat magenta (#FF00FF) background, no gradient, no floor, no shadow.
 ```
