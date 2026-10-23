@@ -1,6 +1,6 @@
 # T-105 생활관(로비)·첫 실행·브리핑 4컷
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · gemini-4-argon-high (역할 카드: `docs/agents/antigravity-build.md`)
 
 ## 목표
@@ -66,10 +66,10 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'`에서 `lobby` 구현 외의 시그니처 변화 없음
-- [ ] 스크린샷(390×844): `docs/shots/T-105-first.png`(첫 실행), `T-105-brief.png`(브리핑 1컷), `T-105-lobby.png`(생활관)
-- [ ] 헤드리스 확인: localStorage를 비우고 `/`를 열면 첫 실행 → 확인 → 브리핑 → 건너뛰기 → 생활관 → 출동 → 전투 HUD가 뜬다. 같은 페이지에서 다시 `/`를 열면 바로 생활관이 뜬다. 결과 보고에 적는다.
+- [x] `npm run verify` 통과
+- [x] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'`에서 `lobby` 구현 외의 시그니처 변화 없음
+- [x] 스크린샷(390×844): `docs/shots/T-105-first.png`(첫 실행), `T-105-brief.png`(브리핑 1컷), `T-105-lobby.png`(생활관)
+- [x] 헤드리스 확인: localStorage를 비우고 `/`를 열면 첫 실행 → 확인 → 브리핑 → 건너뛰기 → 생활관 → 출동 → 전투 HUD가 뜬다. 같은 페이지에서 다시 `/`를 열면 바로 생활관이 뜬다. 결과 보고에 적는다.
 
 디버그 URL: `http://localhost:5173/`(로컬 저장소를 비우면 첫 실행부터), `http://localhost:5173/?scene=battle`(기존대로)
 
@@ -111,14 +111,26 @@
 - [x] 2단계: `src/ui/lobby.ts`에 첫 실행, 브리핑 4컷, 생활관(도감·기록·설정·크레딧·출동) 구현
 - [x] 3단계: `src/ui/screens.ts`의 `lobby()` 구현 (HUD·상점·배너·모달 숨김 후 생활관 표시)
 - [x] 4단계: `src/main.ts`에 `IdleScene` 대기 및 `?scene` 미지정 시 첫 실행/생활관 진입 흐름 연결
+- [x] 5단계: `src/ui/style.css`에 첫 실행·브리핑 4컷·생활관 스타일 추가
+- [x] 6단계: `tests/ui.test.ts` 단위 테스트 추가, `npm run verify` 통과 및 390×844 스크린샷 3장·헤드리스 흐름 확인 완료
 
 ## 결과 보고
 
 - 바뀐 파일:
+  - `src/ui/helpers.ts`: `sanitizeRookieName`, `mergeUnlockedCards`, `formatBriefingText`, `ALL_CARDS` 추가
+  - `src/ui/lobby.ts` (신규): 첫 실행(이름 입력 1~6자·허구/AI 고지 2줄·`[확인]` 저장), 브리핑 4컷(GDD §2.1 4컷·탭 이동·`"건너뛰기"`·파일 존재 시에만 `sfx_siren`·`sfx_radio` 재생), 생활관(`"출동"` 큰 버튼·병과 도감 6칸 `save.unlocked` ∪ `d2_unlocked`·최고 기록·설정 4종 토글·`"브리핑 다시 보기"`·크레딧) 구현
+  - `src/ui/screens.ts`: `lobby()` 호출 시 전투 HUD·상점 패널·배너·모달을 모두 닫고 생활관 화면을 열도록 구현
+  - `src/main.ts`: `?scene` 미지정 시 빈 씬(`IdleScene`, 키 `'idle'`)으로 Phaser `Game`을 시작해 첫 출동 전까지 `BattleScene`이 돌지 않게 하고(캔버스/리사이즈 동기화 유지), `firstRun` 여부에 따라 `첫 실행 → 브리핑 → 생활관` 또는 `생활관`으로 진입하도록 연결 (`"출동"` 클릭 시 `game.scene.start('battle')`)
+  - `src/ui/style.css`: 첫 실행, 브리핑 4컷, 생활관 Safe Area 내부 스타일 추가
+  - `tests/ui.test.ts`: `sanitizeRookieName`, `mergeUnlockedCards`, `formatBriefingText` 단위 테스트 추가
+  - `docs/shots/T-105-first.png`, `docs/shots/T-105-brief.png`, `docs/shots/T-105-lobby.png`: 390×844 스크린샷 3장
 - 검증 결과:
-- 스크린샷:
-- 사용자 확인 방법:
-- 확인하지 못한 점:
-- 다음 제안:
+  - `npm run verify` 통과 (`tsc --noEmit`, `vitest run` 15 files / 228 tests 통과, `assets:check` 통과, `vite build` 성공)
+  - `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` → `-export function lobby(): void {}` / `+export function lobby(): void {`
+  - 헤드리스 확인: `localStorage.clear()` 후 `/?safe=1` 진입 시 첫 실행(`신병 성명 입력`, 기본값 `"김신병"`, 전투 HUD 숨김) → `[확인]` 클릭 시 브리핑 1컷(`컷 1 / 4 · 자대 배치 첫날 밤`) → `[건너뛰기]` 클릭 시 생활관(`이등병 김신병`, 도감 6칸 중 해금 3·잠김 3) → `[출동]` 클릭 시 생활관 숨김 및 전투 HUD(`웨이브 1/10`) 표시 확인. 이후 같은 페이지에서 다시 `/?safe=1` 진입 시 첫 실행·브리핑 없이 바로 생활관(`ui-lobby-overlay mode-lobby`)이 뜨는 것 확인
+- 스크린샷: `docs/shots/T-105-first.png`, `docs/shots/T-105-brief.png`, `docs/shots/T-105-lobby.png`
+- 사용자 확인 방법: `npm run dev` 실행 후 `http://localhost:5173/?safe=1` 접속 (첫 실행부터 다시 보려면 브라우저 콘솔에서 `localStorage.clear(); location.reload()` 실행)
+- 확인하지 못한 점: 브리핑 배경 그림(`brief_1`~`brief_4`)과 `sfx_siren`·`sfx_radio` 음원 파일은 아직 에셋에 없으므로 어두운 경보 점멸 배경 및 조용한 폴백으로 동작함
+- 다음 제안: 레인 A 결과 화면의 `"생활관"` 버튼 콜백에서 `battle` 씬 정지 후 `ui.lobby()` 호출 연결 및 브리핑 컷 일러스트(`brief_1`~`brief_4`) 에셋 추가
 
 ## 인계 메모
