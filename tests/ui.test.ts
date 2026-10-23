@@ -7,11 +7,14 @@ import {
 import {
   canFireSupport,
   cloneHud,
+  formatBriefingText,
   getCardInitial,
   getCardName,
   getRankBars,
   getRankName,
   isSameHud,
+  mergeUnlockedCards,
+  sanitizeRookieName,
   sortSynergies,
 } from '../src/ui/helpers'
 import type { Hud } from '../src/ui/screens'
@@ -148,5 +151,36 @@ describe('UI 순수 헬퍼 테스트', () => {
     const copy = cloneHud(sampleHud)
     expect(isSameHud(sampleHud, { ...copy, support: 2 })).toBe(false)
     expect(isSameHud({ ...sampleHud, support: 2 }, { ...copy, support: 2 })).toBe(true)
+  })
+
+  it('T-105: sanitizeRookieName은 앞뒤 공백을 제거하고 1~6자로 자르며 빈 값이면 기본값 "김신병"을 반환한다', () => {
+    expect(sanitizeRookieName('')).toBe('김신병')
+    expect(sanitizeRookieName('   ')).toBe('김신병')
+    expect(sanitizeRookieName('  이일병  ')).toBe('이일병')
+    expect(sanitizeRookieName('가나다라마바사아자')).toBe('가나다라마바')
+    expect(sanitizeRookieName('  홍길동장군님  ')).toBe('홍길동장군님')
+  })
+
+  it('T-105: mergeUnlockedCards는 save.unlocked와 localStorage d2_unlocked JSON 배열의 합집합을 반환한다', () => {
+    const base = ['rifle', 'blower', 'sniper']
+    expect(mergeUnlockedCards(base, null)).toEqual(['rifle', 'blower', 'sniper'])
+    expect(mergeUnlockedCards(base, 'invalid-json')).toEqual(['rifle', 'blower', 'sniper'])
+    expect(mergeUnlockedCards(base, JSON.stringify(['sniper', 'cook', 'miner']))).toEqual([
+      'rifle',
+      'blower',
+      'sniper',
+      'cook',
+      'miner',
+    ])
+  })
+
+  it('T-105: formatBriefingText는 문구 안의 {이름}을 정리된 신병 이름으로 치환한다', () => {
+    const tpl = '6주 기초군사훈련을 마친 신병 {이름}. {이름} 이등병 출동!'
+    expect(formatBriefingText(tpl, '박신병')).toBe(
+      '6주 기초군사훈련을 마친 신병 박신병. 박신병 이등병 출동!'
+    )
+    expect(formatBriefingText(tpl, '   ')).toBe(
+      '6주 기초군사훈련을 마친 신병 김신병. 김신병 이등병 출동!'
+    )
   })
 })
