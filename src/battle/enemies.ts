@@ -141,7 +141,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       if (e.ready >= ENEMIES[e.type].interval) {
         e.ready -= ENEMIES[e.type].interval
         damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)
-        playAct(e.view, artKey('enemy', e.type, 'act')) // 막혀서 때리는 순간 1회
+        if (e.type !== 'boss') playAct(e.view, artKey('enemy', e.type, 'act')) // 때리는 순간 1회. 보스는 공격 그림이 없어 건너뛴다(없는 키로 artKey가 던지는 것을 막는다)
       }
     } else {
       e.ready = 0
