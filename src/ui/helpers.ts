@@ -82,3 +82,37 @@ export function cloneHud(h: Hud): Hud {
     synergies: h.synergies.map((s) => ({ ...s })),
   }
 }
+
+export const ALL_CARDS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'] as const
+
+export function sanitizeRookieName(raw: string, fallback = '김신병'): string {
+  const trimmed = raw.trim().slice(0, 6)
+  return trimmed.length > 0 ? trimmed : fallback
+}
+
+export function mergeUnlockedCards(
+  saveUnlocked: readonly string[],
+  rawLocalUnlocked: string | null
+): string[] {
+  const set = new Set<string>(saveUnlocked)
+  if (rawLocalUnlocked) {
+    try {
+      const parsed: unknown = JSON.parse(rawLocalUnlocked)
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          if (typeof item === 'string' && item.trim().length > 0) {
+            set.add(item)
+          }
+        }
+      }
+    } catch {
+      // 잘못된 JSON 무시
+    }
+  }
+  return [...set]
+}
+
+export function formatBriefingText(template: string, name: string): string {
+  const cleanName = sanitizeRookieName(name)
+  return template.replace(/\{이름\}/g, cleanName)
+}

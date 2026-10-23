@@ -10,6 +10,7 @@ import {
   isSameHud,
   sortSynergies,
 } from './helpers'
+import { showLobby } from './lobby'
 
 export type Phase = 'prep' | 'fight' | 'settle'
 export type Hud = {
@@ -697,8 +698,33 @@ export function bindBattle(ctl: BattleCtl | null): void {
   syncCtlButtons()
 }
 
-// T-105에서 구현
-export function lobby(): void {}
+export function lobby(): void {
+  currentCtl = null
+  lastHud = null
+  if (bannerTimer !== null) {
+    clearTimeout(bannerTimer)
+    bannerTimer = null
+  }
+  if (defconFlashTimer !== null) {
+    clearTimeout(defconFlashTimer)
+    defconFlashTimer = null
+  }
+  const r = ensureRefs()
+  if (r) {
+    r.hudEl.classList.add('hidden')
+    r.synergyRail.innerHTML = ''
+    r.shopEl.classList.add('closed')
+    r.cardInfoBackdrop.classList.add('hidden')
+    r.bannerEl.classList.add('hidden')
+    r.defconFlashEl.classList.remove('active')
+    r.defconFlashEl.classList.add('hidden')
+    r.pauseBackdrop.classList.add('hidden')
+    r.reviveBackdrop.classList.add('hidden')
+    r.resultBackdrop.classList.add('hidden')
+    syncCtlButtons()
+  }
+  void showLobby()
+}
 
 // 레인 B 전용: 안드로이드 뒤로가기 종료 확인 모달 (T-101 할 일 6)
 export function confirmExit(onYes: () => void, onNo: () => void): void {

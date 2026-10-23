@@ -100,13 +100,17 @@
 
 ## 질문
 
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
 - 기준 커밋: 9d99f12c02ee
 - 브랜치: kidariseok/t104-ticket-work
 - 세션 시작: Gemini 4 Argon (High), 2026-10-23 11:06
+- [x] 1단계: `src/ui/helpers.ts`에 `sanitizeRookieName`, `mergeUnlockedCards`, `formatBriefingText` 추가
+- [x] 2단계: `src/ui/lobby.ts`에 첫 실행, 브리핑 4컷, 생활관(도감·기록·설정·크레딧·출동) 구현
+- [x] 3단계: `src/ui/screens.ts`의 `lobby()` 구현 (HUD·상점·배너·모달 숨김 후 생활관 표시)
+- [x] 4단계: `src/main.ts`에 `IdleScene` 대기 및 `?scene` 미지정 시 첫 실행/생활관 진입 흐름 연결
 
 ## 결과 보고
 

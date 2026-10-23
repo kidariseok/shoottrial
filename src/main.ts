@@ -1,4 +1,4 @@
-import { Game, Scale, AUTO, type Types } from 'phaser'
+import { Game, Scale, Scene, AUTO, type Types } from 'phaser'
 import { initAudio } from './audio'
 import { BattleScene } from './battle/BattleScene'
 import { debug, initDebugOverlays } from './debug'
@@ -7,20 +7,33 @@ import { GalleryScene } from './gallery'
 import { exitApp, init as initPlatform, isNative, onBack, safeRect } from './platform'
 import { load as loadSave } from './save'
 import { startUiDemo } from './ui/demo'
+import { bindDeploy, startEntryFlow } from './ui/lobby'
 import { handleBack } from './ui/screens'
 
 export { calculateLogicalHeight, computeCanvasLayout }
 
+// T-105: 처음 출동하기 전까지 BattleScene이 돌지 않도록 대기하는 빈 씬
+class IdleScene extends Scene {
+  constructor() {
+    super('idle')
+  }
+}
+
 const hasExplicitScene =
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('scene')
-const activeScene = !hasExplicitScene && isNative() ? 'device' : debug.scene
+const activeScene = hasExplicitScene ? debug.scene : 'lobby'
 
 const height = calculateLogicalHeight()
+const isLobby = activeScene === 'lobby'
 const isUiDemo = activeScene === 'ui'
 const isDevice = activeScene === 'device'
 const isDomOnly = isUiDemo || isDevice
 const isGallery = activeScene === 'gallery'
-const scenes = isGallery ? [GalleryScene, BattleScene] : [BattleScene, GalleryScene]
+const scenes = isGallery
+  ? [GalleryScene, BattleScene]
+  : isLobby
+    ? [IdleScene, BattleScene, GalleryScene]
+    : [BattleScene, GalleryScene]
 
 const config: Types.Core.GameConfig = {
   type: AUTO,
@@ -129,7 +142,17 @@ async function boot(): Promise<void> {
     })
   })
 
-  if (isUiDemo) {
+  bindDeploy(() => {
+    if (!game) return
+    if (game.scene.isActive('idle')) {
+      game.scene.stop('idle')
+    }
+    game.scene.start('battle')
+  })
+
+  if (isLobby) {
+    await startEntryFlow(saved)
+  } else if (isUiDemo) {
     startUiDemo()
   } else if (isDevice) {
     await startDeviceScene()
