@@ -30,8 +30,8 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-22",
-      "scale": 0.080944
+      "checked": "2026-10-23",
+      "scale": 0.069767
     },
     {
       "id": "ally_sniper_attack",
@@ -41,8 +41,8 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-22",
-      "scale": 0.080944
+      "checked": "2026-10-23",
+      "scale": 0.069767
     },
     {
       "id": "ally_blower_idle",
@@ -52,8 +52,8 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-22",
-      "scale": 0.09031
+      "checked": "2026-10-23",
+      "scale": 0.067368
     },
     {
       "id": "ally_blower_attack",
@@ -63,8 +63,8 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-22",
-      "scale": 0.09031
+      "checked": "2026-10-23",
+      "scale": 0.067368
     },
     {
       "id": "ally_cook_idle",
@@ -74,8 +74,316 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-22",
-      "scale": 0.071375
+      "checked": "2026-10-23",
+      "scale": 0.065889
+    },
+    {
+      "id": "card_rifle",
+      "file": "public/assets/card_rifle.png",
+      "source": "art/source/card_rifle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.138058
+    },
+    {
+      "id": "card_sniper",
+      "file": "public/assets/card_sniper.png",
+      "source": "art/source/card_sniper",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.148976
+    },
+    {
+      "id": "card_blower",
+      "file": "public/assets/card_blower.png",
+      "source": "art/source/card_blower",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.12931
+    },
+    {
+      "id": "ally_cook_attack",
+      "file": "public/assets/ally_cook_attack.png",
+      "source": "art/source/ally_cook_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.065889
+    },
+    {
+      "id": "card_cook",
+      "file": "public/assets/card_cook.png",
+      "source": "art/source/card_cook",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.132159
+    },
+    {
+      "id": "ally_miner_idle",
+      "file": "public/assets/ally_miner_idle.png",
+      "source": "art/source/ally_miner_idle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.065529
+    },
+    {
+      "id": "ally_miner_attack",
+      "file": "public/assets/ally_miner_attack.png",
+      "source": "art/source/ally_miner_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.065529
+    },
+    {
+      "id": "card_miner",
+      "file": "public/assets/card_miner.png",
+      "source": "art/source/card_miner",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.134831
+    },
+    {
+      "id": "ally_chem_idle",
+      "file": "public/assets/ally_chem_idle.png",
+      "source": "art/source/ally_chem_idle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.064909
+    },
+    {
+      "id": "ally_chem_attack",
+      "file": "public/assets/ally_chem_attack.png",
+      "source": "art/source/ally_chem_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.064909
+    },
+    {
+      "id": "card_chem",
+      "file": "public/assets/card_chem.png",
+      "source": "art/source/card_chem",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.135074
+    },
+    {
+      "id": "enemy_inf_walk",
+      "file": "public/assets/enemy_inf_walk.png",
+      "source": "art/source/enemy_inf_walk",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.182857
+    },
+    {
+      "id": "enemy_inf_attack",
+      "file": "public/assets/enemy_inf_attack.png",
+      "source": "art/source/enemy_inf_attack",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.182857
+    },
+    {
+      "id": "enemy_dog_run",
+      "file": "public/assets/enemy_dog_run.png",
+      "source": "art/source/enemy_dog_run",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.176471
+    },
+    {
+      "id": "enemy_dog_bite",
+      "file": "public/assets/enemy_dog_bite.png",
+      "source": "art/source/enemy_dog_bite",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.174107
+    },
+    {
+      "id": "enemy_rpg_walk",
+      "file": "public/assets/enemy_rpg_walk.png",
+      "source": "art/source/enemy_rpg_walk",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.225352
+    },
+    {
+      "id": "enemy_rpg_fire",
+      "file": "public/assets/enemy_rpg_fire.png",
+      "source": "art/source/enemy_rpg_fire",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.105785
+    },
+    {
+      "id": "boss_apc_hull",
+      "file": "public/assets/boss_apc_hull.png",
+      "source": "art/source/boss_apc_hull",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.15309
+    },
+    {
+      "id": "boss_apc_turret",
+      "file": "public/assets/boss_apc_turret.png",
+      "source": "art/source/boss_apc_turret",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.077057
+    },
+    {
+      "id": "fx_muzzle",
+      "file": "public/assets/fx_muzzle.png",
+      "source": "art/source/fx_muzzle",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.047291
+    },
+    {
+      "id": "fx_wind",
+      "file": "public/assets/fx_wind.png",
+      "source": "art/source/fx_wind",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.180848
+    },
+    {
+      "id": "fx_flame",
+      "file": "public/assets/fx_flame.png",
+      "source": "art/source/fx_flame",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.186408
+    },
+    {
+      "id": "fx_explosion",
+      "file": "public/assets/fx_explosion.png",
+      "source": "art/source/fx_explosion",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.271698
+    },
+    {
+      "id": "fx_heal",
+      "file": "public/assets/fx_heal.png",
+      "source": "art/source/fx_heal",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.27234
+    },
+    {
+      "id": "fx_gas",
+      "file": "public/assets/fx_gas.png",
+      "source": "art/source/fx_gas",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.467343
+    },
+    {
+      "id": "mine",
+      "file": "public/assets/mine.png",
+      "source": "art/source/mine",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.049612
+    },
+    {
+      "id": "mine_at",
+      "file": "public/assets/mine_at.png",
+      "source": "art/source/mine_at",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.053039
+    },
+    {
+      "id": "bg_gate",
+      "file": "public/assets/bg_gate.png",
+      "source": "art/source/bg_gate",
+      "tool": "gemini-argon",
+      "prompt": "docs/ART.md#3.2",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-23",
+      "scale": 0.513158
     }
   ]
 }
