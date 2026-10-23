@@ -17,6 +17,7 @@ import { PNG } from 'pngjs'
 export const BASELINE_Y = 116
 export const UNIT_TARGET_HEIGHT = 96
 export const DEFAULT_MAGENTA_TOLERANCE = 45
+export const DEFAULT_FRINGE_PASSES = 3
 
 /**
  * docs/ART.md §4의 프레임 최대치 규칙을 반환한다.
@@ -264,6 +265,50 @@ export function cleanMagentaFringe1px(png, removedMask = null) {
 }
 
 /**
+ * 마젠타 계열(어두운 자홍, 분홍 글로우 등 허용 오차 밖이지만 마젠타가 지배적인 색)인지 판별한다.
+ */
+function isMagentaHaloPixel(r, g, b) {
+  return r >= 150 && b >= 150 && g <= Math.min(r, b) - 90 && Math.abs(r - b) <= 80
+}
+
+/**
+ * 이미 투명해진 배경과 이어진 마젠타 계열 픽셀만 번져 나가며 지운다.
+ * 배경과 이어지지 않은 그림 속 분홍은 건드리지 않는다.
+ */
+export function removeConnectedMagentaHalo(png) {
+  const { width, height, data } = png
+  const queue = []
+  const seen = new Uint8Array(width * height)
+  for (let i = 0; i < width * height; i++) {
+    if (data[i * 4 + 3] === 0) {
+      seen[i] = 1
+      queue.push(i)
+    }
+  }
+  for (let head = 0; head < queue.length; head++) {
+    const i = queue[head]
+    const x = i % width
+    const y = (i - x) / width
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx
+      const ny = y + dy
+      if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue
+      const ni = ny * width + nx
+      if (seen[ni]) continue
+      seen[ni] = 1
+      const idx = ni * 4
+      if (!isMagentaHaloPixel(data[idx], data[idx + 1], data[idx + 2])) continue
+      data[idx] = 0
+      data[idx + 1] = 0
+      data[idx + 2] = 0
+      data[idx + 3] = 0
+      queue.push(ni)
+    }
+  }
+  return png
+}
+
+/**
  * 마젠타(#FF00FF ± 허용 오차)를 투명하게 만들고,
  * 제거된 배경과 맞닿은 경계 1px의 마젠타 번짐(분홍 테두리)을 정리한다.
  */
@@ -298,7 +343,13 @@ export function removeMagenta(srcPng, tolerance = DEFAULT_MAGENTA_TOLERANCE) {
     }
   }
 
-  return cleanMagentaFringe1px(out, removedMask)
+  removeConnectedMagentaHalo(out)
+  // Gemini 원본은 경계에 번짐이 2~3px 퍼져 있어 배경과 맞닿은 분홍 테두리를 여러 겹 벗긴다.
+  cleanMagentaFringe1px(out, removedMask)
+  for (let pass = 1; pass < DEFAULT_FRINGE_PASSES; pass++) {
+    cleanMagentaFringe1px(out)
+  }
+  return out
 }
 
 /**
