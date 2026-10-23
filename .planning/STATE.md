@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 5 완료(화력 지원), Phase 6 그림 반영·저장 이전 시작 (2026-10-22)"
+stopped_at: "M3 레인 A(Phase 4~6) 완료 (2026-10-23)"
 last_updated: "2026-10-21T13:39:52.806Z"
-last_activity: 2026-10-22 — 5단계 완료(화력 지원 판당 2회·데프콘 1 흔들림·supportAvg)
+last_activity: 2026-10-23 — 6단계 완료(그림 스프라이트 반영, save.ts 이전, 결과→로비)
 progress:
   total_phases: 3
   completed_phases: 3
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-20)
 
 ## Current Position
 
-Milestone: M3 수직 슬라이스(레인 A) — Phase 4·5 완료, Phase 6(그림 반영·저장 이전) 진행
+Milestone: M3 수직 슬라이스(레인 A) — Phase 4~6 완료. 다음: 소리(T-106)·그림 임시본 교체·M4 출시 준비
 Status: T-104 머지됨 → Phase 5 시작 가능. T-105(로비) 레인 B 진행 예정. 그림 A-102 진행 중(소총수 2장 반영)
 
 ## Performance Metrics
