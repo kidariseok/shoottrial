@@ -37,9 +37,9 @@ export const CARDS: Record<
   CardKey,
   { name: string; initial: string; color: number; cost: number; hp: number; atk: number; interval: number; range: number }
 > = {
-  rifle: { name: '소총수', initial: '소', color: 0x4a7c3a, cost: 1, hp: 100, atk: 10, interval: 0.8, range: 4 },
-  sniper: { name: '저격수', initial: '저', color: 0x2f5d8a, cost: 3, hp: 70, atk: 60, interval: 2.5, range: Infinity }, // 열 전체
-  blower: { name: '제설병', initial: '제', color: 0x2a8c8c, cost: 2, hp: 120, atk: 0, interval: 1.5, range: 2 },
+  rifle: { name: '소총수', initial: '소', color: 0x4a7c3a, cost: 1, hp: 100, atk: 10, interval: 0.8, range: 3.5 },
+  sniper: { name: '저격수', initial: '저', color: 0x2f5d8a, cost: 3, hp: 70, atk: 60, interval: 2.5, range: 12 }, // 판 전체(대각선 약 8.6칸보다 크다)
+  blower: { name: '제설병', initial: '제', color: 0x2a8c8c, cost: 2, hp: 180, atk: 4, interval: 1.5, range: 2 },
   cook: { name: '취사병', initial: '취', color: 0x8a8a3a, cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 }, // 인접 8칸의 반지름
   miner: { name: '지뢰설치병', initial: '지', color: 0x6a5a8a, cost: 2, hp: 80, atk: 6, interval: 1.0, range: 3 },
   chem: { name: '화학병', initial: '화', color: 0xb0b420, cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 }, // §5.2 지뢰설치병과 같은 단발 사격. 노랑 계열(r > g 금지)
@@ -73,7 +73,7 @@ export const ECONOMY = {
   earlyBonus: 1,
   rerollCost: 1,
   shopSize: 5,
-  waveHpGrowth: 0.12,
+  waveHpGrowth: 0.5,
 } as const
 
 // 매 판 시작 신병: 배치 구역 가운데 열 맨 아래 칸
@@ -102,7 +102,6 @@ export const UI = {
     hitFlash: 0xffffff, // 피격 번쩍임(붉은색 금지)
     laneFlash: 0xbfe6ff, // 최후 저지선 열 섬광(밝은 청백색)
     lineUsed: 0x5a5a4a, // 쓴 최후 저지선 표시(방어선 띠 위, 노란 띠보다 어두운 회황색)
-    muzzle: 0xfff3b0, // 총구 섬광(노랑, 붉은색·주황 금지)
     tracer: 0xffe066, // 아군 탄 궤적
     snipe: 0xffffff, // 저격 흰 선
     wind: 0xbfe6ff, // 송풍 파동(청백색)
@@ -110,7 +109,6 @@ export const UI = {
     mineToken: 0x7fd1b9, // 지뢰 토큰 더미(아군 계열 청록, 붉은색·주황 금지)
     mineBuried: 0x9fe0c8, // 묻힌 일반 지뢰(반투명으로 그린다)
     mineAnti: 0xc79bff, // 대전차 토큰·지뢰(연보라, 일반과 구분)
-    explosion: 0xe8f6ff, // 지뢰 폭발(밝은 청백색)
     gas: 0xb8c84a, // 가스 칸(탁한 황록)
     gasWarn: 0xd23c3c, // 화학탄 예고(적의 예고라 붉은색 허용, ART §2)
     dogPlusStroke: 0xffffff, // 강화 군견 테두리
@@ -144,13 +142,10 @@ export const UI = {
     lineUsedPx: 22, // 소진 표시 글자 크기
     lineUsedInset: 8, // 소진 표시 사각형 좌우 여백(한쪽)
     msPerSec: 1000, // 초 -> 밀리초(연출 시차 변환)
-    muzzleR: 10, // 총구 섬광 반지름
     muzzleDy: 56, // 총구 위치: 카드 중심에서 위로
-    muzzleMs: 100,
     tracerW: 4, // 탄 궤적 굵기
     tracerMs: 120,
     snipeW: 10, // 저격 흰 선 굵기
-    snipeMs: 250,
     windW: 96, // 송풍 파동 폭
     windH: 24, // 송풍 파동 두께
     windAlpha: 0.6,
@@ -160,16 +155,13 @@ export const UI = {
     reviveScale: 1.4, // 부활 번쩍임이 커지는 배율
     reviveAlpha: 0.9,
     reviveMs: 400,
-    explodeAlpha: 0.8, // 폭발 사각형 시작 알파
-    explodeMs: 350,
-    explodeCoreR: 24, // 폭발 중심 원 시작 반지름
-    explodeCoreScale: 3, // 중심 원이 커지는 배율
     supportPickAlpha: 0.25, // 열 고르기 강조 알파
     supportLineW: 10, // 화력 지원 예고선 굵기
     supportLineAlpha: 0.85,
   },
   text: {
     promote: '진급!',
+    combo: '연계!', // 밀어 넣기 지뢰 보너스 팝업
     sell: '판매',
     line: '위병소 방어선',
     fontPx: 26,
@@ -232,6 +224,89 @@ export const UI = {
   log: { x: 40, y: 112, titlePx: 40, px: 28, lineH: 44, blockGap: 44, colBuys: 380, colRate: 520, lowColor: '#ffe066', secPerMin: 60, pct: 100, rateDigits: 1, waveDigits: 1 },
 } as const
 
+// ---- 07-02 이펙트 수치 (GDD §9 화려함 기준) ----
+// 색은 "야간 작전" 톤: 아군 탄·섬광은 금색·흰색, 폭발·화염·불꽃은 주황~적색, 연기는 어두운 회색(분홍 없음)
+// cfg는 Phaser 파티클 설정 그대로(속도·각도(도)·수명(ms)·크기·알파·색·중력). n은 한 번에 내는 개수
+export const FX = {
+  maxParticles: 400, // 동시 파티클 상한. 넘으면 새 연출은 남은 자리만큼만 낸다
+  lowScale: 0.5, // ?fx=low 일 때 개수 배율
+  lowValue: 'low',
+  hitStopSec: 0.05, // 큰 사건 때 전투가 멈추는 실제 시간
+  depthOver: 51, // 파티클 깊이(그림 이펙트 fxDepth 위)
+  depthUnder: 49, // 연기·가스 깊이(fxDepth 아래, 적 위)
+  // 코드로 만드는 파티클 텍스처: 흰색 원·사각·부드러운 원·십자
+  tex: { color: 0xffffff, dot: 8, square: 6, glow: 32, glowSteps: 8, plus: 14, plusThick: 5 },
+  // 총구 섬광(그림 이펙트가 없을 때): 부드러운 원이 커지며 사라진다
+  muzzle: { from: 0.3, to: 0.9, ms: 110, color: 0xfff3b0, alpha: 1 },
+  // 탄 궤적: 가산 선 + 끝으로 날아가는 빛 알갱이 + 맞은 자리 불꽃
+  tracer: { headScale: 0.35, headColor: 0xffffff },
+  // 저격 빛줄기: 굵은 금빛 바깥 선 + 흰 심지
+  snipe: { outerW: 28, outerAlpha: 0.45, outerColor: 0xffe066, ms: 150 },
+  // 충격파 고리(지뢰·화력 지원·RPG): 커지며 사라진다
+  ring: {
+    blast: { r: 24, lineW: 8, color: 0xffb347, scale: 5, ms: 420, alpha: 0.9 },
+    rank: { r: 40, lineW: 6, color: 0xffe066, scale: 2.4, ms: 420, alpha: 0.9 },
+    flash: { color: 0xffe9b0, from: 1.5, to: 4, ms: 200, alpha: 0.9 }, // 폭발 중심 번쩍임(부드러운 원)
+  },
+  // 취약 표식: 적 머리 위 붉은 아래 화살표. 남은 취약 시간이 blinkHz 단위로 켜졌다 꺼진다
+  vuln: { w: 24, h: 20, color: 0xd23c3c, blinkHz: 6, gap: 6 },
+  // 도발 고리: 제설병 발밑 금색 고리가 천천히 맥동한다(카드 중심 기준 좌표)
+  taunt: { y: 52, w: 96, h: 24, lineW: 4, color: 0xffe066, alpha: 0.9, scale: 1.25, ms: 700 },
+  // 가스 칸 연기: 가스가 있는 칸마다 puffSec 초에 한 번 피어오른다
+  gas: { puffSec: 0.4, n: 2 },
+  // 파티클 종류. tex는 위 텍스처 이름, depth는 over/under, blend는 가산 여부
+  kinds: {
+    spark: {
+      tex: 'dot', n: 8, over: true,
+      cfg: { speed: { min: 140, max: 380 }, angle: { min: 0, max: 360 }, lifespan: { min: 180, max: 380 }, scale: { start: 0.6, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffffff, 0xfff3b0, 0xffe066], blendMode: 'ADD', gravityY: 400 },
+    },
+    fire: {
+      tex: 'glow', n: 14, over: true,
+      cfg: { speed: { min: 80, max: 320 }, angle: { min: 0, max: 360 }, lifespan: { min: 300, max: 600 }, scale: { start: 0.9, end: 0.2 }, alpha: { start: 0.9, end: 0 }, color: [0xfff3b0, 0xff9a2e, 0xd23c1c], blendMode: 'ADD' },
+    },
+    debris: {
+      tex: 'square', n: 8, over: true,
+      cfg: { speed: { min: 160, max: 420 }, angle: { min: 0, max: 360 }, lifespan: { min: 500, max: 900 }, scale: { start: 1, end: 0.5 }, alpha: { start: 1, end: 0 }, tint: [0x8a8f94, 0x6c7075, 0x555a5e], gravityY: 700, rotate: { start: 0, end: 360 } },
+    },
+    smoke: {
+      tex: 'glow', n: 6, over: false,
+      cfg: { speed: { min: 20, max: 70 }, angle: { min: -110, max: -70 }, lifespan: { min: 900, max: 1500 }, scale: { start: 0.6, end: 1.6 }, alpha: { start: 0.5, end: 0 }, tint: [0x3a3d42, 0x4a4d52, 0x2c2f33], gravityY: -30 },
+    },
+    dust: {
+      tex: 'glow', n: 5, over: false,
+      cfg: { speed: { min: 30, max: 90 }, angle: { min: 0, max: 360 }, lifespan: { min: 350, max: 600 }, scale: { start: 0.4, end: 0.9 }, alpha: { start: 0.45, end: 0 }, tint: [0x8c8272, 0x6f6759] },
+    },
+    dustTail: {
+      tex: 'glow', n: 5, over: false,
+      cfg: { speed: { min: 40, max: 120 }, angle: { min: 70, max: 110 }, lifespan: { min: 400, max: 700 }, scale: { start: 0.3, end: 0.7 }, alpha: { start: 0.5, end: 0 }, tint: [0xd8d2c4, 0xb8b2a4] },
+    },
+    snow: {
+      tex: 'dot', n: 28, over: true,
+      cfg: { speed: { min: 260, max: 520 }, angle: { min: -125, max: -55 }, lifespan: { min: 450, max: 750 }, scale: { start: 1, end: 0.3 }, alpha: { start: 1, end: 0 }, tint: [0xffffff, 0xbfe6ff, 0xdff3ff], blendMode: 'ADD' },
+    },
+    ember: {
+      tex: 'dot', n: 5, over: true,
+      cfg: { speed: { min: 120, max: 300 }, angle: { min: -125, max: -55 }, lifespan: { min: 400, max: 700 }, scale: { start: 0.5, end: 0 }, alpha: { start: 1, end: 0 }, color: [0xffd27a, 0xff7a1c], blendMode: 'ADD', gravityY: -60 },
+    },
+    casing: {
+      tex: 'square', n: 1, over: true,
+      cfg: { speed: { min: 140, max: 240 }, angle: { min: -60, max: -20 }, lifespan: { min: 450, max: 600 }, scale: { start: 0.6, end: 0.6 }, alpha: { start: 1, end: 0 }, tint: [0xd9b04a], gravityY: 1000, rotate: { start: 0, end: 540 } },
+    },
+    star: {
+      tex: 'square', n: 12, over: true,
+      cfg: { speed: { min: 120, max: 300 }, angle: { min: 0, max: 360 }, lifespan: { min: 500, max: 800 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 }, tint: [0xffffff, 0xffe066, 0xd9b04a], blendMode: 'ADD', rotate: { start: 0, end: 360 }, gravityY: -80 },
+    },
+    plus: {
+      tex: 'plus', n: 4, over: true,
+      cfg: { speed: { min: 50, max: 110 }, angle: { min: -110, max: -70 }, lifespan: { min: 600, max: 900 }, scale: { start: 1, end: 0.6 }, alpha: { start: 1, end: 0 }, tint: [0x66ff99, 0xd8ffd0], blendMode: 'ADD' },
+    },
+    gasSmoke: {
+      tex: 'glow', n: 1, over: false,
+      cfg: { x: { min: -48, max: 48 }, y: { min: -32, max: 48 }, speed: { min: 30, max: 60 }, angle: { min: -115, max: -65 }, lifespan: { min: 1600, max: 2400 }, scale: { start: 0.7, end: 1.8 }, alpha: { start: 0.9, end: 0 }, tint: [0xe8ec60, 0x9fe05a, 0xc8d84a], blendMode: 'ADD' },
+    },
+  },
+}
+
 // ---- 2단계 전투 수치 (추가분) ----
 
 // GDD §5.6. 웨이브 HP 스케일(rules.waveHp)은 보스에도 적용한다(OQ-3: W5 1776, W10 2496)
@@ -254,11 +329,11 @@ export const ENEMIES: Record<
     size: number
   }
 > = {
-  infantry: { name: '보병', hp: 60, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0, color: 0x80786a, size: 0.55 },
-  dog: { name: '군견', hp: 40, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
-  rpg: { name: 'RPG병', hp: 50, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
-  boss: { name: '장갑차', hp: 1200, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
-  dogPlus: { name: '강화 군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
+  infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0, color: 0x80786a, size: 0.55 },
+  dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
+  rpg: { name: 'RPG병', hp: 100, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
+  boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
+  dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
 }
 
 // 칸 단위 y. 적 진입 구역 맨 위가 0이다(LAYOUT.entryY 기준). 02-CONTEXT 좌표계
@@ -279,7 +354,7 @@ export const SUPPORT = { charges: 2, damage: 200, delay: 1.0, pickSec: 5 }
 export const DOG = { triggerGap: 0.5, laneMs: 250 }
 
 // GDD §4·§4.1·§4.2. 준비/정산 초, 위병소 HP, 데프콘 1(웨이브 7~) 규칙
-// blockGap은 맨 앞 아군 위쪽 경계 앞 칸 수, maxDt·slideSpeed는 연출·판정 보정값
+// maxDt·slideSpeed는 연출·판정 보정값
 export const BATTLE = {
   prepFirst: 30,
   prepNext: 20,
@@ -288,9 +363,21 @@ export const BATTLE = {
   defcon1From: 7,
   defcon1AllyInterval: 0.8,
   defcon1SpawnGap: 0.7,
-  blockGap: 0.5,
   maxDt: 0.1,
   slideSpeed: 8,
+}
+
+// GDD §5.1·§5.2 전투 2.0. 거리는 칸 단위 유클리드. 제설병 취약·도발·지뢰 연계
+// tieEps는 거리 비교 오차(같은 거리 판정), pierceWidth는 저격 사선 폭, minePush*는 밀린 뒤 지뢰에 닿는 허용 초와 배율
+export const COMBAT = {
+  meleeReach: 1.5,
+  pierceWidth: 0.4,
+  tieEps: 1e-9,
+  blowerArmor: 0.9,
+  vulnSec: 2,
+  vulnMult: 1.2,
+  minePushSec: 1,
+  minePushMult: 1.5,
 }
 
 // GDD §5.3 능력. corporal·sergeant는 능력이 켜지는 계급(상병 3, 병장 4)

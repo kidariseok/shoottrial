@@ -1,9 +1,9 @@
 import type { Scene, GameObjects } from 'phaser'
-import { GAS, LAYOUT, UI } from '../data'
+import { FX, GAS, LAYOUT, UI } from '../data'
 import { allyY, cleanseCells, emptyGas, gasCellsAfterDrop, gasHits, synergyTier, type Chem, type GasDrop, type LogEvent } from '../rules'
 import type { Board, Unit } from './board'
 import { hasArt } from './art'
-import { shake } from './fx'
+import { burst, shake } from './fx'
 import { chemsOf, damageAlly, synergyCounts, type Ally } from './units'
 
 // 가스 상태. 클래스 없이 상태 객체 + 모듈 함수로 둔다(AGENTS 코드 원칙)
@@ -15,6 +15,7 @@ export type Gas = {
   warns: GameObjects.Rectangle[] // 떠 있는 예고(떨어지면 destroy)
   tiles: (GameObjects.Rectangle | GameObjects.Sprite)[][] // 칸 표시(미리 만들고 visible만 바꾼다)
   cd: Map<Unit, number> // 화학병별 제독 남은 초
+  puff: number // 다음 연기 피어오름까지 남은 초
 }
 
 export function createGas(scene: Scene, board: Board): Gas {
@@ -26,7 +27,7 @@ export function createGas(scene: Scene, board: Board): Gas {
       return scene.add.rectangle(p.x, p.y, LAYOUT.cell, LAYOUT.cell, UI.colors.gas, UI.gas.alpha).setDepth(UI.gas.depth).setVisible(false)
     }),
   )
-  return { cells: emptyGas(), drops: [], next: 0, warned: 0, warns: [], tiles, cd: new Map() }
+  return { cells: emptyGas(), drops: [], next: 0, warned: 0, warns: [], tiles, cd: new Map(), puff: 0 }
 }
 
 function dropWarns(g: Gas, scene: Scene): void {
@@ -108,6 +109,17 @@ export function tickGas(
   for (const a of allies) if (a.combat.alive && gasHits(g.cells, chems, a.col, a.row)) damageAlly(scene, a, GAS.dps * dt, true)
   // 6. 표시
   g.tiles.forEach((rowTiles, row) => rowTiles.forEach((t, col) => t.setVisible((g.cells[row]?.[col] ?? 0) > 0)))
+  // 7. 연기: 가스 칸마다 일정 간격으로 노란·초록 연기가 피어오른다(칸 사각 위에 겹침)
+  g.puff -= dt
+  if (g.puff > 0) return
+  g.puff = FX.gas.puffSec
+  g.cells.forEach((rowCells, row) =>
+    rowCells.forEach((v, col) => {
+      if (v <= 0) return
+      const p = board.toScreen(col, allyY(row))
+      burst(scene, 'gasSmoke', p.x, p.y, FX.gas.n)
+    }),
+  )
 }
 
 // 정산·판 끝: 가스 칸과 예고를 모두 지운다

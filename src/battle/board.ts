@@ -2,6 +2,7 @@ import { Scene, GameObjects, type Input, type Time } from 'phaser'
 import { ART, CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
 import type { DeckItem } from '../debug'
 import { addSprite, hasArt } from './art'
+import { promoteFx } from './fx'
 import { artKey, canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
 
 // rules.Unit 확장. name은 신병 카드만 가진다
@@ -197,6 +198,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
       .setOrigin(0.5)
       .setDepth(UI.fx.dragDepth)
     scene.tweens.add({ targets: popup, y: target.y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => popup.destroy() })
+    promoteFx(scene, target.x, target.y)
     opts.onMerge?.(card, rank)
   }
 

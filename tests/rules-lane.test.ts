@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   allyY,
-  blockY,
-  frontAlly,
   inRange,
   withinReach,
   defconOf,
@@ -17,30 +15,6 @@ describe('allyY', () => {
   it('배치 행 중심 y', () => {
     expect([0, 1, 2].map(allyY)).toEqual([4.5, 5.5, 6.5])
     expect(allyY(2)).toBe(6.5)
-  })
-})
-
-describe('blockY', () => {
-  it('맨 앞 아군 위쪽 경계 0.5칸 앞에서 멈춘다', () => {
-    expect([0, 1, 2].map(blockY)).toEqual([3.5, 4.5, 5.5])
-    expect(blockY(0)).toBe(3.5)
-  })
-})
-
-describe('frontAlly', () => {
-  const a = (col: number, row: number, alive = true) => ({ col, row, alive })
-  it('같은 열에서 가장 위(행 번호 작은) 산 아군', () => {
-    const list = [a(1, 2), a(1, 1), a(1, 0, false)]
-    expect(frontAlly(list, 1)).toBe(list[1])
-  })
-  it('앞 아군이 쓰러지면 다음 행', () => {
-    const list = [a(1, 1, false), a(1, 2)]
-    expect(frontAlly(list, 1)).toBe(list[1])
-  })
-  it('다른 열은 무시하고 없으면 null', () => {
-    expect(frontAlly([a(0, 0)], 1)).toBeNull()
-    expect(frontAlly([a(1, 0, false)], 1)).toBeNull()
-    expect(frontAlly([], 1)).toBeNull()
   })
 })
 
