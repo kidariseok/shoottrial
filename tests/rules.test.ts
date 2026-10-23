@@ -47,9 +47,9 @@ describe('stats', () => {
     expect(stats('rifle', 5)).toEqual(stats('rifle', 4))
     expect(stats('rifle', 0)).toEqual(stats('rifle', 1))
   })
-  it('저격수 일병 공격은 90, 제설병 공격은 계속 0이다', () => {
+  it('저격수 일병 공격은 90, 제설병 상병 공격은 4 x 2.25 = 9다', () => {
     expect(stats('sniper', 2).atk).toBeCloseTo(90)
-    expect(stats('blower', 3).atk).toBe(0)
+    expect(stats('blower', 3).atk).toBeCloseTo(9)
   })
 })
 
@@ -166,8 +166,8 @@ describe('GDD 수치 고정', () => {
   it('§5.2 카드 표', () => {
     const gdd = {
       rifle: { name: '소총수', cost: 1, hp: 100, atk: 10, interval: 0.8, range: 4 },
-      sniper: { name: '저격수', cost: 3, hp: 70, atk: 60, interval: 2.5, range: Infinity },
-      blower: { name: '제설병', cost: 2, hp: 120, atk: 0, interval: 1.5, range: 2 },
+      sniper: { name: '저격수', cost: 3, hp: 70, atk: 60, interval: 2.5, range: 12 },
+      blower: { name: '제설병', cost: 2, hp: 180, atk: 4, interval: 1.5, range: 2 },
       cook: { name: '취사병', cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 },
       miner: { name: '지뢰설치병', cost: 2, hp: 80, atk: 6, interval: 1.0, range: 3 },
       chem: { name: '화학병', cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 },

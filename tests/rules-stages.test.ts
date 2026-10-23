@@ -54,7 +54,6 @@ describe('GDD 수치 고정', () => {
       defcon1From: 7,
       defcon1AllyInterval: 0.8,
       defcon1SpawnGap: 0.7,
-      blockGap: 0.5,
       maxDt: 0.1,
       slideSpeed: 8,
     })

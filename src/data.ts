@@ -38,8 +38,8 @@ export const CARDS: Record<
   { name: string; initial: string; color: number; cost: number; hp: number; atk: number; interval: number; range: number }
 > = {
   rifle: { name: '소총수', initial: '소', color: 0x4a7c3a, cost: 1, hp: 100, atk: 10, interval: 0.8, range: 4 },
-  sniper: { name: '저격수', initial: '저', color: 0x2f5d8a, cost: 3, hp: 70, atk: 60, interval: 2.5, range: Infinity }, // 열 전체
-  blower: { name: '제설병', initial: '제', color: 0x2a8c8c, cost: 2, hp: 120, atk: 0, interval: 1.5, range: 2 },
+  sniper: { name: '저격수', initial: '저', color: 0x2f5d8a, cost: 3, hp: 70, atk: 60, interval: 2.5, range: 12 }, // 판 전체(대각선 약 8.6칸보다 크다)
+  blower: { name: '제설병', initial: '제', color: 0x2a8c8c, cost: 2, hp: 180, atk: 4, interval: 1.5, range: 2 },
   cook: { name: '취사병', initial: '취', color: 0x8a8a3a, cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 }, // 인접 8칸의 반지름
   miner: { name: '지뢰설치병', initial: '지', color: 0x6a5a8a, cost: 2, hp: 80, atk: 6, interval: 1.0, range: 3 },
   chem: { name: '화학병', initial: '화', color: 0xb0b420, cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 }, // §5.2 지뢰설치병과 같은 단발 사격. 노랑 계열(r > g 금지)
@@ -116,6 +116,8 @@ export const UI = {
     dogPlusStroke: 0xffffff, // 강화 군견 테두리
     supportPick: 0xffe066, // 화력 지원 열 고르기 강조(노랑)
     supportWarn: 0xd23c3c, // 화력 지원 예고선(경보라 붉은색 허용, ART §2)
+    vulnStroke: 0xd23c3c, // 취약 적 테두리(적 표시라 붉은색 허용, 07-02에서 다듬는다)
+    tauntRing: 0xffe066, // 도발 제설병 발밑 고리(노랑, 07-02에서 다듬는다)
   },
   fx: {
     snapMs: 120,
@@ -210,6 +212,8 @@ export const UI = {
     logSupport: '화력 지원 평균',
     logTimes: '회',
   },
+  // 도발 고리: 카드 중심 기준 발밑 타원(임시, 07-02에서 다듬는다)
+  taunt: { y: 52, w: 96, h: 24, lineW: 4 },
   // 카드 도형 치수. LAYOUT.cell 기준 좌표이며 카드 중심이 원점이다. rank는 계급 작대기 묶음
   card: { inset: 10, initialPx: 64, namePx: 22, nameY: 44, rankX: 40, rankY: -40, rankW: 28, rankH: 6, rankGap: 4 },
   // 카드 위 체력바. 카드 중심 기준 좌표, lowRatio 이하면 low 색
@@ -279,7 +283,7 @@ export const SUPPORT = { charges: 2, damage: 200, delay: 1.0, pickSec: 5 }
 export const DOG = { triggerGap: 0.5, laneMs: 250 }
 
 // GDD §4·§4.1·§4.2. 준비/정산 초, 위병소 HP, 데프콘 1(웨이브 7~) 규칙
-// blockGap은 맨 앞 아군 위쪽 경계 앞 칸 수, maxDt·slideSpeed는 연출·판정 보정값
+// maxDt·slideSpeed는 연출·판정 보정값
 export const BATTLE = {
   prepFirst: 30,
   prepNext: 20,
@@ -288,9 +292,21 @@ export const BATTLE = {
   defcon1From: 7,
   defcon1AllyInterval: 0.8,
   defcon1SpawnGap: 0.7,
-  blockGap: 0.5,
   maxDt: 0.1,
   slideSpeed: 8,
+}
+
+// GDD §5.1·§5.2 전투 2.0. 거리는 칸 단위 유클리드. 제설병 취약·도발·지뢰 연계
+// tieEps는 거리 비교 오차(같은 거리 판정), pierceWidth는 저격 사선 폭, minePush*는 밀린 뒤 지뢰에 닿는 허용 초와 배율
+export const COMBAT = {
+  meleeReach: 1.5,
+  pierceWidth: 0.4,
+  tieEps: 1e-9,
+  blowerArmor: 0.8,
+  vulnSec: 2,
+  vulnMult: 1.3,
+  minePushSec: 1,
+  minePushMult: 1.5,
 }
 
 // GDD §5.3 능력. corporal·sergeant는 능력이 켜지는 계급(상병 3, 병장 4)

@@ -5,6 +5,7 @@ import {
   BATTLE,
   CARDS,
   CARD_KEYS,
+  COMBAT,
   ECONOMY,
   ENEMIES,
   GAS,
@@ -161,19 +162,93 @@ export function allyY(row: number): number {
   return GRID.deployTop + row + 0.5
 }
 
-// 그 행 아군이 맨 앞일 때 적 중심이 멈추는 y(행 위쪽 경계 blockGap 앞)
-export function blockY(row: number): number {
-  return GRID.deployTop + row - BATTLE.blockGap
+// ---- 7단계: 전투 2.0 (사거리 안 모든 방향) ----
+
+// 칸 좌표. col은 열, y는 칸 단위 중심(아군은 allyY(row), 적은 e.y)
+export type Pos = { col: number; y: number }
+type Foe = Pos & { hp: number; gone?: boolean }
+type Friend = Pos & { alive: boolean; taunt?: boolean }
+
+// GDD §5.1. 유닛 중심 사이 거리(칸)
+export function dist(a: Pos, b: Pos): number {
+  return Math.hypot(a.col - b.col, a.y - b.y)
 }
 
-// 같은 열에서 살아 있는 가장 위(행 번호 가장 작은) 아군
-export function frontAlly<T extends { col: number; row: number; alive: boolean }>(allies: T[], col: number): T | null {
+// 같은 거리인가(부동소수 오차 허용)
+const sameDist = (a: number, b: number) => Math.abs(a - b) <= COMBAT.tieEps
+
+// GDD §5.1. 사거리 안 살아 있는 적 중 가장 가까운 적. 같은 거리면 y가 큰(아래쪽) 적. 없으면 null
+export function pickTarget<T extends Foe>(from: Pos, enemies: T[], range: number): T | null {
   let best: T | null = null
-  for (const a of allies) if (a.alive && a.col === col && (!best || a.row < best.row)) best = a
+  let bd = Infinity
+  for (const e of enemies) {
+    if (e.hp <= 0 || e.gone) continue
+    const d = dist(from, e)
+    if (d > range) continue
+    if (!best || d < bd - COMBAT.tieEps || (sameDist(d, bd) && e.y > best.y)) {
+      best = e
+      bd = d
+    }
+  }
   return best
 }
 
-// 적이 아군과 같거나 위에 있고 거리가 사거리 이내(Infinity면 위쪽 전부)
+// GDD §5.1. origin에서 target으로 가는 반직선 위(수직 거리 <= width), target 이상으로 먼 점인가. target 자신도 포함
+export function onRay(origin: Pos, target: Pos, p: Pos, width: number): boolean {
+  const dx = target.col - origin.col
+  const dy = target.y - origin.y
+  const len = Math.hypot(dx, dy)
+  if (len === 0) return dist(origin, p) <= width
+  const px = p.col - origin.col
+  const py = p.y - origin.y
+  const along = (px * dx + py * dy) / len // 사선 방향 투영 거리
+  const side = Math.abs(px * dy - py * dx) / len // 사선과의 수직 거리
+  return along >= len - COMBAT.tieEps && side <= width + COMBAT.tieEps
+}
+
+// GDD §5.1·§5.2. 적이 때릴 아군. reach 안 산 아군 중 도발이 있으면 도발끼리, 가장 가까운 것(같으면 위쪽, 왼쪽 열). 없으면 null
+export function engageTarget<T extends Friend>(enemy: Pos, allies: T[], reach: number = COMBAT.meleeReach): T | null {
+  const near = allies.filter((a) => a.alive && dist(enemy, a) <= reach + COMBAT.tieEps)
+  const taunting = near.filter((a) => a.taunt)
+  const pool = taunting.length > 0 ? taunting : near
+  let best: T | null = null
+  let bd = Infinity
+  for (const a of pool) {
+    const d = dist(enemy, a)
+    if (!best || d < bd - COMBAT.tieEps || (sameDist(d, bd) && (a.y < best.y || (a.y === best.y && a.col < best.col)))) {
+      best = a
+      bd = d
+    }
+  }
+  return best
+}
+
+// GDD §5.2. 제설병 부채꼴: 자기 열과 양옆 열, 앞쪽(y가 작은) range칸 안의 산 적 전부
+export function blowerCone<T extends Foe>(ally: Pos, enemies: T[], range: number): T[] {
+  return enemies.filter((e) => e.hp > 0 && !e.gone && Math.abs(e.col - ally.col) <= 1 && inRange(ally.y, e.y, range))
+}
+
+// GDD §5.2. 적이 받는 피해 = 기본 x 다른 곱(화학병 버프 등) x (취약 중이면 vulnMult)
+export function damageTaken(base: number, vuln: number, buff = 1): number {
+  return base * buff * (vuln > 0 ? COMBAT.vulnMult : 1)
+}
+
+// GDD §5.2. 아군이 받는 피해: 제설병은 x blowerArmor
+export function allyDamageTaken(dmg: number, card: CardKey): number {
+  return card === 'blower' ? dmg * COMBAT.blowerArmor : dmg
+}
+
+// GDD §5.2. 밀린(pushedAt) 뒤 minePushSec 안에 터진 지뢰의 피해 배율. 밀린 적이 아니면 -Infinity를 넣는다
+export function pushMult(pushedAt: number, now: number): number {
+  return now - pushedAt <= COMBAT.minePushSec + COMBAT.tieEps ? COMBAT.minePushMult : 1
+}
+
+// GDD §5.2. 취사병 회복 순서: HP 비율이 낮은 순, 같으면 도발 중인 제설병 먼저. 새 배열
+export function healOrder<T extends { hp: number; maxHp: number; taunt?: boolean }>(allies: T[]): T[] {
+  return [...allies].sort((p, q) => p.hp / p.maxHp - q.hp / q.maxHp || Number(!!q.taunt) - Number(!!p.taunt))
+}
+
+// 적이 아군과 같거나 위에 있고 거리가 사거리 이내
 export function inRange(allyY: number, enemyY: number, range: number): boolean {
   return enemyY <= allyY && allyY - enemyY <= range
 }
