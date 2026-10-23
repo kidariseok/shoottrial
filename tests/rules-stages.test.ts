@@ -7,11 +7,11 @@ import { createRng } from '../src/debug'
 describe('GDD 수치 고정', () => {
   it('§5.6 적 표', () => {
     const gdd = {
-      infantry: { name: '보병', hp: 60, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0 },
-      dog: { name: '군견', hp: 40, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0 },
-      rpg: { name: 'RPG병', hp: 50, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3 },
-      boss: { name: '장갑차', hp: 1200, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0 },
-      dogPlus: { name: '강화 군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0 },
+      infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0 },
+      dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0 },
+      rpg: { name: 'RPG병', hp: 100, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3 },
+      boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0 },
+      dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0 },
     }
     expect([...ENEMY_KEYS]).toEqual(['infantry', 'dog', 'rpg', 'boss', 'dogPlus'])
     for (const [k, v] of Object.entries(gdd)) {
@@ -103,7 +103,7 @@ describe('GDD 수치 고정', () => {
     })
   })
   it('§5.7 스테이지 1 출현', () => {
-    expect(STAGE1).toEqual({ spawnGap: 1.2, convoySize: 5, convoyGap: 0.5 })
+    expect(STAGE1).toEqual({ spawnGap: 0.8, convoySize: 5, convoyGap: 0.5 })
   })
   it('§5.7 웨이브 표 10행', () => {
     const w = (infantry: number, dog: number, rpg: number, boss = 0, convoys = 0, flag = false, dogPlus = 0, gas = 0) => ({
@@ -121,12 +121,12 @@ describe('GDD 수치 고정', () => {
       w(8, 2, 0),
       w(8, 0, 2),
       w(10, 4, 0),
-      w(10, 3, 2, 1, 0, true),
-      w(12, 6, 3, 0, 1),
-      w(14, 6, 4, 0, 0, false, 0, 1),
-      w(16, 8, 4),
-      w(18, 4, 6, 0, 2, false, 4, 1),
-      w(20, 5, 6, 2, 0, true, 5, 2),
+      w(13, 4, 3, 1, 0, true),
+      w(16, 8, 4, 0, 1),
+      w(18, 8, 5, 0, 0, false, 0, 1),
+      w(21, 10, 6),
+      w(23, 4, 8, 0, 2, false, 4, 1),
+      w(26, 5, 8, 2, 0, true, 5, 2),
     ])
   })
 })
@@ -155,20 +155,20 @@ describe('spawnPlan', () => {
     expect(spawnPlan(0, createRng(1), false)).toEqual([])
     expect(spawnPlan(11, createRng(1), false)).toEqual([])
   })
-  it('웨이브 1: 보병 6, 1.2초 간격', () => {
+  it('웨이브 1: 보병 6, 0.8초 간격', () => {
     const ev = spawnPlan(1, createRng(42), false)
     expect(ev).toHaveLength(6)
     expect(ev.every((e) => e.type === 'infantry')).toBe(true)
-    ev.forEach((e, i) => expect(e.t).toBeCloseTo(i * 1.2))
-    expect(ev.map((e) => e.t.toFixed(1))).toEqual(['0.0', '1.2', '2.4', '3.6', '4.8', '6.0'])
+    ev.forEach((e, i) => expect(e.t).toBeCloseTo(i * 0.8))
+    expect(ev.map((e) => e.t.toFixed(1))).toEqual(['0.0', '0.8', '1.6', '2.4', '3.2', '4.0'])
   })
   it('웨이브 구성 개수(종대 보병 포함)', () => {
     const want: Record<number, [number, number, number, number]> = {
       1: [6, 0, 0, 0],
-      5: [10, 3, 2, 1],
-      6: [17, 6, 3, 0],
-      9: [28, 4, 6, 0],
-      10: [20, 5, 6, 2],
+      5: [13, 4, 3, 1],
+      6: [21, 8, 4, 0],
+      9: [33, 4, 8, 0],
+      10: [26, 5, 8, 2],
     }
     for (const [w, [inf, dog, rpg, boss]] of Object.entries(want)) {
       const ev = spawnPlan(Number(w), createRng(7), false)
@@ -180,11 +180,11 @@ describe('spawnPlan', () => {
       expect(ev).toHaveLength(d.infantry + d.convoys * STAGE1.convoySize + d.dog + d.dogPlus + d.rpg + d.boss)
     }
   })
-  it('데프콘 1은 출현 간격 x0.7, 아니면 1.2', () => {
+  it('데프콘 1은 출현 간격 x0.7, 아니면 0.8', () => {
     const fast = spawnPlan(7, createRng(42), true)
     const slow = spawnPlan(7, createRng(42), false)
-    expect(fast[1]!.t - fast[0]!.t).toBeCloseTo(0.84)
-    expect(slow[1]!.t - slow[0]!.t).toBeCloseTo(1.2)
+    expect(fast[1]!.t - fast[0]!.t).toBeCloseTo(0.56)
+    expect(slow[1]!.t - slow[0]!.t).toBeCloseTo(0.8)
   })
   it('종대: 웨이브 6은 한 묶음, 웨이브 9는 두 묶음, 간격은 데프콘 1에서도 0.5', () => {
     expect(convoyGroups(spawnPlan(6, createRng(42), false))).toBe(1)
@@ -192,12 +192,12 @@ describe('spawnPlan', () => {
     expect(convoyGroups(spawnPlan(9, createRng(42), true))).toBe(2)
     expect(convoyGroups(spawnPlan(8, createRng(42), false))).toBe(0)
   })
-  it('보스 위치: 웨이브 5는 인덱스 7, 웨이브 10은 12와 25', () => {
+  it('보스 위치: 웨이브 5는 인덱스 10, 웨이브 10은 14와 30', () => {
     const w5 = spawnPlan(5, createRng(42), false)
-    expect(w5.findIndex((e) => e.type === 'boss')).toBe(7)
+    expect(w5.findIndex((e) => e.type === 'boss')).toBe(10)
     const w10 = spawnPlan(10, createRng(42), false)
     const idx = w10.flatMap((e, i) => (e.type === 'boss' ? [i] : []))
-    expect(idx).toEqual([12, 25])
+    expect(idx).toEqual([14, 30])
   })
   it('같은 시드면 같은 목록, 다른 시드면 다른 목록', () => {
     expect(spawnPlan(5, createRng(42), false)).toEqual(spawnPlan(5, createRng(42), false))

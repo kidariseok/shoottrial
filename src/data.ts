@@ -37,7 +37,7 @@ export const CARDS: Record<
   CardKey,
   { name: string; initial: string; color: number; cost: number; hp: number; atk: number; interval: number; range: number }
 > = {
-  rifle: { name: '소총수', initial: '소', color: 0x4a7c3a, cost: 1, hp: 100, atk: 10, interval: 0.8, range: 4 },
+  rifle: { name: '소총수', initial: '소', color: 0x4a7c3a, cost: 1, hp: 100, atk: 10, interval: 0.8, range: 3.5 },
   sniper: { name: '저격수', initial: '저', color: 0x2f5d8a, cost: 3, hp: 70, atk: 60, interval: 2.5, range: 12 }, // 판 전체(대각선 약 8.6칸보다 크다)
   blower: { name: '제설병', initial: '제', color: 0x2a8c8c, cost: 2, hp: 180, atk: 4, interval: 1.5, range: 2 },
   cook: { name: '취사병', initial: '취', color: 0x8a8a3a, cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 }, // 인접 8칸의 반지름
@@ -73,7 +73,7 @@ export const ECONOMY = {
   earlyBonus: 1,
   rerollCost: 1,
   shopSize: 5,
-  waveHpGrowth: 0.12,
+  waveHpGrowth: 0.5,
 } as const
 
 // 매 판 시작 신병: 배치 구역 가운데 열 맨 아래 칸
@@ -258,11 +258,11 @@ export const ENEMIES: Record<
     size: number
   }
 > = {
-  infantry: { name: '보병', hp: 60, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0, color: 0x80786a, size: 0.55 },
-  dog: { name: '군견', hp: 40, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
-  rpg: { name: 'RPG병', hp: 50, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
-  boss: { name: '장갑차', hp: 1200, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
-  dogPlus: { name: '강화 군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
+  infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0, color: 0x80786a, size: 0.55 },
+  dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
+  rpg: { name: 'RPG병', hp: 100, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
+  boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
+  dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
 }
 
 // 칸 단위 y. 적 진입 구역 맨 위가 0이다(LAYOUT.entryY 기준). 02-CONTEXT 좌표계
@@ -302,9 +302,9 @@ export const COMBAT = {
   meleeReach: 1.5,
   pierceWidth: 0.4,
   tieEps: 1e-9,
-  blowerArmor: 0.8,
+  blowerArmor: 0.9,
   vulnSec: 2,
-  vulnMult: 1.3,
+  vulnMult: 1.2,
   minePushSec: 1,
   minePushMult: 1.5,
 }

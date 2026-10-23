@@ -47,7 +47,7 @@ describe('GDD 수치 고정 (4단계)', () => {
     const e = ENEMIES.dogPlus
     expect({ name: e.name, hp: e.hp, speed: e.speed, dmg: e.dmg, interval: e.interval, baseDmg: e.baseDmg, knock: e.knock, range: e.range, size: e.size }).toEqual({
       name: '강화 군견',
-      hp: 80,
+      hp: 160,
       speed: 0.9,
       dmg: 6,
       interval: 0.5,
@@ -85,9 +85,9 @@ describe('nextUnlock (화학병)', () => {
 describe('spawnPlan (강화 군견)', () => {
   it('웨이브 9·10 구성', () => {
     const w9 = spawnPlan(9, createRng(7), false)
-    expect([count(w9, 'infantry'), count(w9, 'dog'), count(w9, 'dogPlus'), count(w9, 'rpg'), count(w9, 'boss')]).toEqual([28, 4, 4, 6, 0])
+    expect([count(w9, 'infantry'), count(w9, 'dog'), count(w9, 'dogPlus'), count(w9, 'rpg'), count(w9, 'boss')]).toEqual([33, 4, 4, 8, 0])
     const w10 = spawnPlan(10, createRng(7), false)
-    expect([count(w10, 'infantry'), count(w10, 'dog'), count(w10, 'dogPlus'), count(w10, 'rpg'), count(w10, 'boss')]).toEqual([20, 5, 5, 6, 2])
+    expect([count(w10, 'infantry'), count(w10, 'dog'), count(w10, 'dogPlus'), count(w10, 'rpg'), count(w10, 'boss')]).toEqual([26, 5, 5, 8, 2])
   })
   it('길이 = 보병 + 종대 + 군견 + 강화 군견 + RPG + 보스', () => {
     for (let w = 1; w <= WAVES.length; w++) {
@@ -119,10 +119,10 @@ describe('gasPlan', () => {
     expect(g[0]!.t).toBeCloseTo(0.35 * lastT(10, true))
     expect(g[1]!.t).toBeCloseTo(0.7 * lastT(10, true))
   })
-  it('extra: 웨이브 1에 1발 더하면 35% 지점(2.1초)', () => {
+  it('extra: 웨이브 1에 1발 더하면 35% 지점(1.4초)', () => {
     const g = gasPlan(1, spawnPlan(1, createRng(42), false), createRng(45), 1)
     expect(g).toHaveLength(1)
-    expect(g[0]!.t).toBeCloseTo(2.1)
+    expect(g[0]!.t).toBeCloseTo(1.4)
   })
   it('extra: 웨이브 10에 1발 더하면 3발, 시점은 회차 순환 후 정렬', () => {
     const T = lastT(10, true)

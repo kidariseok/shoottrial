@@ -11,9 +11,9 @@ describe('COMBAT 수치 고정 (GDD §5.1·§5.2)', () => {
       meleeReach: 1.5,
       pierceWidth: 0.4,
       tieEps: 1e-9,
-      blowerArmor: 0.8,
+      blowerArmor: 0.9,
       vulnSec: 2,
-      vulnMult: 1.3,
+      vulnMult: 1.2,
       minePushSec: 1,
       minePushMult: 1.5,
     })
@@ -165,18 +165,18 @@ describe('blowerCone', () => {
 })
 
 describe('damageTaken / allyDamageTaken', () => {
-  it('취약 중이면 x1.3, 아니면 그대로', () => {
-    expect(damageTaken(10, 1)).toBeCloseTo(13)
+  it('취약 중이면 x1.2, 아니면 그대로', () => {
+    expect(damageTaken(10, 1)).toBeCloseTo(12)
     expect(damageTaken(10, 0)).toBe(10)
     expect(damageTaken(10, -0.1)).toBe(10)
   })
-  it('병장 화학병 버프와 함께 곱한다 (10 x 1.15 x 1.3)', () => {
+  it('병장 화학병 버프와 함께 곱한다 (10 x 1.15 x 1.2)', () => {
     const chems = [{ col: 0, row: 0, rank: 4 }]
     const buff = chemDamageMult(chems, 1, 0)
-    expect(damageTaken(stats('rifle', 1).atk * buff, 2)).toBeCloseTo(10 * 1.15 * 1.3)
+    expect(damageTaken(stats('rifle', 1).atk * buff, 2)).toBeCloseTo(10 * 1.15 * 1.2)
   })
-  it('제설병이 받는 피해는 x0.8, 다른 카드는 그대로', () => {
-    expect(allyDamageTaken(10, 'blower')).toBeCloseTo(8)
+  it('제설병이 받는 피해는 x0.9, 다른 카드는 그대로', () => {
+    expect(allyDamageTaken(10, 'blower')).toBeCloseTo(9)
     expect(allyDamageTaken(10, 'rifle')).toBe(10)
   })
 })
