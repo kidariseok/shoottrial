@@ -17,7 +17,8 @@
 
 ## 소유 경로
 
-- `package.json`, `package-lock.json`
+- `package.json`
+- `package-lock.json`
 - `src/platform.ts`(Capacitor 플러그인은 여기서만 import한다. AGENTS 규칙 6)
 - `src/ads.ts`(새 파일. 광고 흐름: 준비·표시·결과)
 - `src/ui/screens.ts`(광고 버튼 3곳을 실제 광고로)
