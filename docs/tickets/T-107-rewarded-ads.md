@@ -116,3 +116,8 @@
 - 다음 제안:
 
 ## 인계 메모
+
+- 코드·테스트·`npm run verify`는 끝났다. 소유 경로 질문은 해결됨.
+- 디버그 APK 빌드 성공(`ANDROID_HOME=~/Library/Android/sdk`, `cd android && ./gradlew assembleDebug`). AVD `Medium_Phone_API_37.0`.
+- 에뮬레이터 확인 미완: 부팅·APK 설치까지 성공했으나 첫 화면이 "System UI isn't responding"였고, 그 직후 에뮬레이터가 종료 요청을 받고 꺼졌다(`/tmp/emu.log`에 정상 종료 시도 기록, 에뮬레이터 창에 사람 터치 이벤트 흔적). 원인 불명.
+- 남은 일: 에뮬레이터를 켠 뒤 전투에서 긴급 보급 → 테스트 광고 → 보상 +5 확인, `docs/shots/T-107-ad.png`·`T-107-reward.png`, 웹 가짜 광고 확인, 에뮬레이터 끄기.
