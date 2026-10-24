@@ -17,7 +17,8 @@
 
 ## 소유 경로
 
-- `package.json`, `package-lock.json`
+- `package.json`
+- `package-lock.json`
 - `src/platform.ts`(Capacitor 플러그인은 여기서만 import한다. AGENTS 규칙 6)
 - `src/ads.ts`(새 파일. 광고 흐름: 준비·표시·결과)
 - `src/ui/screens.ts`(광고 버튼 3곳을 실제 광고로)
@@ -93,7 +94,7 @@
 
 ## 질문
 
-- [ ] package-lock.json은 티켓 `## 소유 경로`에 있고 AdMob 설치로 바뀌어야 하는데 Stop 훅이 소유 경로 밖이라고 막는다(같은 줄의 두 번째 항목이라 훅이 못 읽는 듯). 되돌리면 package.json과 lock이 어긋난다. 훅 파서 확인 또는 허용을 요청한다. 에뮬레이터 확인(gradle 빌드 진행 중)은 그 뒤에 이어간다.
+- [x] package-lock.json은 티켓 `## 소유 경로`에 있고 AdMob 설치로 바뀌어야 하는데 Stop 훅이 소유 경로 밖이라고 막는다(같은 줄의 두 번째 항목이라 훅이 못 읽는 듯). 되돌리면 package.json과 lock이 어긋난다. 훅 파서 확인 또는 허용을 요청한다. 에뮬레이터 확인(gradle 빌드 진행 중)은 그 뒤에 이어간다.
 - [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
