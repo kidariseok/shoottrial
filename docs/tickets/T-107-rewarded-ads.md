@@ -1,6 +1,6 @@
 # T-107 보상형 광고(AdMob, 테스트 ID)
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · **Claude Sonnet 5.5 High**(Antigravity 안의 Claude 모델. Claude Code 사용량과 따로 계산된다). 2번 막히면 같은 대화에서 GPT 계열 최상위 모델로 바꾼다.
 동시 진행: T-106(소리)과 함께 해도 된다. 소유 경로가 겹치지 않는다(`audio.ts`·`lobby.ts`는 T-106 것이다).
 
@@ -80,13 +80,26 @@
 
 ## 작업 계획
 
+플랫폼 API 출처: `docs/research/play-launch.md` 42행(`AdMob.initialize/prepareRewardVideoAd/showRewardVideoAd`), 플러그인 최신 `@capacitor-community/admob` 8.2.1(npm view 확인). 이벤트 이름(`RewardedVideoAdReward`/`Dismissed` 등)과 Capacitor 8 호환은 설치 직후 `node_modules`의 README·타입 정의로 확인하고 이 티켓에 적는다(기억 금지). 테스트 앱 ID `ca-app-pub-3940256099942544~3347511713`·보상형 테스트 단위 `.../5224354917`은 구글 공식 문서(developers.google.com/admob/android/quick-start, test-ads) 검색으로 확인(직접 페이지 재확인 필요하면 질문).
+
+1. 플러그인 설치·설정: `package.json`, `package-lock.json`, `android/`(AndroidManifest 테스트 앱 ID). 운영 ID 교체 자리는 한 곳(`capacitor.config.ts` 또는 `android/app/build.gradle` manifestPlaceholders)으로 정해 기록. `npx cap sync android`.
+2. `src/platform.ts`: `initAds()`, `showRewarded()`. 웹은 1초 뒤 `'rewarded'` 가짜(`[ads:web-stub]`).
+3. `src/ads.ts`(신규): `watchAd(slot)`. mute/unmute('ad'), 실패 모달, 연타 방지.
+4. `src/ui/screens.ts`, `src/ui/style.css`: 부활·리롤·긴급 보급 연결, 광고 중 버튼 잠금. export 시그니처 불변.
+5. `tests/ads.test.ts`: rewarded만 true, 실패 시 false+unmute, 연타 1회.
+6. 에뮬레이터 1회 확인(끝나면 끈다), 스크린샷 `docs/shots/T-107-ad.png`, `T-107-reward.png`.
+
+확인 URL: `?scene=battle&supply=99` 등(웹 가짜 광고). 검증: `npm run verify`.
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 0fb6acd2d980
+- 브랜치: kidariseok/boxfish
+- 세션 시작: Claude Sonnet 5.5, 2026-10-24 13:08
 
 ## 결과 보고
 
