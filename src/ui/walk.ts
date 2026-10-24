@@ -330,7 +330,7 @@ export class WalkScene extends Scene {
     this.bubbleTitle.setText(s.title)
     this.bubbleDesc.setText(s.kind === 'npc' ? this.line(s) : s.desc)
     const below = near.y < this.offY + 300
-    this.bubble.setPosition(Math.min(W - 190, Math.max(190, near.x)), below ? near.y + 90 : near.y - 150).setVisible(true)
+    this.bubble.setPosition(Math.min(W - 190, Math.max(190, near.x)), below ? near.y + 90 : near.y - 230).setVisible(true)
     this.actLabel.setText(s.kind === 'deploy' ? '투입' : s.kind === 'npc' ? '대화' : '열기')
     this.actBtn.setVisible(true)
   }

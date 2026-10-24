@@ -1,6 +1,6 @@
 # T-109 걸어 다니는 생활관(로비)
 
-상태: 대기
+상태: 완료
 담당: Antigravity · **Claude Sonnet 5.5 High** 또는 Gemini 최상위 모델(Argon 제외, 사고 수준 높음). 2번 막히면 다른 쪽으로 바꾼다.
 
 ## 목표
@@ -107,13 +107,13 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
-- [ ] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'`에서 `lobby` 구현 외의 시그니처 변화 없음
-- [ ] 스크린샷(390×844): `docs/shots/T-109-walk.png`(걷는 중), `T-109-prompt.png`(구역 말풍선), `T-109-codex.png`(관물대 패널), `T-109-zones.png`(`?zones=1`), `T-109-alarm.png`(붉은 비상등이 가장 밝을 때 + 방송 자막)
-- [ ] 헤드리스 확인(결과 보고에 적는다): `/?scene=walk`에서 신병을 구역 5곳으로 차례로 보내 말풍선이 뜨는지, 패널이 열리고 닫히는지, 전투 투입 시 전투 HUD가 뜨는지, 결과 화면 "생활관"으로 돌아오면 `WalkScene`이 다시 뜨는지.
-- [ ] 침상·벽을 향해 계속 걸어도 통과하거나 끼지 않는다(`?zones=1`로 확인).
-- [ ] 비상 연출: 붉은 덮개가 깜박이지 않고 천천히 맥동하고, 설정에서 "비상 연출"을 끄면 모두 사라진다. 사이렌은 진입 시 한 번만 난다(파일이 있을 때).
-- [ ] 캔버스는 하나뿐이다(`document.querySelectorAll('canvas').length === 1`).
+- [x] `npm run verify` 통과
+- [x] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'`에서 `lobby` 구현 외의 시그니처 변화 없음
+- [x] 스크린샷(390×844): `docs/shots/T-109-walk.png`(걷는 중), `T-109-prompt.png`(구역 말풍선), `T-109-codex.png`(관물대 패널), `T-109-zones.png`(`?zones=1`), `T-109-alarm.png`(붉은 비상등이 가장 밝을 때 + 방송 자막)
+- [x] 헤드리스 확인(결과 보고에 적는다): `/?scene=walk`에서 신병을 구역 5곳으로 차례로 보내 말풍선이 뜨는지, 패널이 열리고 닫히는지, 전투 투입 시 전투 HUD가 뜨는지, 결과 화면 "생활관"으로 돌아오면 `WalkScene`이 다시 뜨는지.
+- [x] 침상·벽을 향해 계속 걸어도 통과하거나 끼지 않는다(`?zones=1`로 확인).
+- [x] 비상 연출: 붉은 덮개가 깜박이지 않고 천천히 맥동하고, 설정에서 "비상 연출"을 끄면 모두 사라진다. 사이렌은 진입 시 한 번만 난다(파일이 있을 때).
+- [x] 캔버스는 하나뿐이다(`document.querySelectorAll('canvas').length === 1`).
 
 디버그 URL: `http://localhost:5173/?scene=walk&safe=1`, `http://localhost:5173/?scene=walk&zones=1`
 
@@ -123,22 +123,26 @@
 
 ## 질문
 
-<!-- 막히거나 결정이 필요하면 "- [ ] ..."로 적는다. -->
+<!-- 막히거나 결정이 필요하면 "- [x] ..."로 적는다. -->
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: d76ae77(origin/main) + T-106(tilefish)·T-107(boxfish) 브랜치를 합친 작업 브랜치
+- 브랜치: kidariseok/t109-walk
+- 세션 시작: Claude Code(Sonnet 5.5), 2026-10-24. Antigravity 사용량 소진으로 기획 세션이 직접 구현
+- [x] 헬퍼(`stickVector`·`moveStep`·`nearestZone`·`pulseAlpha`·`nextLine`·`readAlarmFx`·`loadAlarmFx`/`saveAlarmFx`)와 테스트 8개
+- [x] `src/ui/walk.ts` WalkScene, `lobby.ts` 패널화(`openPanel`·`closePanel`·`deploy`·`bindWalk`), `main.ts` 연결, 패널 스타일
+- [x] `npm run verify` 통과(285 테스트)
+- [x] 헤드리스 확인(Chrome, 개발 서버 5199) + 스크린샷 5장(JPEG, `docs/shots/T-109-*.jpg`)
 
 ## 결과 보고
 
-- 바뀐 파일:
-- 검증 결과:
-- 스크린샷:
-- 사용자 확인 방법:
-- 확인하지 못한 점:
-- 다음 제안:
+- 바뀐 파일: `src/ui/walk.ts`(새 파일), `src/ui/lobby.ts`(DOM 메뉴판 → 패널 4종 + 걷는 씬 시작), `src/ui/helpers.ts`, `src/ui/screens.ts`(`handleBack`에서 패널 먼저 닫기 한 줄 + import), `src/ui/style.css`, `src/main.ts`, `tests/ui.test.ts`, `docs/HANDOFF.md`
+- 검증 결과: `npm run verify` 285 테스트 통과. 헤드리스: ①`?scene=walk`에서 구역 5곳·동료 2명 말풍선과 "열기"·"대화"·"투입" 라벨 확인, 관물대 패널 6칸(해금 3·잠김 3), 패널이 열려 있으면 이동 정지, 닫기. ②침상 충돌에서 막힘·벽을 따라 미끄러짐·이동 범위 제한. ③실제 포인터 조이스틱(위로 끌면 위로 걷고 놓으면 멈춤). ④출입구 "투입" → battle 활성·walk 비활성, `ui.lobby()` → walk 다시 활성(캔버스 1개). ⑤캐시를 지운 `/` → 첫 실행 → 확인 → 브리핑 → 건너뛰기 → 걷는 생활관. ⑥붉은 비상등 최대 알파 0.15에서 방송 자막과 함께 캡처.
+- 스크린샷: `docs/shots/T-109-walk.jpg`, `T-109-prompt.jpg`(관물대 말풍선), `T-109-codex.jpg`(관물대 패널), `T-109-zones.jpg`(`?zones=1`), `T-109-alarm.jpg`(비상등 최대 + 방송)
+- 사용자 확인 방법: `npm run dev` 후 `http://localhost:5173/?scene=walk`(조이스틱은 화면을 눌러 끌기, 키보드는 방향키·WASD), 구역 선은 `&zones=1`. 처음부터는 콘솔에서 `localStorage.clear(); location.reload()`
+- 확인하지 못한 점: ①배경 그림 `bg_barracks`(A-103)가 아직 없어 단색 바닥 + 도형 가구로 동작한다. 그림이 오면 `walk.ts` 맨 위 `L` 표(침상·구역 비율 좌표)를 `?zones=1`로 보면서 맞춰야 한다. ②안드로이드 실기기·에뮬레이터 확인은 하지 않았다(웹만). ③비상 사이렌·무전은 소리 파일이 있어 재생 호출을 하지만 귀로 확인하지는 못했다. ④PX는 자리만(버튼 비활성, T-108에서 광고 해금 연결). ⑤스크린샷 형식은 JPEG다(티켓 문구는 png).
+- 다음 제안: T-110(전투 화면 시안 A)을 이어서 한다. A-103 그림이 오면 좌표 맞춤. T-108에서 PX 광고 해금 연결.
 
 ## 인계 메모
 
