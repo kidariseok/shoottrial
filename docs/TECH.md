@@ -170,7 +170,7 @@ export type BattleCtl = {
   fireSupport?(): void  // M3(선택, Phase 5부터 A가 넘긴다): HUD "화력 지원" 버튼. A가 열 고르기를 시작한다(전투 단계·남은 횟수 > 0일 때만 동작)
 }
 export function bindBattle(ctl: BattleCtl | null): void
-export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battle 씬을 멈춘 뒤 부른다. B가 로비를 그리고, 출동하면 B가 battle 씬을 다시 시작한다(T-105)
+export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battle 씬을 멈춘 뒤 부른다. B가 로비를 그리고, 전투 투입하면 B가 battle 씬을 다시 시작한다(T-105)
 ```
 
 - 대기석·판매 칸·배치 구역·지뢰 토큰은 **캔버스(A)**다. 드래그가 한 좌표계 안에서 끝나야 하기 때문이다.

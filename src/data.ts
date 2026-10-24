@@ -442,7 +442,7 @@ export const UNLOCK: { base: readonly CardKey[]; order: readonly CardKey[]; atWa
   atWave: 5,
 }
 
-// 같은 페이지에서 "다시 출동"할 때마다 난수 시드에 더하는 간격(판마다 다른 출현 순서)
+// 같은 페이지에서 "다시 투입"할 때마다 난수 시드에 더하는 간격(판마다 다른 출현 순서)
 export const RUN = { reseedStep: 7919, gasSeed: 3 } // gasSeed: 화학탄 난수 스트림 = 시드 + 3
 
 // GDD §10 보상형 광고 슬롯 횟수·양, §4.2 부활 HP

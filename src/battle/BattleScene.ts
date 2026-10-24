@@ -320,7 +320,7 @@ export class BattleScene extends Scene {
     this.syncShop()
   }
 
-  // 출동!: 준비 시간이 남은 채 누르면 조기 출동 보너스
+  // 전투 투입!: 준비 시간이 남은 채 누르면 조기 투입 보너스
   go() {
     if (this.phase !== 'prep' || this.result) return
     this.supply += ECONOMY.earlyBonus
