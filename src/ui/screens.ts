@@ -1,6 +1,8 @@
 // docs/TECH.md §8 레인 A·B 경계 고정 시그니처
 import { watchAd } from '../ads'
+import { fetchAvailableAssets } from '../assets'
 import { playSfx } from '../audio'
+import { BATTLE } from '../data'
 import {
   canFireSupport,
   cloneHud,
@@ -12,6 +14,13 @@ import {
   sortSynergies,
 } from './helpers'
 import { closePanel, showLobby } from './lobby'
+
+// T-110: 카드 그림이 실제로 있는 키(assets/index.json). 없으면 글자 상자로 폴백한다
+// ponytail: 첫 상점이 열리기 전에 목록이 안 왔으면 그 판 첫 상점만 그림 없이 열린다, 그 뒤 렌더부터 적용
+let artKeys = new Set<string>()
+if (typeof window !== 'undefined') void fetchAvailableAssets().then((list) => (artKeys = new Set(list)))
+// 위병소 HP 막대의 최대치(시작 HP). 시작값이 data.ts에 있다
+let hpMax: number = BATTLE.baseHp
 
 export type Phase = 'prep' | 'fight' | 'settle'
 export type Hud = {
@@ -221,7 +230,7 @@ function ensureRefs(): UiRefs | null {
   const goBtn = document.createElement('button')
   goBtn.type = 'button'
   goBtn.className = 'mil-btn action-go shop-btn-go'
-  goBtn.textContent = '출동!'
+  goBtn.textContent = '전투 투입!'
 
   shopActions.append(rerollBtn, freeRerollBtn, goBtn)
   shopEl.append(shopCards, shopActions)
@@ -376,6 +385,11 @@ export function hud(h: Hud): void {
 
   r.supplyVal.textContent = String(h.supply)
   r.hpVal.textContent = String(h.baseHp)
+  // 위병소 HP 막대: 시작 HP 대비 비율, 30% 이하면 붉게
+  hpMax = Math.max(hpMax, h.baseHp)
+  const hpPillEl = r.hpVal.parentElement
+  hpPillEl?.style.setProperty('--hp', `${Math.max(0, Math.min(100, (h.baseHp / hpMax) * 100))}%`)
+  hpPillEl?.classList.toggle('danger', h.baseHp / hpMax <= 0.3)
 
   if (h.phase === 'prep') {
     r.prepPill.textContent = `준비 ${Math.max(0, Math.ceil(h.prepLeft))}초`
@@ -441,7 +455,9 @@ export function shop(
       btn.textContent = '—'
     } else {
       const insufficient = offer.cost > supply
-      btn.className = `shop-card${insufficient ? ' insufficient' : ''}`
+      const art = artKeys.has(`card_${offer.card}`)
+      btn.className = `shop-card${insufficient ? ' insufficient' : ''}${art ? ' has-art' : ''}`
+      if (art) btn.style.backgroundImage = `url('/assets/card_${offer.card}.png')`
 
       const initialEl = document.createElement('div')
       initialEl.className = 'shop-card-initial'
@@ -616,7 +632,7 @@ export function result(
   const againBtn = document.createElement('button')
   againBtn.type = 'button'
   againBtn.className = 'mil-btn action-go'
-  againBtn.textContent = '다시 출동'
+  againBtn.textContent = '다시 투입'
   againBtn.addEventListener('click', () => {
     refsObj.resultBackdrop.classList.add('hidden')
     onAgain()
@@ -715,6 +731,7 @@ export function bindBattle(ctl: BattleCtl | null): void {
 
 export function lobby(): void {
   currentCtl = null
+  hpMax = BATTLE.baseHp
   lastHud = null
   if (bannerTimer !== null) {
     clearTimeout(bannerTimer)
