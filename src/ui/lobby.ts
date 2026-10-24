@@ -1,13 +1,15 @@
 import { fetchAvailableAssets } from '../assets'
-import { playSfx, setSettings } from '../audio'
+import { playBgm, playSfx, setSettings, type SfxKey } from '../audio'
 import { defaultSave, load, save, type Save } from '../save'
 import {
   ALL_CARDS,
   formatBriefingText,
   getCardInitial,
   getCardName,
+  loadAlarmFx,
   mergeUnlockedCards,
   sanitizeRookieName,
+  saveAlarmFx,
 } from './helpers'
 
 const LOCAL_UNLOCKED_KEY = 'd2_unlocked'
@@ -80,9 +82,8 @@ function readLocalUnlockedRaw(): string | null {
 
 function playBriefingSfxIfPresent(sfxKey: string, assets: Set<string>): void {
   if (!assets.has(sfxKey)) return
-  const playOptionalSfx = playSfx as (key: string) => boolean
   try {
-    playOptionalSfx(sfxKey)
+    playSfx(sfxKey as SfxKey)
   } catch {
     // 파일이 없거나 재생 실패 시 무시
   }
@@ -231,177 +232,184 @@ export async function showBriefing(cutIndex = 0): Promise<void> {
   wrap.appendChild(stage)
 }
 
+// 걷는 생활관(T-109): showLobby는 저장을 읽고 걷는 씬을 시작한다. 메뉴는 구역 앞에서 여는 패널이다
+export type PanelKind = 'codex' | 'board' | 'admin' | 'px'
+
+let onWalkCallback: (() => void) | null = null
+let panelOpen = false
+
+export function bindWalk(onWalk: () => void): void {
+  onWalkCallback = onWalk
+}
+
+export const getLobbySave = (): Save => currentSave
+export const isPanelOpen = (): boolean => panelOpen
+
+// 전투 투입: 걷는 화면 어디서나 같은 동작
+export function deploy(): void {
+  playBgm(null)
+  closePanel()
+  hideLobbyOverlay()
+  onDeployCallback?.()
+}
+
 export async function showLobby(): Promise<void> {
   currentSave = await load()
-  setSettings({
-    bgm: currentSave.settings.bgm,
-    sfx: currentSave.settings.sfx,
-  })
+  setSettings({ bgm: currentSave.settings.bgm, sfx: currentSave.settings.sfx })
+  playBgm('bgm_lobby')
+  closePanel()
+  hideLobbyOverlay()
+  onWalkCallback?.()
+}
 
-  const wrap = ensureOverlay()
-  if (!wrap) return
+export function closePanel(): boolean {
+  const was = panelOpen
+  panelOpen = false
+  if (was) hideLobbyOverlay()
+  return was
+}
 
-  const mergedUnlocked = mergeUnlockedCards(currentSave.unlocked, readLocalUnlockedRaw())
-  const unlockedSet = new Set(mergedUnlocked)
+const el = (tag: string, cls: string, text?: string): HTMLElement => {
+  const e = document.createElement(tag)
+  e.className = cls
+  if (text !== undefined) e.textContent = text
+  return e
+}
 
-  wrap.innerHTML = ''
-  wrap.className = 'ui-lobby-overlay mode-lobby'
+function codexBody(): HTMLElement {
+  const unlocked = new Set(mergeUnlockedCards(currentSave.unlocked, readLocalUnlockedRaw()))
+  const grid = el('div', 'lobby-codex-grid')
+  for (const cardKey of ALL_CARDS) {
+    const on = unlocked.has(cardKey)
+    const item = el('div', `lobby-codex-card ${on ? 'unlocked' : 'locked'}`)
+    item.append(
+      el('div', 'lobby-codex-icon', on ? getCardInitial(cardKey) : '🔒'),
+      el('div', 'lobby-codex-name', getCardName(cardKey)),
+      el('div', 'lobby-codex-sub', on ? '배치 가능' : '웨이브 5 도달로 해금')
+    )
+    grid.appendChild(item)
+  }
+  return grid
+}
 
-  const container = document.createElement('div')
-  container.className = 'lobby-container'
-
-  // 1. 상단 생활관 헤더 + 최고 기록 + 브리핑 다시 보기
-  const header = document.createElement('header')
-  header.className = 'lobby-header'
-
-  const headerTop = document.createElement('div')
-  headerTop.className = 'lobby-header-top'
-
-  const titleWrap = document.createElement('div')
-  titleWrap.className = 'lobby-title-wrap'
-
-  const unitBadge = document.createElement('span')
-  unitBadge.className = 'lobby-unit-badge'
-  unitBadge.textContent = '제77보병사단 · 생활관'
-
-  const title = document.createElement('h1')
-  title.className = 'lobby-title'
-  title.textContent = `이등병 ${sanitizeRookieName(currentSave.name)}`
-
-  titleWrap.append(unitBadge, title)
-
-  const rebriefBtn = document.createElement('button')
-  rebriefBtn.type = 'button'
-  rebriefBtn.className = 'mil-btn lobby-rebrief-btn'
-  rebriefBtn.textContent = '브리핑 다시 보기'
-  rebriefBtn.addEventListener('click', () => {
+function boardBody(): HTMLElement {
+  const box = el('div', 'lobby-panel-stack')
+  const row = el('div', 'lobby-record-row')
+  row.append(el('span', 'lobby-record-label', '최고 기록'), el('span', 'lobby-record-val', `웨이브 ${currentSave.bestWave}`))
+  const notice = el('p', 'lobby-panel-note', '[당직] 위병소에 적 침투 징후. 전 장병은 전투 투입 준비.')
+  const rebrief = el('button', 'mil-btn lobby-rebrief-btn', '브리핑 다시 보기') as HTMLButtonElement
+  rebrief.type = 'button'
+  rebrief.addEventListener('click', () => {
+    closePanel()
     void showBriefing(0)
   })
+  box.append(row, notice, rebrief)
+  return box
+}
 
-  headerTop.append(titleWrap, rebriefBtn)
-
-  const recordRow = document.createElement('div')
-  recordRow.className = 'lobby-record-row'
-
-  const recordLabel = document.createElement('span')
-  recordLabel.className = 'lobby-record-label'
-  recordLabel.textContent = '최고 기록'
-
-  const recordVal = document.createElement('span')
-  recordVal.className = 'lobby-record-val'
-  recordVal.textContent = `웨이브 ${currentSave.bestWave}`
-
-  recordRow.append(recordLabel, recordVal)
-  header.append(headerTop, recordRow)
-
-  // 2. 출동 큰 버튼
-  const deployBtn = document.createElement('button')
-  deployBtn.type = 'button'
-  deployBtn.className = 'mil-btn action-go lobby-deploy-btn'
-  deployBtn.textContent = '출동'
-  deployBtn.addEventListener('click', () => {
-    hideLobbyOverlay()
-    onDeployCallback?.()
-  })
-
-  // 3. 병과 도감 6칸
-  const codexSection = document.createElement('section')
-  codexSection.className = 'lobby-section'
-
-  const codexTitle = document.createElement('h2')
-  codexTitle.className = 'lobby-section-title'
-  codexTitle.textContent = `병과 도감 (${unlockedSet.size} / ${ALL_CARDS.length})`
-
-  const codexGrid = document.createElement('div')
-  codexGrid.className = 'lobby-codex-grid'
-
-  for (const cardKey of ALL_CARDS) {
-    const isUnlocked = unlockedSet.has(cardKey)
-    const item = document.createElement('div')
-    item.className = `lobby-codex-card ${isUnlocked ? 'unlocked' : 'locked'}`
-
-    const icon = document.createElement('div')
-    icon.className = 'lobby-codex-icon'
-    icon.textContent = isUnlocked ? getCardInitial(cardKey) : '🔒'
-
-    const name = document.createElement('div')
-    name.className = 'lobby-codex-name'
-    name.textContent = getCardName(cardKey)
-
-    const sub = document.createElement('div')
-    sub.className = 'lobby-codex-sub'
-    sub.textContent = isUnlocked ? '배치 가능' : '웨이브 5 도달로 해금'
-
-    item.append(icon, name, sub)
-    codexGrid.appendChild(item)
-  }
-
-  codexSection.append(codexTitle, codexGrid)
-
-  // 4. 설정 (BGM·효과음·진동·데미지 숫자)
-  const settingsSection = document.createElement('section')
-  settingsSection.className = 'lobby-section'
-
-  const settingsTitle = document.createElement('h2')
-  settingsTitle.className = 'lobby-section-title'
-  settingsTitle.textContent = '작전 설정'
-
-  const settingsGrid = document.createElement('div')
-  settingsGrid.className = 'lobby-settings-grid'
-
-  const settingDefs: { key: keyof Save['settings']; label: string }[] = [
+function adminBody(): HTMLElement {
+  const box = el('div', 'lobby-panel-stack')
+  const grid = el('div', 'lobby-settings-grid')
+  const defs: { key: keyof Save['settings']; label: string }[] = [
     { key: 'bgm', label: 'BGM' },
     { key: 'sfx', label: '효과음' },
     { key: 'haptic', label: '진동' },
     { key: 'dmgNumbers', label: '데미지 숫자' },
   ]
-
-  for (const def of settingDefs) {
-    const btn = document.createElement('button')
+  const toggle = (label: string, get: () => boolean, set: () => void): HTMLButtonElement => {
+    const btn = el('button', '') as HTMLButtonElement
     btn.type = 'button'
-    const updateBtn = () => {
-      const on = currentSave.settings[def.key]
-      btn.className = `mil-btn lobby-setting-btn ${on ? 'on' : 'off'}`
-      btn.textContent = `${def.label}: ${on ? '켜짐' : '꺼짐'}`
+    const paint = (): void => {
+      btn.className = `mil-btn lobby-setting-btn ${get() ? 'on' : 'off'}`
+      btn.textContent = `${label}: ${get() ? '켜짐' : '꺼짐'}`
     }
-    updateBtn()
+    paint()
     btn.addEventListener('click', () => {
-      currentSave = {
-        ...currentSave,
-        settings: {
-          ...currentSave.settings,
-          [def.key]: !currentSave.settings[def.key],
-        },
-      }
-      setSettings({
-        bgm: currentSave.settings.bgm,
-        sfx: currentSave.settings.sfx,
-      })
-      updateBtn()
-      void save(currentSave)
+      set()
+      paint()
     })
-    settingsGrid.appendChild(btn)
+    return btn
   }
+  for (const d of defs) {
+    grid.appendChild(
+      toggle(
+        d.label,
+        () => currentSave.settings[d.key],
+        () => {
+          currentSave = { ...currentSave, settings: { ...currentSave.settings, [d.key]: !currentSave.settings[d.key] } }
+          setSettings({ bgm: currentSave.settings.bgm, sfx: currentSave.settings.sfx })
+          void save(currentSave)
+        }
+      )
+    )
+  }
+  // 비상 연출(붉은 비상등·방송 자막): 기기별 설정이라 세이브 형식과 따로 localStorage에 둔다
+  let alarm = loadAlarmFx()
+  grid.appendChild(
+    toggle(
+      '비상 연출',
+      () => alarm,
+      () => {
+        alarm = !alarm
+        saveAlarmFx(alarm)
+      }
+    )
+  )
+  const credits = el('footer', 'lobby-credits')
+  credits.append(
+    el('div', '', '이 게임은 허구이며 실제 인물·부대·사건과 관계없습니다.'),
+    el('div', '', '일부 그래픽은 생성형 AI로 제작되었습니다.'),
+    el('div', '', '오픈소스: Phaser (MIT) · Capacitor (MIT)')
+  )
+  box.append(grid, credits)
+  return box
+}
 
-  settingsSection.append(settingsTitle, settingsGrid)
+// ponytail: PX는 자리만. 광고 보고 카드 해금은 T-108이 이 패널의 버튼에 `watchAd`를 연결한다
+function pxBody(): HTMLElement {
+  const unlocked = new Set(mergeUnlockedCards(currentSave.unlocked, readLocalUnlockedRaw()))
+  const locked = ALL_CARDS.filter((c) => !unlocked.has(c))
+  const box = el('div', 'lobby-panel-stack')
+  box.appendChild(
+    el(
+      'p',
+      'lobby-panel-note',
+      locked.length > 0 ? `아직 못 쓰는 병과: ${locked.map(getCardName).join(', ')}` : '모든 병과를 쓸 수 있다. 수고했다.'
+    )
+  )
+  const btn = el('button', 'mil-btn action-go lobby-px-btn', '광고 보고 해금 (준비 중)') as HTMLButtonElement
+  btn.type = 'button'
+  btn.disabled = true
+  box.appendChild(btn)
+  return box
+}
 
-  // 5. 크레딧 (허구 고지, AI 고지, 오픈소스 목록)
-  const creditsSection = document.createElement('footer')
-  creditsSection.className = 'lobby-credits'
+const PANELS: Record<PanelKind, { title: string; body: () => HTMLElement }> = {
+  codex: { title: '관물대 · 병과 도감', body: codexBody },
+  board: { title: '게시판', body: boardBody },
+  admin: { title: '행정반 · 설정', body: adminBody },
+  px: { title: 'PX', body: pxBody },
+}
 
-  const creditFiction = document.createElement('div')
-  creditFiction.textContent = '이 게임은 허구이며 실제 인물·부대·사건과 관계없습니다.'
-
-  const creditAi = document.createElement('div')
-  creditAi.textContent = '일부 그래픽은 생성형 AI로 제작되었습니다.'
-
-  const creditOss = document.createElement('div')
-  creditOss.textContent = '오픈소스: Phaser (MIT) · Capacitor (MIT)'
-
-  creditsSection.append(creditFiction, creditAi, creditOss)
-
-  container.append(header, deployBtn, codexSection, settingsSection, creditsSection)
-  wrap.appendChild(container)
+// 구역 앞에서 "열기"를 누르면 걷는 화면 위에 패널을 띄운다. 바깥을 누르거나 닫기를 누르면 닫힌다
+export function openPanel(kind: PanelKind): void {
+  const wrap = ensureOverlay()
+  if (!wrap) return
+  const def = PANELS[kind]
+  wrap.innerHTML = ''
+  wrap.className = 'ui-lobby-overlay mode-panel'
+  const card = el('div', 'lobby-panel-card')
+  const head = el('div', 'lobby-panel-head')
+  const close = el('button', 'mil-btn lobby-panel-close', '닫기') as HTMLButtonElement
+  close.type = 'button'
+  close.addEventListener('click', () => closePanel())
+  head.append(el('h2', 'lobby-section-title', def.title), close)
+  card.append(head, def.body())
+  wrap.addEventListener('click', (e) => {
+    if (e.target === wrap) closePanel()
+  })
+  wrap.appendChild(card)
+  panelOpen = true
 }
 
 export async function startEntryFlow(initialSave?: Save): Promise<void> {
