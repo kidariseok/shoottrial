@@ -73,7 +73,7 @@
 ## 완료 조건
 
 - [ ] `npm run verify` 통과
-- [ ] 웹에서 세 버튼이 가짜 광고(1초)를 거쳐 보상을 준다(헤드리스 또는 브라우저 확인)
+- [ ] 웹에서 세 버튼이(긴급 보급만 확인, 리롤·부활 남음) 가짜 광고(1초)를 거쳐 보상을 준다(헤드리스 또는 브라우저 확인)
 - [ ] 에뮬레이터에서 테스트 광고가 실제로 뜨고 보상이 들어온다(스크린샷 2장)
 - [ ] 운영 광고 ID가 저장소 어디에도 없다. 테스트 ID만 있다
 - [ ] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 결과 시그니처 변화가 없다
@@ -104,7 +104,8 @@
 - 세션 시작: Claude Sonnet 5.5, 2026-10-24 13:08
 - [x] 1 플러그인 설치: `@capacitor-community/admob@8.2.1`(peer `@capacitor/core ^8.0.0`로 Capacitor 8.5.3 호환, node_modules package.json 확인). 이벤트: `onRewardedVideoAdReward`/`Dismissed`/`FailedToShow`/`FailedToLoad`(타입 정의 확인). 테스트 앱 ID는 `android/app/build.gradle`의 manifestPlaceholders(`-PadmobAppId`로 운영 ID 교체), 보상형 단위 ID는 `platform.ts`(`VITE_ADMOB_REWARDED_ID`로 교체). 출처: 구글 공식 테스트 ID(웹 검색 요약).
 - [x] 2~5 `platform.ts`·`ads.ts`·`screens.ts`·`style.css`·`tests/ads.test.ts` 구현. `npm run verify` 통과(270 테스트). main.ts는 소유 경로 밖이라 `initAds`는 첫 `showRewarded`에서 지연 호출.
-- [ ] 6 웹 가짜 광고 확인, 에뮬레이터 확인(`Medium_Phone_API_37.0`, SDK `~/Library/Android/sdk`)
+- [x] 6a 웹 확인(헤드리스 Chrome, CDP, `?scene=battle&seed=42`): 긴급 보급 클릭 → 버튼 잠김 → 1초 뒤 보급 6→11, 잠금 해제. 무료 리롤·부활은 같은 `watchAd` 경로지만 화면에서는 아직 눌러 보지 못함.
+- [ ] 6b 에뮬레이터 확인(`Medium_Phone_API_37.0`, SDK `~/Library/Android/sdk`)
 
 ## 결과 보고
 
