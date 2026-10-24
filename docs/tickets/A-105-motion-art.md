@@ -99,4 +99,9 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 
 ## 진행 기록
 
-- (아직 없음)
+- 2026-10-25 (브랜치 `kidariseok/m6-chars`, Claude Code가 ChatGPT High로 대신 제작)
+  - [x] **시험 제작 3장**: 소총수 `ally_rifle_idle`(4프레임)·`ally_rifle_attack`(6프레임), 보병 `enemy_inf_walk`(6프레임). `art/inbox/`에 같은 이름으로 넣어 둠(원본 1672×941).
+  - 품질 판단: 프레임 수 정확, 발 기준선 일정, 화풍 유지, 공격은 준비→발동(반동)→복귀 흐름이 보이고 1·6프레임이 대기 자세와 같음. 시험 합격으로 보고 1묶음 진행 가능.
+  - 방식: **ChatGPT 대화 하나**를 계속 쓰고 시트마다 기준 시트+현재 스프라이트를 첨부(`docs/agents/art-browser-workflow.md`). 티켓의 "캐릭터마다 새 채팅"은 사용자 요청으로 바꿈.
+  - 처리(`node scripts/assets.mjs`)는 아직 안 돌림: T-111이 프레임 상한(아군 대기 2·공격 4·적 걷기 4)을 늘린 뒤에 한다. 지금 돌리면 새 시트가 잘리거나 기존 파일을 덮는다.
+  - 다음: 사용자 확인 후 1묶음 나머지 진행(아군 9종 대기·공격, 적 걷기·공격·피격·쓰러짐).
