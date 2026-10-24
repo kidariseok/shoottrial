@@ -9,6 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // 운영 AdMob 앱 ID는 ./gradlew -PadmobAppId=... 로만 주입한다. 기본값은 구글 공식 테스트 앱 ID.
+        manifestPlaceholders = [admobAppId: (project.findProperty('admobAppId') ?: 'ca-app-pub-3940256099942544~3347511713')]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

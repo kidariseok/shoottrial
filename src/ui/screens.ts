@@ -1,4 +1,5 @@
 // docs/TECH.md §8 레인 A·B 경계 고정 시그니처
+import { watchAd } from '../ads'
 import { playSfx } from '../audio'
 import {
   canFireSupport,
@@ -163,8 +164,12 @@ function ensureRefs(): UiRefs | null {
   supplyAdBtn.className = 'mil-btn brass hud-supply-ad-btn'
   supplyAdBtn.textContent = '📺 긴급보급 +5'
   supplyAdBtn.addEventListener('click', () => {
-    if (!currentCtl) return
-    currentCtl.adSupply()
+    if (!currentCtl || supplyAdBtn.disabled) return
+    supplyAdBtn.disabled = true
+    void watchAd('supply').then((ok) => {
+      supplyAdBtn.disabled = false
+      if (ok) currentCtl?.adSupply()
+    })
   })
 
   rowBottom.append(statsGroup, supplyAdBtn)
@@ -205,8 +210,12 @@ function ensureRefs(): UiRefs | null {
   freeRerollBtn.className = 'mil-btn brass shop-btn-free-reroll'
   freeRerollBtn.textContent = '📺 무료'
   freeRerollBtn.addEventListener('click', () => {
-    if (!currentCtl) return
-    currentCtl.adReroll()
+    if (!currentCtl || freeRerollBtn.disabled) return
+    freeRerollBtn.disabled = true
+    void watchAd('reroll').then((ok) => {
+      freeRerollBtn.disabled = false
+      if (ok) currentCtl?.adReroll()
+    })
   })
 
   const goBtn = document.createElement('button')
@@ -649,7 +658,7 @@ export function askRevive(onYes: () => void, onNo: () => void): void {
 
   const note = document.createElement('div')
   note.className = 'modal-note'
-  note.textContent = '광고는 M4에서 연결'
+  note.textContent = '광고를 끝까지 보면 부활합니다'
 
   body.append(desc, note)
 
@@ -661,8 +670,14 @@ export function askRevive(onYes: () => void, onNo: () => void): void {
   yesBtn.className = 'mil-btn brass'
   yesBtn.textContent = '📺 광고 보고 부활'
   yesBtn.addEventListener('click', () => {
-    r.reviveBackdrop.classList.add('hidden')
-    onYes()
+    if (yesBtn.disabled) return
+    yesBtn.disabled = true
+    noBtn.disabled = true
+    void watchAd('revive').then((ok) => {
+      r.reviveBackdrop.classList.add('hidden')
+      if (ok) onYes()
+      else onNo()
+    })
   })
 
   const noBtn = document.createElement('button')

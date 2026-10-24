@@ -1345,3 +1345,16 @@ html, body {
   flex-direction: column;
   gap: 2px;
 }
+
+.ad-fail-backdrop {
+  z-index: 60;
+}
+
+.ad-fail-note {
+  font-size: 13px;
+}
+
+.mil-btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}

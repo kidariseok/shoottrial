@@ -93,13 +93,16 @@
 
 ## 질문
 
-- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
+- [x] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
 - 기준 커밋: 0fb6acd2d980
 - 브랜치: kidariseok/boxfish
 - 세션 시작: Claude Sonnet 5.5, 2026-10-24 13:08
+- [x] 1 플러그인 설치: `@capacitor-community/admob@8.2.1`(peer `@capacitor/core ^8.0.0`로 Capacitor 8.5.3 호환, node_modules package.json 확인). 이벤트: `onRewardedVideoAdReward`/`Dismissed`/`FailedToShow`/`FailedToLoad`(타입 정의 확인). 테스트 앱 ID는 `android/app/build.gradle`의 manifestPlaceholders(`-PadmobAppId`로 운영 ID 교체), 보상형 단위 ID는 `platform.ts`(`VITE_ADMOB_REWARDED_ID`로 교체). 출처: 구글 공식 테스트 ID(웹 검색 요약).
+- [x] 2~5 `platform.ts`·`ads.ts`·`screens.ts`·`style.css`·`tests/ads.test.ts` 구현. `npm run verify` 통과(270 테스트). main.ts는 소유 경로 밖이라 `initAds`는 첫 `showRewarded`에서 지연 호출.
+- [ ] 6 웹 가짜 광고 확인, 에뮬레이터 확인(`Medium_Phone_API_37.0`, SDK `~/Library/Android/sdk`)
 
 ## 결과 보고
 

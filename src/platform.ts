@@ -2,6 +2,7 @@
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Preferences } from '@capacitor/preferences'
+import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob'
 
 export interface SafeRect {
   top: number
@@ -185,5 +186,63 @@ export async function prefsSet(key: string, value: string): Promise<void> {
   }
   if (Capacitor.isNativePlatform()) {
     await Preferences.set({ key, value })
+  }
+}
+
+// ── 보상형 광고 (T-107) ──
+// 출처: docs/research/play-launch.md 42행, 플러그인 타입 정의(RewardAdPluginEvents).
+// 테스트 보상형 단위 ID는 구글 공식 테스트 ID. 운영 ID는 빌드 시 VITE_ADMOB_REWARDED_ID로만 주입한다.
+const TEST_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'
+const rewardedId: string = (import.meta as { env?: Record<string, string> }).env?.VITE_ADMOB_REWARDED_ID || TEST_REWARDED_ID
+const adsTesting = rewardedId === TEST_REWARDED_ID
+
+export type AdResult = 'rewarded' | 'dismissed' | 'failed'
+
+let adsReady = false
+
+// ponytail: UMP 동의 폼은 한국 한정 출시라 생략, 해외 출시 시 추가
+export async function initAds(): Promise<void> {
+  if (!Capacitor.isNativePlatform() || adsReady) return
+  try {
+    await AdMob.initialize({ initializeForTesting: adsTesting })
+    adsReady = true
+    await AdMob.prepareRewardVideoAd({ adId: rewardedId, isTesting: adsTesting }).catch(() => {})
+  } catch (e) {
+    console.warn('[ads] init failed', e)
+  }
+}
+
+export async function showRewarded(): Promise<AdResult> {
+  if (!Capacitor.isNativePlatform()) {
+    console.log('[ads:web-stub] 1초 뒤 보상')
+    await new Promise((r) => setTimeout(r, 1000))
+    return 'rewarded'
+  }
+  let rewarded = false
+  const handles: { remove: () => Promise<void> }[] = []
+  try {
+    if (!adsReady) await initAds()
+    if (!adsReady) return 'failed'
+    const done = new Promise<AdResult>((resolve) => {
+      void (async () => {
+        handles.push(await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => { rewarded = true }))
+        handles.push(await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => resolve(rewarded ? 'rewarded' : 'dismissed')))
+        handles.push(await AdMob.addListener(RewardAdPluginEvents.FailedToShow, () => resolve('failed')))
+        handles.push(await AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => resolve('failed')))
+        try {
+          await AdMob.prepareRewardVideoAd({ adId: rewardedId, isTesting: adsTesting })
+          await AdMob.showRewardVideoAd()
+        } catch {
+          resolve('failed')
+        }
+      })()
+    })
+    return await done
+  } catch {
+    return 'failed'
+  } finally {
+    for (const h of handles) void h.remove()
+    // 다음 광고 미리 준비
+    void AdMob.prepareRewardVideoAd({ adId: rewardedId, isTesting: adsTesting }).catch(() => {})
   }
 }
