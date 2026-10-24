@@ -39,6 +39,8 @@ shoottrial/
 │  ├─ debug.ts             # B  URL 파라미터 해석 (§9)
 │  ├─ ui/
 │  │  ├─ screens.ts        # B  DOM 화면·HUD·상점·모달. A가 부르는 함수는 §8에 고정
+│  │  ├─ lobby.ts          # B  첫 실행·브리핑·생활관 패널(도감·기록·설정·크레딧)
+│  │  ├─ walk.ts           # B  걸어 다니는 생활관 Phaser 씬(T-109): 조이스틱·구역·충돌·동료
 │  │  └─ style.css         # B
 │  ├─ data.ts              # A  모든 수치 표(카드·적·경제·시너지). GDD §5·§6과 1:1
 │  ├─ stages.ts            # A  웨이브 표 (GDD §5.7)
@@ -168,7 +170,7 @@ export type BattleCtl = {
   fireSupport?(): void  // M3(선택, Phase 5부터 A가 넘긴다): HUD "화력 지원" 버튼. A가 열 고르기를 시작한다(전투 단계·남은 횟수 > 0일 때만 동작)
 }
 export function bindBattle(ctl: BattleCtl | null): void
-export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battle 씬을 멈춘 뒤 부른다. B가 로비를 그리고, 출동하면 B가 battle 씬을 다시 시작한다(T-105)
+export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battle 씬을 멈춘 뒤 부른다. B가 로비를 그리고, 전투 투입하면 B가 battle 씬을 다시 시작한다(T-105)
 ```
 
 - 대기석·판매 칸·배치 구역·지뢰 토큰은 **캔버스(A)**다. 드래그가 한 좌표계 안에서 끝나야 하기 때문이다.
@@ -186,6 +188,8 @@ export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battl
 |---|---|---|
 | `?scene=battle` | 로비를 건너뛰고 전투를 바로 연다 | B(H-101) |
 | `?scene=gallery` | 모든 에셋 키를 격자로 표시 | B(H-101) |
+| `?scene=walk` | 첫 실행·브리핑을 건너뛰고 걷는 생활관을 바로 연다 | B(T-109) |
+| `?zones=1` | 걷는 생활관의 구역 반경·충돌 사각형을 선으로 그린다 | B(T-109) |
 | `?wave=5` | 지정 웨이브부터 시작 | A |
 | `?unlock=all` | 모든 카드 해금 | B |
 | `?supply=99` | 시작 보급 | A |
