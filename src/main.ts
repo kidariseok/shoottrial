@@ -7,12 +7,13 @@ import { GalleryScene } from './gallery'
 import { exitApp, init as initPlatform, isNative, onBack, safeRect } from './platform'
 import { load as loadSave } from './save'
 import { startUiDemo } from './ui/demo'
-import { bindDeploy, startEntryFlow } from './ui/lobby'
+import { bindDeploy, bindWalk, showLobby, startEntryFlow } from './ui/lobby'
 import { handleBack } from './ui/screens'
+import { WalkScene } from './ui/walk'
 
 export { calculateLogicalHeight, computeCanvasLayout }
 
-// T-105: 처음 출동하기 전까지 BattleScene이 돌지 않도록 대기하는 빈 씬
+// T-105: 처음 전투 투입하기 전까지 BattleScene이 돌지 않도록 대기하는 빈 씬
 class IdleScene extends Scene {
   constructor() {
     super('idle')
@@ -24,7 +25,8 @@ const hasExplicitScene =
 const activeScene = hasExplicitScene ? debug.scene : 'lobby'
 
 const height = calculateLogicalHeight()
-const isLobby = activeScene === 'lobby'
+const isWalk = activeScene === 'walk' // T-109: 첫 실행·브리핑을 건너뛰고 걷는 생활관을 바로 연다
+const isLobby = activeScene === 'lobby' || isWalk
 const isUiDemo = activeScene === 'ui'
 const isDevice = activeScene === 'device'
 const isDomOnly = isUiDemo || isDevice
@@ -32,7 +34,7 @@ const isGallery = activeScene === 'gallery'
 const scenes = isGallery
   ? [GalleryScene, BattleScene]
   : isLobby
-    ? [IdleScene, BattleScene, GalleryScene]
+    ? [IdleScene, WalkScene, BattleScene, GalleryScene]
     : [BattleScene, GalleryScene]
 
 const config: Types.Core.GameConfig = {
@@ -144,13 +146,22 @@ async function boot(): Promise<void> {
 
   bindDeploy(() => {
     if (!game) return
-    if (game.scene.isActive('idle')) {
-      game.scene.stop('idle')
-    }
+    game.scene.stop('idle')
+    game.scene.stop('walk')
     game.scene.start('battle')
   })
 
-  if (isLobby) {
+  // 생활관(걷는 화면)으로: 전투가 돌고 있으면 멈추고 걷는 씬을 시작한다(결과 화면 "생활관"도 이 길로 온다)
+  bindWalk(() => {
+    if (!game) return
+    game.scene.stop('idle')
+    game.scene.stop('battle')
+    if (!game.scene.isActive('walk')) game.scene.start('walk')
+  })
+
+  if (isWalk) {
+    await showLobby()
+  } else if (isLobby) {
     await startEntryFlow(saved)
   } else if (isUiDemo) {
     startUiDemo()

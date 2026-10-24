@@ -75,15 +75,16 @@
   - `?scene=walk`, `?zones=1`(walk.ts가 직접 읽는다, `debug.ts`는 건드리지 않는다).
 - 진행 체크(완료되면 [x]):
   - [x] 인계 문서 작성(이 문서)
-  - [ ] 헬퍼 + 테스트
-  - [ ] `walk.ts` 씬
-  - [ ] `lobby.ts` 패널화 + `showLobby` 연결
-  - [ ] `main.ts` 씬 등록·`?scene=walk`·전투 투입 연결
-  - [ ] 스타일(패널)
-  - [ ] `npm run verify`
+  - [x] 헬퍼 + 테스트(`helpers.ts` 맨 아래, `tests/ui.test.ts` 8개)
+  - [x] `src/ui/walk.ts` 씬(HUD·말풍선·조이스틱·구역·충돌·동료·비상 연출·`?zones=1`)
+  - [x] `lobby.ts` 패널화(`openPanel`/`closePanel`/`deploy`/`bindWalk`), `showLobby`가 걷는 씬 시작, 뒤로가기는 패널 먼저 닫음(`screens.ts handleBack`)
+  - [x] `main.ts` 씬 등록·`?scene=walk`·`bindWalk`·`bindDeploy`
+  - [x] 스타일(패널, `style.css` 맨 아래)
+  - [x] `npm run verify`(285 테스트 통과, 2026-10-24)
   - [ ] 헤드리스 확인 + 스크린샷 5장(`docs/shots/T-109-*.png`)
   - [ ] 티켓 진행 기록·결과 보고, PR
 
 ## 9. 갱신 로그
 
 - 2026-10-24: 최초 작성(T-109 시작 전). 열린 PR #33, #34.
+- 2026-10-24: T-109 코드·테스트 완료(verify 285 통과). 남은 것: 헤드리스 화면 확인 + 스크린샷 5장, 티켓 기록, PR.

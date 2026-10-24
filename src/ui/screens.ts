@@ -11,7 +11,7 @@ import {
   isSameHud,
   sortSynergies,
 } from './helpers'
-import { showLobby } from './lobby'
+import { closePanel, showLobby } from './lobby'
 
 export type Phase = 'prep' | 'fight' | 'settle'
 export type Hud = {
@@ -790,6 +790,7 @@ export function confirmExit(onYes: () => void, onNo: () => void): void {
 }
 
 export function handleBack(onExit: () => void): void {
+  if (closePanel()) return
   if (currentCtl) {
     currentCtl.pause()
     openPauseModal()

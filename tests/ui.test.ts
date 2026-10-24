@@ -14,8 +14,14 @@ import {
   getRankName,
   isSameHud,
   mergeUnlockedCards,
+  moveStep,
+  nearestZone,
+  nextLine,
+  pulseAlpha,
+  readAlarmFx,
   sanitizeRookieName,
   sortSynergies,
+  stickVector,
 } from '../src/ui/helpers'
 import type { Hud } from '../src/ui/screens'
 
@@ -182,5 +188,71 @@ describe('UI 순수 헬퍼 테스트', () => {
     expect(formatBriefingText(tpl, '   ')).toBe(
       '6주 기초군사훈련을 마친 신병 김신병. 김신병 이등병 출동!'
     )
+  })
+})
+
+describe('T-109 걷는 생활관 헬퍼', () => {
+  const bounds = { x: 0, y: 0, w: 100, h: 100 }
+  const wall = { x: 40, y: 0, w: 10, h: 100 }
+
+  it('stickVector: 세기는 0~1이고 최대 반경에서 잘린다', () => {
+    expect(stickVector({ x: 0, y: 0 }, { x: 0, y: 0 }, 50)).toEqual({ x: 0, y: 0 })
+    expect(stickVector({ x: 0, y: 0 }, { x: 25, y: 0 }, 50)).toEqual({ x: 0.5, y: 0 })
+    const far = stickVector({ x: 0, y: 0 }, { x: 300, y: 400 }, 50)
+    expect(Math.hypot(far.x, far.y)).toBeCloseTo(1)
+    expect(far.x / far.y).toBeCloseTo(0.75)
+  })
+
+  it('moveStep: 자유롭게 움직이고, 정지하면 그대로다', () => {
+    expect(moveStep({ x: 10, y: 10 }, { x: 1, y: 0 }, 100, 100, [], bounds, 5)).toEqual({ x: 20, y: 10 })
+    expect(moveStep({ x: 10, y: 10 }, { x: 0, y: 0 }, 100, 100, [], bounds, 5)).toEqual({ x: 10, y: 10 })
+  })
+
+  it('moveStep: 범위 밖으로 나가지 않는다', () => {
+    expect(moveStep({ x: 98, y: 50 }, { x: 1, y: 0 }, 100, 100, [], bounds, 5).x).toBe(100)
+    expect(moveStep({ x: 50, y: 2 }, { x: 0, y: -1 }, 100, 100, [], bounds, 5).y).toBe(0)
+  })
+
+  it('moveStep: 벽에 막히고 비스듬히 비비면 벽을 따라 미끄러진다', () => {
+    const blocked = moveStep({ x: 30, y: 50 }, { x: 1, y: 0 }, 100, 100, [wall], bounds, 5)
+    expect(blocked).toEqual({ x: 30, y: 50 })
+    const slide = moveStep({ x: 30, y: 50 }, { x: 1, y: 1 }, 100, 100, [wall], bounds, 5)
+    expect(slide.x).toBe(30)
+    expect(slide.y).toBeGreaterThan(50)
+  })
+
+  it('nearestZone: 반경 밖이면 null, 겹치면 가까운 쪽', () => {
+    const zones = [
+      { id: 'a', x: 0, y: 0, r: 50 },
+      { id: 'b', x: 30, y: 0, r: 50 },
+    ]
+    expect(nearestZone({ x: 500, y: 500 }, zones)).toBeNull()
+    expect(nearestZone({ x: 5, y: 0 }, zones)?.id).toBe('a')
+    expect(nearestZone({ x: 25, y: 0 }, zones)?.id).toBe('b')
+  })
+
+  it('pulseAlpha: 0~max 범위에서 주기마다 반복하고, 너무 짧은 주기는 1/3초로 올린다', () => {
+    expect(pulseAlpha(0, 2400, 0.16)).toBeCloseTo(0)
+    expect(pulseAlpha(1200, 2400, 0.16)).toBeCloseTo(0.16)
+    expect(pulseAlpha(2400, 2400, 0.16)).toBeCloseTo(0)
+    for (let t = 0; t < 5000; t += 37) {
+      const a = pulseAlpha(t, 100, 0.2)
+      expect(a).toBeGreaterThanOrEqual(0)
+      expect(a).toBeLessThanOrEqual(0.2)
+    }
+    // 주기 100은 333으로 올라가므로 166.5ms가 반주기(최대)다
+    expect(pulseAlpha(166.5, 100, 0.2)).toBeCloseTo(0.2)
+  })
+
+  it('nextLine: 줄이 순환하고 빈 목록은 0이다', () => {
+    expect(nextLine(0, ['a', 'b', 'c'])).toBe(1)
+    expect(nextLine(2, ['a', 'b', 'c'])).toBe(0)
+    expect(nextLine(5, [])).toBe(0)
+  })
+
+  it('readAlarmFx: "0"일 때만 끈다', () => {
+    expect(readAlarmFx(null)).toBe(true)
+    expect(readAlarmFx('1')).toBe(true)
+    expect(readAlarmFx('0')).toBe(false)
   })
 })
