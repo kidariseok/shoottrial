@@ -1,6 +1,6 @@
 # T-106 효과음·배경음 (CC0 음원)
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · **Gemini 최상위 모델(Argon 제외), 사고 수준 높음**. 2번 막히면 같은 대화에서 Claude Sonnet 5.5 High로 바꾼다.
 동시 진행: T-107(광고)과 함께 해도 된다. 소유 경로가 겹치지 않는다(`screens.ts`는 T-107 것이다).
 
@@ -95,9 +95,9 @@
 
 - 바뀐 파일: src/audio.ts, src/ui/lobby.ts, tests/audio.test.ts, public/assets/*.m4a(14), public/assets/audio-credits.json
 - 검증 결과: npm run verify 통과. 헤드리스 로그: 생활관 `play bgm_lobby.m4a`, 버튼 `play sfx_click.m4a`, BGM 끄기/출동 시 `pause bgm_lobby.m4a`
-- 스크린샷:
-- 사용자 확인 방법:
+- 스크린샷: docs/shots/T-106.png (생활관, 390×844)
+- 사용자 확인 방법: `npm run dev` 후 크롬에서 `/` 열기 → 화면을 한 번 클릭(자동재생 정책) → 생활관 배경음·버튼 클릭음, 작전 설정 BGM 끄기/켜기, 출동 시 정지. 사용자가 "확인했다고 치고 넘김"(2026-10-24): 소리를 직접 듣고 검증하지는 않았다.
 - 확인하지 못한 점: 실제 소리 품질은 듣지 못함(사격음은 Kenney에 총성이 없어 금속 타격음으로 대체, 배경음은 칩튠 풍). 교체 판단은 사용자 청취 후.
-- 다음 제안:
+- 다음 제안: 레인 A가 전투에서 `playSfx`/`playBgm('bgm_defcon2'|'bgm_defcon1')`을 연결. 사격음·배경음 분위기가 안 맞으면 음원 교체(A 티켓). `screens.ts`의 `playSfx` 캐스팅은 T-107 쪽에서 제거 가능.
 
 ## 인계 메모
