@@ -33,5 +33,17 @@
   "fx_gas",
   "mine",
   "mine_at",
-  "bg_gate"
+  "bg_gate",
+  "ally_medic_idle",
+  "ally_medic_attack",
+  "card_medic",
+  "ally_mortar_idle",
+  "ally_mortar_attack",
+  "card_mortar",
+  "ally_antitank_idle",
+  "ally_antitank_attack",
+  "card_antitank",
+  "ally_signal_idle",
+  "ally_signal_attack",
+  "card_signal"
 ]

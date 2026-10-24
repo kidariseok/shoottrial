@@ -162,4 +162,15 @@ Portrait card illustration in exactly the same pixel art style as the attached l
 
 ## 진행 기록
 
-- (아직 없음)
+- [x] 2026-10-24 Claude: 그림 16장 완료·반영. 브랜치: `kidariseok/m6-chars`
+  - 만든 도구: ChatGPT(유료, Thinking effort `High`). 레퍼런스는 `01-soldier-motion`·`12-miner-sheet`·`03-weapons`, Argon으로 만든 고품질 샘플, 직전 캐릭터의 승인된 시트(레이아웃 예시), 카드는 `08-big-character`를 함께 첨부했다. 사용량을 아끼려고 Gemini 대신 썼고, 품질은 Argon과 견줄 만했다.
+  - 저장: 시트 4장 `art/ref/14~17-*-sheet.png`(gitignore), 나머지 12장은 `art/inbox/`에 넣은 뒤 `node scripts/assets.mjs`로 처리했다.
+  - 처리 결과: 12개 키 모두 성공(대기 2프레임·공격 3프레임·카드 1), `npm run assets:check`(47키) 통과. 수동 정리 없이 프레임이 자동으로 나뉘었다.
+  - 확인: `?scene=gallery`에서 새 에셋이 보인다(의무병 대기·공격 확인).
+  - 원본 해상도 1672×941(ChatGPT). Argon(2752×1536)보다 낮지만 게임에서 약 96px로 줄이므로 문제 없다.
+  - 남은 이슈
+    - 카드 비율은 비율 선택기가 없어 프롬프트로 세로(3:4)를 요청했다(티켓의 4:5와 약간 다름). 처리 도구가 256×320으로 맞춘다.
+    - 통신병은 안테나가 높이에 포함돼 몸이 다른 캐릭터보다 작게 보인다(배율 0.121). 크기가 거슬리면 `meta.json`으로 조정하거나 다시 뽑는다.
+    - 박격포병은 쭈그려 앉은 자세라 다른 캐릭터와 키 차이가 난다(의도된 자세).
+    - 게임 전투 화면(`?scene=battle`)에서의 크기·배치는 아직 확인하지 않았다.
+  - 다음: 전투 화면에서 크기를 보고, 거슬리는 장만 다시 뽑기
