@@ -1,6 +1,6 @@
 # T-107 보상형 광고(AdMob, 테스트 ID)
 
-상태: 진행 중
+상태: 완료
 담당: Antigravity · **Claude Sonnet 5.5 High**(Antigravity 안의 Claude 모델. Claude Code 사용량과 따로 계산된다). 2번 막히면 같은 대화에서 GPT 계열 최상위 모델로 바꾼다.
 동시 진행: T-106(소리)과 함께 해도 된다. 소유 경로가 겹치지 않는다(`audio.ts`·`lobby.ts`는 T-106 것이다).
 
@@ -72,12 +72,12 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과
+- [x] `npm run verify` 통과(270 테스트)
 - [x] 웹에서 세 버튼이(보급은 실제 전투, 리롤·부활은 가짜 ctl로 확인) 가짜 광고(1초)를 거쳐 보상을 준다(헤드리스 또는 브라우저 확인)
-- [ ] 에뮬레이터에서 테스트 광고가 실제로 뜨고 보상이 들어온다(스크린샷 2장)
-- [ ] 운영 광고 ID가 저장소 어디에도 없다. 테스트 ID만 있다
-- [ ] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 결과 시그니처 변화가 없다
-- [ ] `src/audio.ts`·`src/ui/lobby.ts`·`src/battle/`을 고치지 않았다
+- [x] 에뮬레이터에서 테스트 광고가 실제로 뜨고 보상이 들어온다(스크린샷 2장: `docs/shots/T-107-ad.png`, `T-107-reward.png`)
+- [x] 운영 광고 ID가 저장소 어디에도 없다. 테스트 ID만 있다(`git grep ca-app-pub-`에서 테스트 ID 외 없음)
+- [x] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 결과 시그니처 변화가 없다
+- [x] `src/audio.ts`·`src/ui/lobby.ts`·`src/battle/`을 고치지 않았다(`git diff origin/main...HEAD` 기준)
 
 ## 작업 계획
 
@@ -105,15 +105,15 @@
 - [x] 1 플러그인 설치: `@capacitor-community/admob@8.2.1`(peer `@capacitor/core ^8.0.0`로 Capacitor 8.5.3 호환, node_modules package.json 확인). 이벤트: `onRewardedVideoAdReward`/`Dismissed`/`FailedToShow`/`FailedToLoad`(타입 정의 확인). 테스트 앱 ID는 `android/app/build.gradle`의 manifestPlaceholders(`-PadmobAppId`로 운영 ID 교체), 보상형 단위 ID는 `platform.ts`(`VITE_ADMOB_REWARDED_ID`로 교체). 출처: 구글 공식 테스트 ID(웹 검색 요약).
 - [x] 2~5 `platform.ts`·`ads.ts`·`screens.ts`·`style.css`·`tests/ads.test.ts` 구현. `npm run verify` 통과(270 테스트). main.ts는 소유 경로 밖이라 `initAds`는 첫 `showRewarded`에서 지연 호출.
 - [x] 6a 웹 확인(헤드리스 Chrome, CDP, `?scene=battle&seed=42`): 긴급 보급 클릭 → 버튼 잠김 → 1초 뒤 보급 6→11, 잠금 해제. 무료 리롤·부활은 실제 전투 흐름이 아니라 같은 페이지에서 `screens.ts`를 import해 가짜 ctl로 호출해 확인: 리롤 → `adReroll` 호출, 부활 → 1초 뒤 `onYes` 호출, 버튼 잠금. 광고 재생 중 부활을 누르면 연타 방지로 `onNo`가 불리는 점(드문 겹침)은 알아 둠.
-- [ ] 6b 에뮬레이터 확인(`Medium_Phone_API_37.0`, SDK `~/Library/Android/sdk`)
+- [x] 6b 에뮬레이터 확인(`Medium_Phone_API_37.0`): Claude Code(기획 세션)가 이어받아 확인. Antigravity 사용량 한도로 중단된 지점에서 에뮬레이터에 테스트 광고(`AdActivity`, "Test Ad", "Reward granted")가 떠 있었고 닫으면 `MainActivity`로 돌아왔다. 긴급 보급은 `긴급보급 +5` 보상 후 보급 26까지 올라가 있었고, 이어서 위병소 HP 0의 "긴급 부활" 모달에서 "광고 보고 부활"을 눌러 새 테스트 광고가 떴고(6초 내), 닫자 위병소 HP 0→10, 전투 재개. 에뮬레이터는 끄고 확인했다.
 
 ## 결과 보고
 
-- 바뀐 파일:
-- 검증 결과:
-- 스크린샷:
+- 바뀐 파일: `package.json`, `package-lock.json`, `src/platform.ts`, `src/ads.ts`, `src/ui/screens.ts`, `src/ui/style.css`, `android/`(AdMob 테스트 앱 ID·플러그인 연결), `tests/ads.test.ts`
+- 검증 결과: `npm run verify` 270 테스트 통과, 에뮬레이터에서 테스트 광고 2종(긴급 보급·부활) 실제 재생·보상 확인, 운영 ID 없음
+- 스크린샷: `docs/shots/T-107-ad.png`(테스트 광고, "Reward granted"), `docs/shots/T-107-reward.png`(부활 후 위병소 HP 10)
 - 사용자 확인 방법:
-- 확인하지 못한 점:
+- 확인하지 못한 점: 무료 리롤은 에뮬레이터에서 누르지 않았다(웹 가짜 ctl 확인만, 같은 `watchAd` 경로). 광고 중 소리 정지(`audio.mute`)는 소리 확인을 하지 않았다. 실제 운영 광고 ID와 AdMob 계정 연결은 T-108.
 - 다음 제안:
 
 ## 인계 메모
