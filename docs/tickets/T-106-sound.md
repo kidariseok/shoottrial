@@ -1,6 +1,6 @@
 # T-106 효과음·배경음 (CC0 음원)
 
-상태: 대기
+상태: 진행 중
 담당: Antigravity · **Gemini 최상위 모델(Argon 제외), 사고 수준 높음**. 2번 막히면 같은 대화에서 Claude Sonnet 5.5 High로 바꾼다.
 동시 진행: T-107(광고)과 함께 해도 된다. 소유 경로가 겹치지 않는다(`screens.ts`는 T-107 것이다).
 
@@ -67,13 +67,24 @@
 
 ## 작업 계획
 
+1. **음원 확보**: Kenney.nl CC0 팩(Impact/Sci-fi/Interface Sounds)과 OpenGameArt CC0 음원을 받아 라이선스(CC0) 페이지를 확인한다. 임시 작업은 `/tmp`에서 한다. 바뀔 파일: 없음(조사).
+2. **변환**: `afconvert -f m4af -d aac`(모노, 낮은 비트레이트, 자르기)로 `public/assets/` 에 m4a 13개 추가(`sfx_click`은 기존 파일 유지 여부 확인), `public/assets/audio-credits.json` 작성(키마다 URL·제작자·CC0).
+3. **API**: `src/audio.ts`에 `SfxKey`·`BgmKey`, `playSfx`(대체 합성음은 `sfx_click`만), `playBgm`(0.3초 페이드, 같은 키 무시, `null` 정지, 음소거 시 일시정지·복귀 시 재개, 설정 반영), `initAudio`에 `.mil-btn` 클릭 리스너.
+4. **생활관**: `src/ui/lobby.ts`에서 `showLobby` 시 `playBgm('bgm_lobby')`, 출동 클릭 시 `playBgm(null)`. 기존 캐스팅 제거(`lobby.ts`만. `screens.ts`는 수정 안 함).
+5. **테스트**: `tests/audio.test.ts` (가짜 Audio 객체로 키 목록·같은 키 무시·null 정지·음소거 무시).
+6. **검증**: `npm run verify`, `ls -la public/assets/*.m4a`, 디버그 URL `/`(생활관)에서 헤드리스로 `Audio.play` 호출 기록 확인.
+
+플랫폼 API: Capacitor 플러그인 사용 없음(브라우저 `Audio`/`AudioContext`만).
+
 ## 질문
+
+- [ ] 사용자: 계획을 확인하고 "진행"이라고 답해 주세요
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: 0fb6acd2d980
+- 브랜치: kidariseok/tilefish
+- 세션 시작: (Claude Sonnet 5.5, 2026-10-24 13:07)
 
 ## 결과 보고
 
