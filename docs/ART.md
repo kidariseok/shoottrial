@@ -99,7 +99,7 @@ character centered with feet on the same baseline
 
 ### 4.1 아군 (카드 하나에 아래 6개 키)
 
-`<카드>`는 `rifle`, `sniper`, `blower`, `cook`, `miner`, `chem`(M3)이다.
+`<카드>`는 `rifle`, `sniper`, `blower`, `cook`, `miner`, `chem`(M3), `medic`, `mortar`, `antitank`, `signal`(M6, 새 카드 4종)이다.
 
 | 키 | 캔버스 | 프레임(최소~권장) | 피벗 | 플레이스홀더 | 단계 |
 |---|---|---|---|---|---|
