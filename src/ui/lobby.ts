@@ -1,5 +1,5 @@
 import { fetchAvailableAssets } from '../assets'
-import { playSfx, setSettings } from '../audio'
+import { playBgm, playSfx, setSettings, type SfxKey } from '../audio'
 import { defaultSave, load, save, type Save } from '../save'
 import {
   ALL_CARDS,
@@ -80,9 +80,8 @@ function readLocalUnlockedRaw(): string | null {
 
 function playBriefingSfxIfPresent(sfxKey: string, assets: Set<string>): void {
   if (!assets.has(sfxKey)) return
-  const playOptionalSfx = playSfx as (key: string) => boolean
   try {
-    playOptionalSfx(sfxKey)
+    playSfx(sfxKey as SfxKey)
   } catch {
     // 파일이 없거나 재생 실패 시 무시
   }
@@ -240,6 +239,7 @@ export async function showLobby(): Promise<void> {
 
   const wrap = ensureOverlay()
   if (!wrap) return
+  playBgm('bgm_lobby')
 
   const mergedUnlocked = mergeUnlockedCards(currentSave.unlocked, readLocalUnlockedRaw())
   const unlockedSet = new Set(mergedUnlocked)
@@ -300,6 +300,7 @@ export async function showLobby(): Promise<void> {
   deployBtn.className = 'mil-btn action-go lobby-deploy-btn'
   deployBtn.textContent = '출동'
   deployBtn.addEventListener('click', () => {
+    playBgm(null)
     hideLobbyOverlay()
     onDeployCallback?.()
   })

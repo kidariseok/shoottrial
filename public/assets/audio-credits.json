@@ -1,0 +1,100 @@
+{
+  "sfx_rifle": {
+    "source": "https://kenney.nl/assets/impact-sounds",
+    "original": "impactMetal_medium_000.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_sniper": {
+    "source": "https://kenney.nl/assets/impact-sounds",
+    "original": "impactMetal_heavy_001.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_wind": {
+    "source": "https://kenney.nl/assets/sci-fi-sounds",
+    "original": "thrusterFire_000.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_boom": {
+    "source": "https://kenney.nl/assets/sci-fi-sounds",
+    "original": "explosionCrunch_000.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_heal": {
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "original": "confirmation_002.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_merge": {
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "original": "confirmation_004.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_siren": {
+    "source": "https://kenney.nl/assets/impact-sounds",
+    "original": "impactBell_heavy_000.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_radio": {
+    "source": "https://kenney.nl/assets/sci-fi-sounds",
+    "original": "computerNoise_001.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_hit": {
+    "source": "https://kenney.nl/assets/impact-sounds",
+    "original": "impactSoft_medium_000.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_click": {
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "original": "click_001.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_buy": {
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "original": "pluck_002.ogg",
+    "author": "Kenney (kenney.nl)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "bgm_lobby": {
+    "source": "https://opengameart.org/content/tense-future-loop",
+    "original": "tensefutureloop.ogg",
+    "author": "gmason (OpenGameArt)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "bgm_defcon2": {
+    "source": "https://opengameart.org/content/chiptune-battle-music",
+    "original": "battle_music_01-loop.ogg",
+    "author": "pmiller (OpenGameArt)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "bgm_defcon1": {
+    "source": "https://opengameart.org/content/8-bit-battle-loop",
+    "original": "8BitBattleLoop_0.ogg",
+    "author": "AntumDeluge (OpenGameArt)",
+    "license": "CC0 1.0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  }
+}
