@@ -10,7 +10,7 @@ export interface AssetContract {
   label: string
 }
 
-export const CARDS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'] as const
+export const CARDS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem', 'medic', 'mortar', 'antitank', 'signal'] as const
 
 function makeAllyContracts(): AssetContract[] {
   const contracts: AssetContract[] = []

@@ -1,6 +1,6 @@
 # T-110 전투 화면 UI를 "야간 작전" 시안 A로
 
-상태: 대기
+상태: 완료
 담당: Antigravity · **Claude Sonnet 5.5 High** 또는 Gemini 최상위 모델(Argon 제외, 사고 수준 높음). 2번 막히면 다른 쪽으로 바꾼다.
 
 ## 목표
@@ -67,11 +67,11 @@
 
 ## 완료 조건
 
-- [ ] `npm run verify` 통과(`assets:check` 포함)
-- [ ] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'`에서 시그니처 변화 없음
-- [ ] 스크린샷(390×844, `docs/shots/`): `T-110-prep.png`(준비 단계, 카드 5장), `T-110-battle.png`(전투 중, 화력 지원 켜짐), `T-110-result.png`(결과 화면), `T-110-narrow.png`(360×800)
-- [ ] 결과 보고에 "카드 그림이 들어갔는지", "눌러서 살 수 있는 카드와 없는 카드가 구분되는지"를 스크린샷으로 가리킨다.
-- [ ] 캔버스는 하나뿐이다. 눌림·드래그 동작이 이전과 같다.
+- [x] `npm run verify` 통과(`assets:check` 포함)
+- [x] `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'`에서 시그니처 변화 없음
+- [x] 스크린샷(390×844, `docs/shots/`): `T-110-prep.png`(준비 단계, 카드 5장), `T-110-battle.png`(전투 중, 화력 지원 켜짐), `T-110-result.png`(결과 화면), `T-110-narrow.png`(360×800)
+- [x] 결과 보고에 "카드 그림이 들어갔는지", "눌러서 살 수 있는 카드와 없는 카드가 구분되는지"를 스크린샷으로 가리킨다.
+- [x] 캔버스는 하나뿐이다. 눌림·드래그 동작이 이전과 같다.
 
 디버그 URL: `http://localhost:5173/?scene=battle&wave=7&unlock=all&supply=99&safe=1`
 
@@ -81,22 +81,27 @@
 
 ## 질문
 
-<!-- 막히거나 결정이 필요하면 "- [ ] ..."로 적는다. -->
+<!-- 막히거나 결정이 필요하면 "- [x] ..."로 적는다. -->
 
 ## 진행 기록
 
-- 기준 커밋: (/start-ticket이 적는다)
-- 브랜치: (/start-ticket이 적는다)
-- 세션 시작: (모델, 시각)
+- 기준 커밋: c5caf71(origin/main, PR #35 병합 직후)
+- 브랜치: kidariseok/t110-hud
+- 세션 시작: Claude Code(Sonnet 5.5), 2026-10-24(Antigravity 사용량 소진으로 기획 세션이 직접 구현)
+- [x] 색 토큰을 어두운 철판 + 금테로 교체(`:root`, 변수 이름은 유지), 금테 버튼·HUD·상점 판 스타일(`style.css` 맨 아래 T-110 구역)
+- [x] 카드 칸에 `card_*.png` 배경(없는 키는 글자 상자 폴백), 이름 띠·비용 배지, 살 수 있는 카드만 금테 발광
+- [x] 위병소 HP 막대(시작 HP `BATTLE.baseHp` 대비 비율, 30% 이하 붉게)
+- [x] 문구: "출동!" → "전투 투입!", "다시 출동" → "다시 투입"(결과 제목에 "복귀 보고"는 없었음)
+- [x] `npm run verify` 285 통과, 헤드리스 확인 + 스크린샷 5장(JPEG)
 
 ## 결과 보고
 
-- 바뀐 파일:
-- 검증 결과:
-- 스크린샷:
-- 사용자 확인 방법:
-- 확인하지 못한 점:
-- 다음 제안:
+- 바뀐 파일: `src/ui/screens.ts`(그림 키 캐시·카드 칸 클래스·HP 막대·문구), `src/ui/style.css`(토큰 + 맨 아래 T-110 구역)
+- 검증 결과: `npm run verify` 285 통과. 헤드리스(Chrome, 390×844·360×800): 준비 단계 카드 5장에 그림, 전투 중 "교전 중"·화력 지원 ×2 금테·HP 막대, 결과 화면 "다시 투입"·"생활관". `git diff origin/main -- src/ui/screens.ts | grep -E '^[+-]export'` 변화 없음
+- 스크린샷: `docs/shots/T-110-prep.jpg`, `T-110-battle.jpg`, `T-110-result.jpg`, `T-110-narrow.jpg`(360×800)
+- 사용자 확인 방법: `npm run dev` 후 `http://localhost:5173/?scene=battle&wave=7&unlock=all&supply=99&safe=1`
+- 확인하지 못한 점: ①**글꼴 번들은 하지 않았다.** 시안의 Black Han Sans는 파일을 내려받아 `public/fonts/`에 넣어야 해서(외부 다운로드) 사용자 승인이 필요하다. 지금은 시스템 굵은 글꼴이다. ②안드로이드 실기기·에뮬레이터 화면은 확인하지 않았다(웹만). ③카드 정보 시트(길게 누르기)와 대기석은 그림 적용 대상이 아니라 건드리지 않았다. ④첫 상점이 열리기 전에 그림 목록이 안 왔으면 그 판 첫 상점만 그림 없이 열린다(드문 경우).
+- 다음 제안: 글꼴 번들 여부를 사용자에게 묻는다. A-103(생활관 그림) 반영 후 걷는 화면 좌표 맞춤. 다음 큰 일은 T-108(출시 준비).
 
 ## 인계 메모
 

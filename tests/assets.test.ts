@@ -8,7 +8,7 @@ describe('에셋 계약 표 (docs/ART.md §4)', () => {
     expect(set.size).toBe(keys.length)
   })
 
-  it('아군 6종 카드(rifle, sniper, blower, cook, miner, chem)의 6개 키가 모두 존재한다', () => {
+  it('아군 10종 카드(rifle, sniper, blower, cook, miner, chem + M6 medic, mortar, antitank, signal)의 6개 키가 모두 존재한다', () => {
     const keys = new Set(ASSET_CONTRACTS.map((c) => c.key))
     for (const card of CARDS) {
       expect(keys.has(`ally_${card}_idle`)).toBe(true)
@@ -65,8 +65,8 @@ describe('에셋 계약 표 (docs/ART.md §4)', () => {
     }
   })
 
-  it('총 키 개수가 64개이고 모든 규격(w, h, frames)이 유효하다', () => {
-    expect(ASSET_CONTRACTS.length).toBe(64)
+  it('총 키 개수가 88개이고 모든 규격(w, h, frames)이 유효하다', () => {
+    expect(ASSET_CONTRACTS.length).toBe(88)
     for (const item of ASSET_CONTRACTS) {
       expect(item.w).toBeGreaterThan(0)
       expect(item.h).toBeGreaterThan(0)
