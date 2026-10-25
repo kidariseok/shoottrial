@@ -184,7 +184,7 @@ describe('GDD 수치 고정', () => {
     expect(RANKS.names).toEqual(['이등병', '일병', '상병', '병장'])
   })
   it('§5.4 시너지', () => {
-    expect(SYNERGY).toEqual({ rifle: [2, 4], sniper: [2], blower: [2, 4], cook: [2], miner: [2], chem: [2] })
+    expect(SYNERGY).toMatchObject({ rifle: [2, 4], sniper: [2], blower: [2, 4], cook: [2], miner: [2], chem: [2] })
   })
   it('§6 경제', () => {
     expect(ECONOMY).toEqual({

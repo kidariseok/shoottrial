@@ -24,7 +24,7 @@ const count = (ev: SpawnEvent[], type: SpawnEvent['type']) => ev.filter((e) => e
 
 describe('GDD 수치 고정 (4단계)', () => {
   it('§5.2 화학병은 카드 6번째', () => {
-    expect([...CARD_KEYS]).toEqual(['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'])
+    expect(CARD_KEYS.slice(0, 6)).toEqual(['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'])
     const c = CARDS.chem
     expect({ name: c.name, initial: c.initial, cost: c.cost, hp: c.hp, atk: c.atk, interval: c.interval, range: c.range }).toEqual({
       name: '화학병',
@@ -67,13 +67,13 @@ describe('GDD 수치 고정 (4단계)', () => {
     expect(WAVES[8]!.dog).toBe(4)
     expect(WAVES[9]!.dog).toBe(5)
   })
-  it('§7 해금 순서 끝에 화학병', () => {
-    expect(UNLOCK.order).toEqual(['cook', 'miner', 'chem'])
+  it('§7 기존 해금 세 번째는 화학병', () => {
+    expect(UNLOCK.order.slice(0, 3)).toEqual(['cook', 'miner', 'chem'])
   })
 })
 
 describe('nextUnlock (화학병)', () => {
-  it('cook -> miner -> chem -> null', () => {
+  it('cook -> miner -> chem, 전체 해금이면 null', () => {
     const base = ['rifle', 'sniper', 'blower'] as const
     expect(nextUnlock([...base])).toBe('cook')
     expect(nextUnlock([...base, 'cook'])).toBe('miner')

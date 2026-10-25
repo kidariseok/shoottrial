@@ -1,7 +1,7 @@
 import { Scene, type GameObjects, type Input } from 'phaser'
 import { BATTLE, CARD_KEYS, CARDS, CHARACTERS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { motionPhase, artKey, afterRun, colAt, defconOf, gasPlan, income, mineTokenPlan, cookSupplyBonus, unitInfoRows, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
+import { motionPhase, artKey, afterRun, colAt, defconOf, gasPlan, income, mineTokenPlan, cookSupplyBonus, unitInfoRows, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, signalIntervalMult, supportGrant, supportDamage, type SupportSource, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { defaultSave, load, save, type Save } from '../save'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
@@ -13,7 +13,7 @@ import { hurtEnemy, removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy 
 import { colBand, explosion, fall, hitStop, laneFlash, resetStop, shake, stopping } from './fx'
 import { loadRuns, readKey, removeKey, saveRun } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
-import { collectAllies, endWave, startWave, tickAllies } from './units'
+import { clearAlliedActions, collectAllies, endWave, startWave, tickAllies } from './units'
 
 // ponytail: 같은 시드로 재시작해도 판마다 다른 시퀀스. 디버그에서 두 번째 판을 재현하려면 페이지를 새로 연다
 let runsThisPage = 0
@@ -46,7 +46,9 @@ export class BattleScene extends Scene {
   // 화력 지원(GDD §5.8): picking 남은 초(0이면 고르는 중 아님), strikes 예약된 포격
   public support = 0
   public picking = 0
-  public strikes: { col: number; left: number; line: GameObjects.Rectangle }[] = []
+  public strikes: { col: number; left: number; damage: number; line: GameObjects.Rectangle }[] = []
+  public supportSources: SupportSource[] = []
+  private supportOverride = false
   private pickBands: GameObjects.Rectangle[] = []
   public selecting = false
   public buying = false
@@ -80,6 +82,7 @@ export class BattleScene extends Scene {
 
   // 클래스 필드 초기값은 생성자에서 한 번만 돈다. 씬 재시작은 create만 다시 부르므로 판 상태는 여기서 전부 되돌린다
   private resetRun() {
+    clearAlliedActions(this)
     this.runGeneration += 1
     this.selecting = false
     this.buying = false
@@ -102,6 +105,8 @@ export class BattleScene extends Scene {
     this.pickBands = []
     // ponytail: 게이트 때 debug.ts로 옮긴다
     const sup = new URLSearchParams(location.search).get('support')
+    this.supportOverride = sup !== null
+    this.supportSources = []
     this.support = sup === null ? SUPPORT.charges : Number(sup) || 0
     this.lineUsed = Array<boolean>(LAYOUT.cols).fill(false)
     this.prepLeft = 0
@@ -136,6 +141,15 @@ export class BattleScene extends Scene {
     this.supply += cookSupplyBonus(this.board.deployed().map((d) => d.unit))
     this.flushVulnKills()
     this.log({ e: 'wave_clear', wave: this.wave, base_hp: Math.max(0, this.baseHp), supply: this.supply })
+  }
+
+  // 지원 보너스는 판당 출처별 한 번. 판매·재배치나 웨이브 전환으로 다시 충전하지 않는다.
+  private syncSignalSupport() {
+    if (this.supportOverride || !this.board) return
+    const signals = collectAllies(this.board).filter((a) => a.combat.alive && a.unit.card === 'signal').map((a) => ({ ...a.unit, col: a.col, row: a.row }))
+    const grant = supportGrant(this.supportSources, signals)
+    this.supportSources = grant.sources
+    this.support += grant.bonus
   }
 
   // 취약 처치 수를 기록하고 0으로 되돌린다(없으면 기록하지 않는다)
@@ -173,6 +187,8 @@ export class BattleScene extends Scene {
     this.ready = false
     const generation = this.runGeneration
     this.events.once('shutdown', () => {
+      clearAlliedActions(this)
+      this.endSupport()
       this.runGeneration += 1
       this.ready = false
       this.cancelSelection()
@@ -206,8 +222,12 @@ export class BattleScene extends Scene {
       },
       onMerge: (card, rank) => this.log({ e: 'merge', card, rank }),
       onHold: (u) => {
-        if (u) ui.cardInfoDetail(u.card, u.rank, { name: u.name, spec: u.spec, rows: unitInfoRows(u, this.board.deployed().filter((d) => d.unit.card === u.card).length, defconOf(this.wave) === 1) })
-        else ui.cardInfo(null)
+        if (!u) return ui.cardInfo(null)
+        const allies = collectAllies(this.board)
+        const entry = allies.find((a) => a.unit === u)
+        const signals = allies.filter((a) => a.unit.card === 'signal').map((a) => ({ ...a.unit, col: a.col, row: a.row, alive: a.combat.alive }))
+        const signalMult = entry ? signalIntervalMult(signals, entry.col, entry.row) : 1
+        ui.cardInfoDetail(u.card, u.rank, { name: u.name, spec: u.spec, rows: unitInfoRows(u, allies.filter((a) => a.unit.card === u.card).length, defconOf(this.wave) === 1, signalMult) })
       },
     })
     // 신병을 먼저 놓아야 디버그 덱이 같은 칸을 차지하지 않는다
@@ -346,6 +366,8 @@ export class BattleScene extends Scene {
 
   startFight() {
     if (this.inputBlocked() || this.phase !== 'prep') return
+    this.syncSignalSupport()
+    clearAlliedActions(this)
     this.phase = 'fight'
     this.board.setPhase('fight')
     this.board.setTokens(0, false) // 쓰지 않은 토큰은 사라지고 묻힌 지뢰는 남는다
@@ -412,6 +434,7 @@ export class BattleScene extends Scene {
 
   // 화력 지원 열 고르기(전투 단계, 남은 횟수가 있을 때). 5열 강조 + 카드 입력 잠금
   fireSupport() {
+    if (!this.inputBlocked()) this.syncSignalSupport()
     if (this.inputBlocked() || this.phase !== 'fight' || this.support <= 0 || this.picking > 0) return
     this.picking = SUPPORT.pickSec
     const y0 = this.board.worldY(LAYOUT.entryY)
@@ -427,7 +450,8 @@ export class BattleScene extends Scene {
     if (col < 0) return
     this.support -= 1
     const line = colBand(this, this.board.toScreen(col, 0).x, this.board.worldY(LAYOUT.entryY), this.board.worldY(LAYOUT.lineY), UI.fx.supportLineW, UI.colors.supportWarn, UI.fx.supportLineAlpha)
-    this.strikes.push({ col, left: SUPPORT.delay, line })
+    const signals = collectAllies(this.board).filter((a) => a.combat.alive && a.unit.card === 'signal').map((a) => ({ ...a.unit, col: a.col, row: a.row }))
+    this.strikes.push({ col, left: SUPPORT.delay, damage: supportDamage(signals), line })
   }
 
   private endPick() {
@@ -451,17 +475,17 @@ export class BattleScene extends Scene {
       if (this.picking <= 0) this.endPick()
     }
     for (const s of this.strikes) s.left -= dt
-    for (const s of this.strikes.filter((s) => s.left <= 0)) this.strike(s.col, s.line)
+    for (const s of this.strikes.filter((s) => s.left <= 0)) this.strike(s.col, s.line, s.damage)
     this.strikes = this.strikes.filter((s) => s.left > 0)
   }
 
   // 그 열의 살아 있는 적 전부에게 피해. 처치 수는 기존 정리 단계가 센다
-  private strike(col: number, line: GameObjects.Rectangle) {
+  private strike(col: number, line: GameObjects.Rectangle, damage: number = SUPPORT.damage) {
     line.destroy()
     let kills = 0
     for (const e of this.enemies) {
       if (e.col !== col || e.gone || e.hp <= 0) continue
-      hurtEnemy(this, e, SUPPORT.damage)
+      hurtEnemy(this, e, damage)
       if (e.hp <= 0) kills += 1
     }
     for (let r = 0; r < GRID.lineY; r++) explosion(this, this.board.toScreen(col, r + 0.5).x, this.board.toScreen(col, r + 0.5).y)
@@ -471,6 +495,7 @@ export class BattleScene extends Scene {
   }
 
   startSettle() {
+    clearAlliedActions(this)
     this.clearWave()
     this.endSupport()
     clearGas(this.gas)
@@ -485,6 +510,7 @@ export class BattleScene extends Scene {
 
   update(_time: number, delta: number) {
     if (this.logOnly || !this.ready || this.paused || this.modal || this.selecting || this.buying) return
+    if (!this.result) this.syncSignalSupport()
     const real = Math.min(delta / 1000, BATTLE.maxDt)
     const dt = stopping(real) ? 0 : real * this.speed // 히트스톱 중에는 전투 시간이 흐르지 않는다
     // 새 카드(도형 포함)를 기존 보드 함수 변경 없이 찾아 몸 모션만 연결한다.
@@ -537,7 +563,7 @@ export class BattleScene extends Scene {
     const reached = tickEnemies({ scene: this, board: this.board, enemies: this.enemies, allies, dogRand: this.dogRand }, dt)
     for (const e of reached) this.reachLine(e)
     tickGas({ scene: this, board: this.board, gas: this.gas, allies, wave: this.wave, log: (ev) => this.log(ev) }, this.clock, dt)
-    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: this.gas.cells, clock: this.clock }, dt)
+    tickAllies({ scene: this, board: this.board, enemies: this.enemies, allies, defcon1: defconOf(this.wave) === 1, gas: this.gas.cells, clock: this.clock, wave: this.wave }, dt)
     // 지뢰: 아군 사격 뒤, 정리 전(터진 지뢰의 사망도 같은 틱 정리가 센다)
     tickMines({ scene: this, board: this.board, enemies: this.enemies, clock: this.clock, wave: this.wave, log: (ev) => this.log(ev) })
     this.tickSupport(dt)
@@ -633,6 +659,7 @@ export class BattleScene extends Scene {
 
   private finish(win: boolean) {
     if (this.result) return
+    clearAlliedActions(this)
     this.cancelSelection()
     this.result = win ? 'win' : 'lose'
     this.syncLock()

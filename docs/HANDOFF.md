@@ -38,7 +38,7 @@
 | 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25); 브랜치 `kidariseok/t111-motion`) |
 | 1' | **A-105 모션 그림62장**(1묶음32+2묶음30) | 처리·갤러리 완료. 기존6종 피격/쓰러짐/진급 실제 연결 확인, [PR #39](https://github.com/kidariseok/shoottrial/pull/39) 병합 확인 완료(2026-10-25). 제품 연결 코드는 T-111에 이미 있음 |
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, [PR #40](https://github.com/kidariseok/shoottrial/pull/40) 실제 병합 확인(2026-10-25T12:18:10Z). 브랜치 `kidariseok/t112-rank-specialty` |
-| 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 계획 작성·사용자 승인 대기. 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. 새4종 그림 준비 완료 |
+| 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 사용자 승인 후 구현 중. 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. 새4종 그림 준비 완료 |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
 | 5 | 레인 A 잔여: 일일 첫 접속 보너스, 전투 소리 연결(`playSfx`/`playBgm`) | 대기 |
 | 6 | **T-108 출시 준비**(AAB 서명, 개인정보처리방침, 스토어 등록물, PX 광고 해금 연결) | **사용자가 구글 콘솔을 뒤로 미룸.** 사용자가 다시 꺼낼 때 시작(참고 `docs/research/play-launch.md`) |
@@ -123,3 +123,7 @@
 - T-112 PR: https://github.com/kidariseok/shoottrial/pull/40, 완료 저장·push 성공. 다음 작업자는 #40 실제 병합 확인 후 T-113을 별도 대화·origin/main 새 브랜치에서 시작한다.
 
 - 2026-10-26 (T-113 착수): 사용자 다음 작업 지시. #40 MERGED 확인, git fetch 후 origin/main40ef73845433에서 `kidariseok/t113-new-cards` 생성. 새4종 전투/특기/시너지/해금/상점/도감 계획과 경계 기본안을 템플릿 티켓에 작성. 새4종 에셋24파일 확인. 제품 코드·읽기 전용 문서 미변경, verify 미실행. start-ticket 계획 승인 후 구현한다.
+
+- T-113 사용자 ‘진행’ 승인, 기준선 verify319테스트·83에셋·빌드 통과. 구현 Run `run_3b58d8d3abf0`: data/rules/tests `ctx_6af1ce26e288`, 전투 `ctx_f2eae57ea1b0`, UI `ctx_053f84cedca2`; 조정자는 Scene/board/debug/검증. 지원 출처 최초 자격만 충전, 병장 지원 피해는 열 선택 시 snapshot, 예약/처치 정리 hook 연결 중.
+
+- T-113 통합341테스트/21파일·83에셋·빌드 통과. 소유 경로 밖 구표 비교2테스트는 사용자 승인 후 경로 추가·부분 비교로 수정. 새4종 실제 모달/도감/해금/구매·주요전투/정산과 모션0/그림0 확인. Orca 구현3건 succeeded, UI창 release, 계산/전투창은 runtime이 user_takeover로 retained하여 보존, reclaimable0. 다음: 검증 캡처/결과 보고 정리·PR.

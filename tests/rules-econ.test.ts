@@ -130,7 +130,7 @@ describe('parseUnlocked', () => {
 describe('GDD 수치 고정 (3단계)', () => {
   it('§7 해금', () => {
     expect([...UNLOCK.base].sort()).toEqual(['blower', 'rifle', 'sniper'])
-    expect(UNLOCK.order).toEqual(['cook', 'miner', 'chem'])
+    expect(UNLOCK.order.slice(0, 3)).toEqual(['cook', 'miner', 'chem'])
     expect(UNLOCK.atWave).toBe(5)
   })
   it('§10·§4.2 보상', () => {

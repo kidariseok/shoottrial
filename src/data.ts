@@ -29,7 +29,7 @@ export const LAYOUT = {
 } as const
 
 // 이 순서가 시너지 목록 정렬 순서다
-export const CARD_KEYS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'] as const
+export const CARD_KEYS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem', 'medic', 'mortar', 'antitank', 'signal'] as const
 export type CardKey = (typeof CARD_KEYS)[number]
 
 // GDD §5.2. range 단위는 "칸"이다. color는 아트 전 임시색(ART §2: 붉은색 계열 금지)
@@ -43,9 +43,13 @@ export const CARDS: Record<
   cook: { name: '취사병', initial: '취', color: 0x8a8a3a, cost: 2, hp: 90, atk: 0, interval: 2.0, range: 1 }, // 인접 8칸의 반지름
   miner: { name: '지뢰설치병', initial: '지', color: 0x6a5a8a, cost: 2, hp: 80, atk: 6, interval: 1.0, range: 3 },
   chem: { name: '화학병', initial: '화', color: 0xb0b420, cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 }, // §5.2 지뢰설치병과 같은 단발 사격. 노랑 계열(r > g 금지)
+  medic: { name: '의무병', initial: '의', color: 0x61aa83, cost: 2, hp: 90, atk: 0, interval: 1, range: 1 },
+  mortar: { name: '박격포병', initial: '박', color: 0x808046, cost: 3, hp: 70, atk: 45, interval: 3, range: 8 },
+  antitank: { name: '대전차병', initial: '대', color: 0x6a7992, cost: 3, hp: 80, atk: 100, interval: 4, range: 5 },
+  signal: { name: '통신병', initial: '통', color: 0x4c9c9a, cost: 2, hp: 80, atk: 0, interval: 0, range: 1 },
 }
 
-// GDD §5.3 기존 6종 특기·인물. 효과 수치도 이 표에서만 읽는다.
+// GDD §5.3 카드10종 특기·인물. 효과 수치도 이 표에서만 읽는다.
 export type Specialty = 'A' | 'B'
 export const SPECIALTIES = {
   rifle: { A: { name: '사수', description: '사거리 +1.5칸, 공격 간격 ×1.15', range: 1.5, interval: 1.15 }, B: { name: '돌격', description: '사거리 −1칸, 간격 ×0.75, 1.5칸 안 피해 ×1.3', range: -1, interval: 0.75, reach: 1.5, damage: 1.3 } },
@@ -54,6 +58,10 @@ export const SPECIALTIES = {
   cook: { A: { name: '영양', description: '회복량 18', heal: 18 }, B: { name: '보급', description: '웨이브 클리어 보급 +1', supply: 1 } },
   miner: { A: { name: '다량 매설', description: '지뢰 토큰 +1', tokens: 1 }, B: { name: '부비트랩', description: '폭발 범위 안 적 1초 기절', stun: 1 } },
   chem: { A: { name: '제독', description: '제독·보호 범위 +1칸, 제독 주기 2초', reach: 1, interval: 2 }, B: { name: '화생방 사격', description: '직접 공격에 3초 중독, 초당 4 피해', poisonSec: 3, poisonDps: 4 } },
+  medic: { A: { name: '응급처치', description: '소생 시간 −2초, 소생 HP 50%', treatmentReduction: 2, reviveRatio: 0.5 }, B: { name: '위생', description: '인접 아군 받는 피해 −10%', damageMult: 0.9 } },
+  mortar: { A: { name: '고폭', description: '폭발 반지름 +0.6칸', radius: 0.6 }, B: { name: '조명탄', description: '착탄 범위 취약 +20%, 4초', vulnSec: 4 } },
+  antitank: { A: { name: '철갑', description: '장갑 피해 ×3', armorMult: 3 }, B: { name: '연속', description: '공격 간격 ×0.7', interval: 0.7 } },
+  signal: { A: { name: '지휘', description: '인접 아군 공격 간격 −25%', intervalMult: 0.75 }, B: { name: '화력 유도', description: '화력 지원 +1회 추가', charges: 1 } },
 } as const
 export const CHARACTERS = {
   rifle: { name: '{이름}', intro: '방금 자대에 온 신병', quotes: ['총은 몸이 기억한다.', '이제 눈 감고도 쏩니다.', '말년엔 총알도 아낍니다.'] },
@@ -62,6 +70,10 @@ export const CHARACTERS = {
   cook: { name: '박취사', intro: '밥심을 믿는 취사반장', quotes: ['든든히 먹어야 버팁니다.', '밥심이 전투력입니다.', '짬밥 내공 보여드리죠.'] },
   miner: { name: '조지뢰', intro: '깔아 둔 건 정직하다고 믿는 공병', quotes: ['밟으면 끝입니다.', '깔아 둔 건 정직합니다.', '길은 제가 만들어 둡니다.'] },
   chem: { name: '한화학', intro: '방독면을 늘 챙기는 화생방 담당', quotes: ['방독면은 잊지 마세요.', '공기부터 지킵니다.', '독가스는 여기서 끝납니다.'] },
+  medic: { name: '윤의무', intro: '아무도 두고 가지 않는 의무반', quotes: ['아프면 말하세요.', '누구도 두고 가지 않습니다.', '일어나세요. 아직 끝 아닙니다.'] },
+  mortar: { name: '고박격', intro: '좌표를 외워 두는 81mm 박격포 담당', quotes: ['포탄 나갑니다!', '좌표 수정, 다시 갑니다.', '한 방에 정리합니다.'] },
+  antitank: { name: '남전차', intro: '큰 것만 노리는 대전차 사수', quotes: ['큰 건 제 몫입니다.', '장갑도 뚫립니다.', '보스는 제게 맡기세요.'] },
+  signal: { name: '송통신', intro: '무전기를 끼고 사는 통신반', quotes: ['무전 감도 양호.', '화력 지원 요청, 즉시 연결.', '전 부대, 제 목소리를 들으십시오.'] },
 } as const
 export const RANK_VISUAL = {
   scale: [1, 1, 1.1, 1.2], quoteMs: 1500, veteran: '말년', ring: 0xffe066, aura: 0xffd56a, promoteText: '진급!',
@@ -88,6 +100,10 @@ export const SYNERGY: Record<CardKey, readonly number[]> = {
   cook: [2],
   miner: [2],
   chem: [2], // 4명 단계 없음
+  medic: [2],
+  mortar: [2],
+  antitank: [2],
+  signal: [2],
 }
 
 // GDD §6
@@ -432,11 +448,17 @@ export const SYN_FX: {
   sniperDamage: readonly number[]
   blowerKnock: readonly number[]
   blowerRange: readonly number[]
+  medicTreatment: readonly number[]
+  mortarInterval: readonly number[]
+  antitankArmor: readonly number[]
 } = {
   rifleInterval: [1, 0.8, 0.6],
   sniperDamage: [1, 1.3],
   blowerKnock: [1, 1.5, 1.5],
   blowerRange: [0, 0, 1],
+  medicTreatment: [0, 1],
+  mortarInterval: [1, 0.8],
+  antitankArmor: [0, 0.5],
 }
 
 // GDD §5.2·§5.3·§5.4·§5.6 화학전. 가스 칸은 배치 구역 5x3 칸 단위, 시간은 초
@@ -465,7 +487,7 @@ export const MINES = {
 // GDD §7. base = 첫 판 해금, order = 웨이브 atWave 도달 때마다 하나씩 여는 순서
 export const UNLOCK: { base: readonly CardKey[]; order: readonly CardKey[]; atWave: number } = {
   base: ['rifle', 'blower', 'sniper'],
-  order: ['cook', 'miner', 'chem'],
+  order: ['cook', 'miner', 'chem', 'medic', 'signal', 'mortar', 'antitank'],
   atWave: 5,
 }
 
@@ -523,3 +545,17 @@ export const ART = {
 } as const
 
 export const SPECIALTY_RULES = { cookTargets: 2 } as const
+
+// GDD §5.2~5.4·§5.8 새4종. 지연·보호는 초, 반지름은 칸 단위다.
+export const NEW_CARDS = {
+  medic: { treatmentSec: 4, reviveRatio: 0.3, uses: 1, sergeantUses: 2, protectionSec: 3, protectionMult: 0.5 },
+  mortar: { minRange: 2, radius: 1, delay: 0.8, secondShotDelay: 0.5, sergeantRadius: 0.5, sergeantDelay: 0.5 },
+  antitank: { armorMult: 2, pierceMult: 0.5, stunSec: 1 },
+  signal: { reach: 1, intervalMult: 0.85, corporalReach: 2, sergeantDamage: 300, maxBonus: 3 },
+} as const
+
+// 새4종 예고/소생 연출 보정값. 전투 판정에는 NEW_CARDS를 쓴다.
+export const NEW_CARD_FX = {
+  mortar: { color: 0xffe066, alpha: 0.6, lineW: 3, blastMs: 420, blastAlpha: 0.8 },
+  medic: { color: 0x66ff99, lineW: 3, alpha: 0.75 },
+} as const

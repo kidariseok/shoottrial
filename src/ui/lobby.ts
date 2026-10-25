@@ -1,11 +1,13 @@
 import { fetchAvailableAssets } from '../assets'
 import { playBgm, playSfx, setSettings, type SfxKey } from '../audio'
 import { defaultSave, load, save, type Save } from '../save'
+import { cardInfo, cardInfoDetail } from './screens'
 import {
   ALL_CARDS,
   formatBriefingText,
   getCardInitial,
   getCardName,
+  getCodexRows,
   loadAlarmFx,
   mergeUnlockedCards,
   sanitizeRookieName,
@@ -265,7 +267,10 @@ export async function showLobby(): Promise<void> {
 export function closePanel(): boolean {
   const was = panelOpen
   panelOpen = false
-  if (was) hideLobbyOverlay()
+  if (was) {
+    cardInfo(null)
+    hideLobbyOverlay()
+  }
   return was
 }
 
@@ -281,11 +286,25 @@ function codexBody(): HTMLElement {
   const grid = el('div', 'lobby-codex-grid')
   for (const cardKey of ALL_CARDS) {
     const on = unlocked.has(cardKey)
-    const item = el('div', `lobby-codex-card ${on ? 'unlocked' : 'locked'}`)
+    const item = el('button', `lobby-codex-card ${on ? 'unlocked' : 'locked'}`) as HTMLButtonElement
+    item.type = 'button'
+    item.disabled = !on
+    const icon = el('div', 'lobby-codex-icon', on ? getCardInitial(cardKey) : '🔒')
+    if (on) {
+      const image = document.createElement('img')
+      image.src = `/assets/card_${cardKey}.png`
+      image.alt = ''
+      image.addEventListener('error', () => image.remove(), { once: true })
+      icon.appendChild(image)
+      item.addEventListener('click', () => cardInfoDetail(cardKey, 1, {
+        name: cardKey === 'rifle' ? currentSave.name : undefined,
+        rows: getCodexRows(cardKey),
+      }))
+    }
     item.append(
-      el('div', 'lobby-codex-icon', on ? getCardInitial(cardKey) : '🔒'),
+      icon,
       el('div', 'lobby-codex-name', getCardName(cardKey)),
-      el('div', 'lobby-codex-sub', on ? '배치 가능' : '웨이브 5 도달로 해금')
+      el('div', 'lobby-codex-sub', on ? '인물 · 능력 보기' : '웨이브 5 도달로 해금')
     )
     grid.appendChild(item)
   }

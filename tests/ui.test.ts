@@ -5,6 +5,7 @@ import {
   readEffectiveSafeArea,
 } from '../src/device'
 import {
+  ALL_CARDS,
   canFireSupport,
   cloneHud,
   formatBriefingText,
@@ -12,6 +13,7 @@ import {
   getCharacterName,
   getCharacterIntro,
   getCardName,
+  getCodexRows,
   getRankBars,
   getRankName,
   isSameHud,
@@ -273,5 +275,55 @@ describe('T-112 인물 표시', () => {
     expect(getCharacterIntro('cook')).toBe('밥심을 믿는 취사반장')
     expect(getCharacterName('unknown')).toBe('unknown')
     expect(getCharacterIntro('unknown')).toBe('—')
+  })
+})
+
+describe('T-113 열 보직 도감', () => {
+  it('기존 여섯 종과 새 네 종을 빠짐없이 표시한다', () => {
+    expect(ALL_CARDS).toEqual(['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem', 'medic', 'mortar', 'antitank', 'signal'])
+    for (const [card, label, initial, name, intro] of [
+      ['medic', '의무병', '의', '윤의무', '아무도 두고 가지 않는 의무반'],
+      ['mortar', '박격포병', '박', '고박격', '좌표를 외워 두는 81mm 박격포 담당'],
+      ['antitank', '대전차병', '대', '남전차', '큰 것만 노리는 대전차 사수'],
+      ['signal', '통신병', '통', '송통신', '무전기를 끼고 사는 통신반'],
+    ] as const) {
+      expect(getCardName(card)).toBe(label)
+      expect(getCardInitial(card)).toBe(initial)
+      expect(getCharacterName(card, 1)).toBe(name)
+      expect(getCharacterName(card, 4)).toBe(`말년 ${name}`)
+      expect(getCharacterIntro(card)).toBe(intro)
+    }
+  })
+
+  it('도감 기준 수치는 실제 이등병이며 해금과 별도로 조회한다', () => {
+    for (const [card, hp, atk] of [
+      ['medic', '90', '0'], ['mortar', '70', '45'], ['antitank', '80', '100'], ['signal', '80', '0'],
+    ] as const) {
+      const rows = new Map(getCodexRows(card))
+      expect(rows.get('최대 HP')).toBe(hp)
+      expect(rows.get('직접 공격')).toBe(atk)
+      expect(rows.has('상병 능력')).toBe(false)
+      expect(rows.has('병장 능력')).toBe(false)
+      expect([...rows.values()].every((value) => typeof value === 'string' && !/undefined|NaN/.test(value))).toBe(true)
+    }
+    expect(mergeUnlockedCards(['rifle', 'blower', 'sniper'], null)).toEqual(['rifle', 'blower', 'sniper'])
+    expect(mergeUnlockedCards(['rifle', 'chem'], '["medic","signal"]')).toEqual(['rifle', 'chem', 'medic', 'signal'])
+  })
+
+  it('새 보직의 실제 역할 수치를 도감에 전달한다', () => {
+    const medic = new Map(getCodexRows('medic'))
+    expect(medic.get('소생 처치')).toBe('4초')
+    expect(medic.get('소생 HP')).toBe('30%')
+    expect(medic.get('소생 횟수')).toBe('웨이브 1회')
+    const mortar = new Map(getCodexRows('mortar'))
+    expect(mortar.get('사거리')).toBe('2~8칸')
+    expect(mortar.get('낙하 지연')).toBe('0.8초')
+    expect(mortar.get('폭발 반지름')).toBe('1칸')
+    expect(new Map(getCodexRows('antitank')).get('장갑 배율')).toBe('×2')
+    const signal = new Map(getCodexRows('signal'))
+    expect(signal.get('공격 간격')).toBe('직접 공격 없음')
+    expect(signal.get('아군 공격 간격')).toBe('×0.85')
+    expect(signal.get('지휘 범위')).toBe('1칸')
+    expect(signal.get('지원 보너스')).toContain('+1회')
   })
 })

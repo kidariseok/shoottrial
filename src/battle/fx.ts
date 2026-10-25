@@ -1,5 +1,5 @@
 import { BlendModes, type Scene, type GameObjects, type Types } from 'phaser'
-import { ART, FX, LAYOUT, UI } from '../data'
+import { ART, FX, NEW_CARD_FX, LAYOUT, UI } from '../data'
 import { playFx } from './art'
 
 // 도형·트윈·파티클만 쓰는 공통 연출. 피·시체 표현은 쓰지 않는다
@@ -224,4 +224,16 @@ export function colBand(scene: Scene, x: number, y0: number, y1: number, w: numb
 // 화상 불꽃: 그림이 있을 때만 그린다(도형 대체 없음)
 export function flame(scene: Scene, x: number, y: number): void {
   playFx(scene, 'fx_flame', x, y)
+}
+
+// 아군 박격포의 고정 탄착점. 게임 dt 예약이 지우므로 트윈·실시간 타이머를 쓰지 않는다.
+export function mortarWarning(scene: Scene, x: number, y: number, radius: number): GameObjects.Ellipse {
+  return scene.add.ellipse(x, y, radius * LAYOUT.cell * 2, radius * LAYOUT.cell * 2, NEW_CARD_FX.mortar.color, NEW_CARD_FX.mortar.alpha)
+    .setStrokeStyle(NEW_CARD_FX.mortar.lineW, NEW_CARD_FX.mortar.color, NEW_CARD_FX.mortar.alpha).setDepth(UI.fx.fxDepth)
+}
+
+// 소생 처치가 지속되는 동안의 연두 연결선. 취소·완료 때 호출자가 없앤다.
+export function medicChannel(scene: Scene, x0: number, y0: number, x1: number, y1: number): GameObjects.Line {
+  return scene.add.line(0, 0, x0, y0, x1, y1, NEW_CARD_FX.medic.color, NEW_CARD_FX.medic.alpha)
+    .setOrigin(0, 0).setLineWidth(NEW_CARD_FX.medic.lineW).setBlendMode(BlendModes.ADD).setDepth(UI.fx.fxDepth)
 }

@@ -825,6 +825,10 @@ export function confirmExit(onYes: () => void, onNo: () => void): void {
 }
 
 export function handleBack(onExit: () => void): void {
+  if (!currentCtl && refs && !refs.cardInfoBackdrop.classList.contains('hidden')) {
+    cardInfo(null)
+    return
+  }
   if (closePanel()) return
   if (currentCtl) {
     currentCtl.pause()

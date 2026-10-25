@@ -18,8 +18,8 @@ describe('특기 선택과 누적 계급', () => {
     expect(a).toEqual(unit(3, 'A')); expect(b).toEqual(unit(3, 'B'))
     expect(merge(unit(4), unit(4))).toBeNull()
   })
-  it('기존6종 인물과 특기12개·진급 대사18개만 제공한다', () => {
-    expect(CARD_KEYS).toHaveLength(6)
+  it('10종 인물과 특기20개·진급 대사30개를 제공한다', () => {
+    expect(CARD_KEYS).toHaveLength(10)
     for (const card of CARD_KEYS) {
       expect(CHARACTERS[card].quotes).toHaveLength(3)
       expect(Object.keys(SPECIALTIES[card])).toEqual(['A', 'B'])
