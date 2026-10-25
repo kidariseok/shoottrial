@@ -26,7 +26,7 @@
 - 작업 폴더: `/Users/jinseokoh/orca/workspaces/shoottrial/moonfish`. (`boxfish`·`tilefish` 등 다른 폴더는 Antigravity가 쓰던 것이고 병합돼 불필요하다.)
 - **main 병합 완료**: M2~M3, 전투 2.0, 최종 그림 35종, T-106 소리(#33), T-107 보상형 광고 테스트 ID(#34), T-109 걷는 생활관(#35).
 - **#36·#37 병합 확인 완료**(2026-10-25, GitHub 실제 조회). `origin/main` 기준 커밋 `f101faf9c0de`에서 T-111 브랜치 `kidariseok/t111-motion` 생성.
-- **T-111** 구현·검증 완료, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 사용자 병합 대기.
+- **T-111** 구현·검증 완료, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25).
 - 병합된 것을 확인하려면 `git fetch && gh pr list --state open`. 병합 뒤 새 작업은 **항상 `origin/main`에서 새 브랜치**(과거 사고: 21MB 원본 커밋 615683e가 history에 들어옴. 그 커밋이 있는 브랜치는 squash).
 - 에이전트는 병합 권한이 막혀 있다(권한 분류기가 거절). PR 링크를 사용자에게 준다.
 
@@ -35,8 +35,8 @@
 | 순서 | 일 | 상태·티켓 |
 |---|---|---|
 | 0 | 사용자가 #36·#37 병합 | 완료(실제 조회 확인) |
-| 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 사용자 병합 대기; 브랜치 `kidariseok/t111-motion`) |
-| 1' | **A-105 모션 그림**(62장: 필수 32 + 선택 30). 사용자가 만들어 `art/inbox/`에 넣는다 | `docs/tickets/A-105-motion-art.md`. 1묶음 32장 로컬 `art/inbox/` 대기. T-111 병합 후 별도 브랜치에서 처리 |
+| 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25); 브랜치 `kidariseok/t111-motion`) |
+| 1' | **A-105 모션 그림**(62장: 필수 32 + 선택 30). 사용자가 만들어 `art/inbox/`에 넣는다 | `docs/tickets/A-105-motion-art.md`. 1묶음32장 분리 수 정상, 처리 후 상태별 몸 크기 불일치 발견. `kidariseok/a105-motion-pack1`에서 도구 수정 범위 승인 대기(티켓 질문). 2묶음 제작 중 |
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | 티켓 아직 없음. §8의 설계 메모로 `T-112` 작성부터 |
 | 3 | **M6 단계 9: 새 카드 4종 구현** | 티켓 없음(`T-113`). 그림 A-104는 처리 완료(도형이 아니라 그림이 나온다) |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
@@ -96,3 +96,5 @@
 - 2026-10-25 15:38 (Codex, T-111 완료): 101키 계약·프레임 상한, 모션 연결·도형 폴백·갤러리 재생 완료. 재공격 예비 동작은 쿨다운에 연결해 피해/간격은 유지. 최종 `npm run verify`: 19파일 292테스트·실제 에셋47개 검사·빌드 통과(기존 번들 크기 경고). on/off/도형 각6장과 대표 Safe Area·대기·갤러리, 총21장 `docs/shots/T-111*.png`. 일시정지/배속·쓰러짐/복귀·군견 이동·드래그 확인. 선택 클립은 메모리 임시 텍스처로만 분기 검증, A-105 실제 그림 품질과 실기기는 미확인. 서버·브라우저 종료 후 완료 저장·PR 생성한다. ART §4와 TECH §9 수정은 사용자의 T-111 범위 승인에 근거한다. 다음: 사용자 PR 병합 → A-105 32장 처리 또는 T-112 계획(새 대화/브랜치).
 
 - 2026-10-25 (T-111 마무리): 완료 저장·push 성공. PR: https://github.com/kidariseok/shoottrial/pull/38 (병합하지 않음). 확인용 개발 서버와 브라우저 종료 완료.
+
+- 2026-10-25 (A-105 1묶음): #38 실제 병합 확인 후 origin/main 65b222a2f11e에서 `kidariseok/a105-motion-pack1` 시작. 32장과 홈 백업 해시 일치, 2묶음3장 별도 보존. 전체32장 읽기 전용 분리 측정은 프레임 수 정상. 소총수 실제 처리에서 대기96px→공격65px 축소 문제 발견: 기존 도구의 원본 배율 공유가 서로 다른 시트 원본 크기와 맞지 않는다. 부적합 결과는 원복, 원본32장은 inbox 유지. A-105 질문에 scripts/assets.mjs·tests/assets-pipeline.test.ts 소유 경로 확장 이유를 기록하고 승인 대기. 다음은 시트 간 몸 크기 보정(동작 내 비율은 유지) 후 캐릭터별 처리·검증·PR.

@@ -1,6 +1,6 @@
 # A-105 캐릭터 모션 확장 그림 (자연스러운 동작 + 동작 사이 연결)
 
-상태: 대기
+상태: 진행 중(1묶음 처리, 2묶음 제작 중)
 담당: 사용자 (ChatGPT 이미지 High 또는 Gemini Argon). 넣은 뒤 처리는 Claude/Codex가 한다.
 짝 티켓: `T-111-motion-engine.md`(코드). 그림이 없어도 T-111은 도형·변형 모션으로 먼저 동작하고, 그림이 들어오면 그대로 바뀐다.
 
@@ -97,6 +97,37 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 - 처리(`node scripts/assets.mjs`)는 **T-111이 프레임 상한을 늘린 뒤에** 된다(지금 도구는 아군 대기 2·공격 4·적 걷기 4까지만 받는다). 먼저 만든 그림은 `art/inbox/`에 쌓아 두면 된다.
 - `?scene=gallery`와 `?scene=battle`로 움직임을 확인하고, 어색한 시트만 다시 뽑는다.
 
+## 소유 경로
+
+- `public/assets/ally_*_idle.png`
+- `public/assets/ally_*_attack.png`
+- `public/assets/enemy_inf_*.png`
+- `public/assets/enemy_dog_*.png`
+- `public/assets/enemy_rpg_*.png`
+- `public/assets/index.json`
+- `art/LEDGER.json`
+- `art/inbox/`
+- `art/source/`
+- `docs/tickets/A-105-motion-art.md`
+- `docs/HANDOFF.md`
+- `docs/shots/A-105*.png`
+
+## 허용 의존성
+
+- 없음
+
+## 작업 계획
+
+1. 사용자 요청에 따라 1묶음 32개 키만 명시해 처리한다. `origin/main`에서 `kidariseok/a105-motion-pack1` 생성, #38 병합 및 프레임 상한 확인.
+2. 원본32장과 사용자 홈 폴더 백업의 해시를 비교하고, 2묶음 파일은 목록·해시를 따로 보존한다. 원본·백업은 커밋하지 않는다.
+3. 캐릭터마다 대기/이동 먼저, 공격/피격/쓰러짐 순으로 `node scripts/assets.mjs <키>` 실행. 결과 프레임 수와 발 기준선·상태 간 크기를 확인하고 캐릭터별로 사용자에게 보고한다. 실패 시 원인과 재제작 조건을 기록하며 같은 오류를 같은 방법으로 세 번 반복하지 않는다.
+4. `npm run verify`, `?scene=gallery`, `?scene=battle&wave=3&unlock=all&supply=99&seed=7`로 확인하고 사진을 남긴다. 신규 4종의 실제 전투 규칙은 T-113 전이므로 갤러리 재생까지 구분해 확인한다.
+5. 장부·이 티켓·HANDOFF에 성공/실패·수정 권장사항을 기록하고 자동 저장 도구로 저장·PR 생성한다. 1묶음 처리는 완료해도 2묶음은 제작 중 상태를 유지한다.
+
+## 질문
+
+- [ ] 처리 도구 수정 범위 승인 요청: `scripts/assets.mjs`와 `tests/assets-pipeline.test.ts`를 소유 경로에 추가해야 한다. 현재 도구는 캐릭터 대기/이동의 **원본 축소 비율**을 다른 시트에 그대로 적용한다. A-105는 프레임 수에 따라 원본 인물 크기가 달라 소총수가 대기96px→공격65px로 작아진다(다른 아군도 같은 문제, 적은 반대로 커짐). 새 시트의 첫/끝 대기 자세를 기준으로 **처리 후 몸 크기**를 맞추되, 쓰러짐·웅크림 같은 실제 동작은 시트 내 동일 배율로 보존하는 선택적 보정과 회귀 테스트가 필요하다. AGENTS.md 절대 규칙2에 따라 승인 전에는 도구를 수정하지 않는다.
+
 ## 진행 기록
 
 - 2026-10-25 (브랜치 `kidariseok/m6-chars`, Claude Code가 ChatGPT High로 대신 제작)
@@ -111,3 +142,15 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
   - 남은 이슈(작음): 제설병 공격 6번째 노즐 끝이 캔버스 끝에서 살짝 잘림 / 의무병 공격 1·6번 프레임에 손에 든 작은 구급함이 빠짐 / 군견 달리기 3번 프레임 붉은 눈 위치가 다름 / RPG병 쓰러짐 1·4번 프레임이 캔버스 가장자리에 닿음 / 지뢰설치병 대기 3번에 공중에 뜬 지뢰가 몸과 떨어져 있음.
   - 주의: `art/inbox/`와 `art/ref/`는 gitignore라 GitHub에 안 올라간다. 원본 PNG 백업은 이 컴퓨터의 `art/ref/a105/`(아군)와 스크래치패드뿐이므로, 컴퓨터가 지워지기 전에 T-111이 처리하거나 따로 백업할 것.
   - 다음: T-111이 프레임 상한을 늘린 뒤 `node scripts/assets.mjs` 처리 → `?scene=gallery`·`?scene=battle` 확인. 그 뒤 2묶음(피격·쓰러짐·진급 30장)은 사용자 판단.
+
+- 2026-10-25 (Codex, 1묶음 처리 시작)
+  - 기준 커밋: `65b222a2f11e` (`origin/main`, #38 실제 병합 확인).
+  - 브랜치: `kidariseok/a105-motion-pack1`.
+  - [x] 처리할32장과 홈 백업 경로 존재 확인, 대응 파일 해시 불일치 없음. 2묶음의 소총수 `hit/down/promote` 3장은 받은편지함에서 제외해 보존한다.
+  - 계획은 사용자의 1묶음 진행 요청에 따라 작성. 코드·규칙 변경 없이 기존 처리 도구를 사용한다.
+
+- 2026-10-25 (처리 도구 문제 발견, 범위 승인 대기)
+  - [x] 소총수 대기4·공격6 분리 성공. 결과 그림을 직접 열어 보니 공격 시 몸 높이가96→65px로 줄어 부적합.
+  - [x] 32장 전체를 읽기 전용으로 분리·측정: 모든 시트의 프레임 수는 티켓과 일치하며 분리 실패 없음. 아군 공격 첫 자세의 기존 배율 적용 시 높이: 소총수65·저격수66·취사병71·제설병72·지뢰설치병74·화학병72·의무병83·박격포병72·대전차병72·통신병77px(대기는 약93~96px). 적 공격/피격은 반대로 더 커지거나 캔버스 상한 때문에 추가 축소돼 상태별 크기가 달라진다.
+  - [x] 비교에서 발견한 부적합 출력2장은 origin/main 그림으로 되돌리고 장부·목록도 기준 상태로 복구. 소총수 원본2장은 art/inbox에 다시 복사해32장 모두 유지했다. 사용자의 홈 백업은 수정하지 않았다.
+  - 다음: `## 질문`의 scripts/assets.mjs·tests/assets-pipeline.test.ts 수정 범위 승인 후 크기 보정 구현·테스트 → 캐릭터별 처리·검증·보고. 2묶음 소총수 hit/down/promote3장은 미변경.
