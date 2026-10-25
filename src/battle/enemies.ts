@@ -2,7 +2,7 @@ import type { Scene, GameObjects } from 'phaser'
 import { ABILITY, ART, BATTLE, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
 import { motionPhase, artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
 import { debug } from '../debug'
-import { addSprite, setupMotion, moveMotion, leanMotion, hasArt, hitSprite, playAct, tickHit } from './art'
+import { addSprite, setupMotion, moveMotion, leanMotion, hasArt, hitSprite, playAct, anticipateMotion } from './art'
 import type { Board } from './board'
 import { comboText, dmgText, explosion, hitFlash, hitStop, laneFlash, shake } from './fx'
 import { damageAlly, type Ally } from './units'
@@ -104,7 +104,6 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
   for (const e of ctx.enemies) {
     if (e.hp <= 0 || e.gone) continue
     moveMotion(e.view, ENEMIES[e.type].speed, false)
-    tickHit(e.view, dt)
     const place = () => {
       const p = ctx.board.toScreen(e.col, e.y)
       e.view.y = p.y
@@ -150,6 +149,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       // 7. 교전 중이면 충격파(보스) 후 공격 준비
       if (e.type === 'boss') shockwave(ctx, e)
       e.ready += dt
+      anticipateMotion(e.view, ENEMIES[e.type].interval - e.ready, ENEMIES[e.type].interval)
       if (e.ready >= ENEMIES[e.type].interval) {
         e.ready -= ENEMIES[e.type].interval
         damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)

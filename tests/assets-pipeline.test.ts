@@ -111,7 +111,6 @@ describe('H-102 에셋 파이프라인 및 계약 검사 (scripts/assets.mjs, sc
       ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_idle.png'), createTwoSoldierIdleSheet())
       ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_attack.png'), createIrregularThreeSoldierSheet())
       ws.writePng(ws.joinPath(ws.inboxDir, 'fx_muzzle.png'), readFixturePng('source/fx_muzzle/sheet.png'))
-      ws.writeJson(ws.joinPath(ws.inboxDir, 'fx_muzzle.json'), { split: 'even' })
       const results = processAllAssets({
         rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir,
         outAssetsDir: ws.outAssetsDir, ledgerPath: ws.ledgerPath, indexPath: ws.indexPath,

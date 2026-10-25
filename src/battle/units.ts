@@ -2,7 +2,7 @@ import { BlendModes, type Scene, type GameObjects } from 'phaser'
 import { ABILITY, CARDS, CARD_KEYS, COMBAT, FX, LAYOUT, UI, type CardKey } from '../data'
 import { allyDamageTaken, allyY, artKey, blowerCone, blowerRange, chemDamageMult, cookReach, dist, gasHits, healOrder, interval, knockback, onRay, pickTarget, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
-import { downMotion, hitSprite, playAct, restoreMotion, tickHit } from './art'
+import { anticipateMotion, downMotion, hitSprite, playAct, restoreMotion } from './art'
 import { hurtEnemy, type Enemy } from './enemies'
 import { burst, dmgText, flame, healText, hitFlash, muzzle, reviveFlash, shake, snipeLine, tracer, windWave } from './fx'
 
@@ -132,7 +132,6 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
   const chems = chemsOf(allies)
   for (const a of allies) {
     const c = a.combat
-    tickHit(a.view, dt)
     if (a.taunt && c.alive) ensureRing(a)
     if (!c.alive) continue
     if (c.stun > 0) {
@@ -140,9 +139,10 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
       continue
     }
     c.cd = Math.max(0, c.cd - dt)
-    if (c.cd > 0) continue
     const { card, rank } = a.unit
     const iv = interval(card, rank, counts[card], ctx.defcon1, gasHits(ctx.gas, chems, a.col, a.row))
+    anticipateMotion(a.view, c.cd, iv)
+    if (c.cd > 0) continue
     const mx = a.view.x
     const my = a.view.y - UI.fx.muzzleDy
     const act = () => playAct(a.view, artKey('ally', card, 'attack'), iv) // 공격하는 순간 1회 재생
