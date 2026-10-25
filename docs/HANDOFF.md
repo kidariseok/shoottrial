@@ -1,7 +1,7 @@
 # 인계 문서 (Claude Code → Codex 등 다른 에이전트)
 
 > 이 문서는 **작업자가 바뀌어도 이어갈 수 있게** 지금 상태·다음 할 일·함정을 적는다. 작업 단계를 끝낼 때마다 갱신한다.
-> 마지막 갱신: 2026-10-24 밤(Claude Code 사용량 소진 직전, **Codex 인수 준비 완료**). 갱신 로그는 맨 아래.
+> 마지막 갱신: 2026-10-25(Codex, T-111 완료·PR #38 생성). 갱신 로그는 맨 아래.
 > **Codex에게 시키는 프롬프트는 `docs/CODEX-START.md`에 있다.**
 
 ## 0. 먼저 읽을 것 (순서대로)
@@ -25,7 +25,8 @@
 - 저장소: `kidariseok/shoottrial`(**공개**). 키·토큰·키스토어·테스터 이메일·그림 원본 PNG를 커밋하지 않는다.
 - 작업 폴더: `/Users/jinseokoh/orca/workspaces/shoottrial/moonfish`. (`boxfish`·`tilefish` 등 다른 폴더는 Antigravity가 쓰던 것이고 병합돼 불필요하다.)
 - **main 병합 완료**: M2~M3, 전투 2.0, 최종 그림 35종, T-106 소리(#33), T-107 보상형 광고 테스트 ID(#34), T-109 걷는 생활관(#35).
-- **열린 PR(사용자 병합 대기)**: **#36** T-110 전투 화면 UI(시안 A), **#37** M6 설계(GDD·A-104 티켓·카드 키 88개) + A-104 그림 12장 처리 + A-105/T-111 티켓. #37 브랜치(`kidariseok/m6-chars`)는 #36을 이미 합쳐 두었다. **#36→#37 순서로 병합**한다.
+- **#36·#37 병합 확인 완료**(2026-10-25, GitHub 실제 조회). `origin/main` 기준 커밋 `f101faf9c0de`에서 T-111 브랜치 `kidariseok/t111-motion` 생성.
+- **T-111** 구현·검증 완료, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 사용자 병합 대기.
 - 병합된 것을 확인하려면 `git fetch && gh pr list --state open`. 병합 뒤 새 작업은 **항상 `origin/main`에서 새 브랜치**(과거 사고: 21MB 원본 커밋 615683e가 history에 들어옴. 그 커밋이 있는 브랜치는 squash).
 - 에이전트는 병합 권한이 막혀 있다(권한 분류기가 거절). PR 링크를 사용자에게 준다.
 
@@ -33,9 +34,9 @@
 
 | 순서 | 일 | 상태·티켓 |
 |---|---|---|
-| 0 | 사용자가 #36·#37 병합 | 사용자 |
-| 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(티켓 작성 완료, 시작 전) |
-| 1' | **A-105 모션 그림**(62장: 필수 32 + 선택 30). 사용자가 만들어 `art/inbox/`에 넣는다 | `docs/tickets/A-105-motion-art.md`. 처리는 T-111의 상한 확장 뒤 |
+| 0 | 사용자가 #36·#37 병합 | 완료(실제 조회 확인) |
+| 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 사용자 병합 대기; 브랜치 `kidariseok/t111-motion`) |
+| 1' | **A-105 모션 그림**(62장: 필수 32 + 선택 30). 사용자가 만들어 `art/inbox/`에 넣는다 | `docs/tickets/A-105-motion-art.md`. 1묶음 32장 로컬 `art/inbox/` 대기. T-111 병합 후 별도 브랜치에서 처리 |
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | 티켓 아직 없음. §8의 설계 메모로 `T-112` 작성부터 |
 | 3 | **M6 단계 9: 새 카드 4종 구현** | 티켓 없음(`T-113`). 그림 A-104는 처리 완료(도형이 아니라 그림이 나온다) |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
@@ -48,7 +49,7 @@
 
 ## 5. 검증과 확인 방법
 
-- `npm run verify`(타입체크 + vitest + assets:check + build). 지금 285 테스트. **돌리지 않은 검증을 했다고 쓰지 않는다.**
+- `npm run verify`(타입체크 + vitest + assets:check + build). T-111에서 292 테스트. **돌리지 않은 검증을 했다고 쓰지 않는다.**
 - 화면 확인: 개발 서버 `npx vite --port 5199`, 브라우저로 `http://localhost:5199/?scene=battle&wave=7&unlock=all&supply=99&seed=42`. 걷는 생활관은 `?scene=walk`(+`&zones=1`). 디버그 URL 표는 `docs/TECH.md` §9. 확인이 끝나면 **서버·브라우저를 끈다**(사용자 노트북이 느려짐).
 - 개발 서버에서 JS로 게임에 접근할 때는 `performance.getEntriesByType('resource')`의 `/src/main.ts?t=…` 주소를 그대로 `import()`해야 한다(다른 주소면 Game이 하나 더 생겨 캔버스 2개가 된다).
 - 안드로이드: `export ANDROID_HOME=~/Library/Android/sdk`, AVD `Medium_Phone_API_37.0`, `emulator -avd Medium_Phone_API_37.0 -no-snapshot -no-audio -no-window -memory 2048`(nohup, 백그라운드), 부팅 후 `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`(빌드: `cd android && JAVA_HOME=<temurin-21> ./gradlew assembleDebug`, 웹 변경은 `npx cap sync android` 먼저). **첫 부팅에 "System UI isn't responding"가 뜨면 Wait를 누른다.** 확인 뒤 `adb emu kill`. 에뮬레이터 확인은 최종 단계에서만.
@@ -77,7 +78,7 @@
 
 - **카드 키**: `src/data.ts`의 `CARD_KEYS`·`CARDS`(새 4종 추가: `medic`, `mortar`, `antitank`, `signal`), `SYNERGY`, `src/ui/helpers.ts`의 `CARD_META`·`ALL_CARDS`. 그림 계약은 이미 `src/assets.ts`의 `CARDS`에 새 4종이 들어 있다.
 - **특기(일병 선택)**: 유닛에 `spec?: 'A' | 'B'`를 더한다. 합성 규칙은 `rules.ts`(합성 순수 함수), 저장·복원은 `src/battle/persist.ts`, 합성 UI 흐름은 `src/battle/board.ts`와 `src/ui/screens.ts`(선택 모달은 새 `BattleCtl`/`Hud` 필드가 필요하면 `docs/TECH.md` §8을 함께 고친다). 특기 효과 수치는 `data.ts`의 새 표 하나에 모은다(GDD §5.3 표 그대로).
-- **진급 연출·칭호·대사**: 계급 링·후광·오라는 코드 도형, 대사 30개는 GDD §5.3 표 그대로를 `data.ts`에 둔다. 진급 지점의 연결 함수는 T-111이 `promoteFx(view, rank)`로 열어 둔다.
+- **진급 연출·칭호·대사**: 계급 링·후광·오라는 코드 도형, 대사 30개는 GDD §5.3 표 그대로를 `data.ts`에 둔다. 진급 지점의 연결 함수는 T-111이 `promoteMotion(view, rank)`(`src/battle/art.ts`)로 열어 둔다.
 - **해금 순서**: `rules.ts`의 `mergeUnlocked`/`afterRun`(`grep`으로 찾는다)과 `save.ts`의 해금 목록. 순서는 GDD §7.
 - **새 카드 동작**: `src/battle/units.ts`의 카드별 `switch`에 `medic`(소생), `mortar`(2~8칸 지연 낙하 원형 피해), `antitank`(장갑 ×2), `signal`(인접 간격 −15% 오라, 화력 지원 +1)를 더한다. 쓰러진 아군은 "그 웨이브 동안 쓰러져 있다"는 기존 규칙(GDD §4)을 의무병이 되돌린다.
 - **테스트**: 특기와 새 카드의 수치 규칙은 `tests/rules-*.test.ts`에 순수 함수로(GDD 표와 1:1).
@@ -87,3 +88,11 @@
 
 - 2026-10-24: 최초 작성. T-109(걷는 생활관)·T-110(전투 UI) 완료·PR. M6(캐릭터 확장) 승인: 새 카드 4종, 일병 특기 선택, 계급 연출, 인물·대사. GDD 개정, A-104 그림 티켓, 카드 키 계약 88개.
 - 2026-10-24 밤: A-104 그림 16장 완료(ChatGPT High, 12장 처리). 사용자가 구글 콘솔 연결을 뒤로 미루고 "캐릭터 모션 확장"을 요청 → `A-105`(그림 62장)·`T-111`(코드) 티켓 작성. Claude 사용량 소진 직전이라 이 문서를 Codex 인수용으로 전면 갱신, `docs/CODEX-START.md`(시작 프롬프트) 추가. 열린 PR #36, #37.
+
+- 2026-10-25 (Codex): #36·#37 실제 병합 및 열린 PR 없음 확인. `origin/main` f101faf9c0de에서 `kidariseok/t111-motion` 생성. T-111 작업 계획 작성; 코드·그림 처리 전 승인 대기. AGENTS의 레인/읽기 전용 제한과 티켓의 지시 충돌 및 TECH 소유 경로 누락을 티켓 질문에 기록. `npm run verify` 미실행. 다음: 계획 및 범위 승인 후 기준선 검증.
+
+- 2026-10-25 (Codex, T-111): 사용자 계획/범위 승인 후 프레임 계약 101키, 몸 모션 및 갤러리 재생 구현. `npm run verify` 292테스트·assets:check 47개·빌드 통과. A-105 32장 원본은 처리하지 않았음. 다음은 비교 캡처·도형/일시정지/배속/쓰러짐/군견 이동 확인·코드 검토·PR. 사용자 인증 리팩터링 병렬 분담 요청은 대상 저장소/티켓 확인 중.
+
+- 2026-10-25 15:38 (Codex, T-111 완료): 101키 계약·프레임 상한, 모션 연결·도형 폴백·갤러리 재생 완료. 재공격 예비 동작은 쿨다운에 연결해 피해/간격은 유지. 최종 `npm run verify`: 19파일 292테스트·실제 에셋47개 검사·빌드 통과(기존 번들 크기 경고). on/off/도형 각6장과 대표 Safe Area·대기·갤러리, 총21장 `docs/shots/T-111*.png`. 일시정지/배속·쓰러짐/복귀·군견 이동·드래그 확인. 선택 클립은 메모리 임시 텍스처로만 분기 검증, A-105 실제 그림 품질과 실기기는 미확인. 서버·브라우저 종료 후 완료 저장·PR 생성한다. ART §4와 TECH §9 수정은 사용자의 T-111 범위 승인에 근거한다. 다음: 사용자 PR 병합 → A-105 32장 처리 또는 T-112 계획(새 대화/브랜치).
+
+- 2026-10-25 (T-111 마무리): 완료 저장·push 성공. PR: https://github.com/kidariseok/shoottrial/pull/38 (병합하지 않음). 확인용 개발 서버와 브라우저 종료 완료.

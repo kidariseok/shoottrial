@@ -571,7 +571,7 @@ export function frameCount(imgW: number, contractW: number): number {
 export function artKey(kind: 'ally' | 'enemy' | 'boss', who: string, state: string): string {
   if (kind === 'enemy') {
     const e = ART.enemy[who as keyof typeof ART.enemy]
-    return `enemy_${e.id}_${state === 'act' ? e.act : e.move}`
+    return `enemy_${e.id}_${state === 'act' ? e.act : state === 'move' ? e.move : state}`
   }
   return `${kind}_${who}_${state}`
 }
@@ -579,4 +579,23 @@ export function artKey(kind: 'ally' | 'enemy' | 'boss', who: string, state: stri
 // 반복 재생하는 애니메이션 키(대기·걷기·달리기·가스). 나머지는 1회
 export function artLoops(key: string): boolean {
   return ART.loopKeys.includes(key) || ART.loopSuffix.some((s) => key.endsWith(s))
+}
+
+// 동작 프레임을 정해진 초 안에 끝내며, 빠른 공격도 다음 쿨다운 전에 대기로 돌아간다.
+export function clipFps(frames: number, seconds: number): number {
+  return Math.max(1, frames) / Math.max(ART.fps.minClipSec, seconds)
+}
+
+export function walkFps(speed: number): number {
+  return Math.max(ART.fps.minWalk, Math.max(0, speed) * ART.fps.walkPerSpeed)
+}
+
+export function motionEnabled(value: string | null): boolean {
+  return value !== '0'
+}
+
+// 전투 난수 스트림을 소비하지 않는 시드 기반 위상. 동일 카드끼리도 숨쉬기가 어긋난다.
+export function motionPhase(seed: number, index: number): number {
+  const phase = (seed + ART.motion.seedSalt) * ART.motion.phaseStep + index * ART.motion.phaseStep
+  return phase - Math.floor(phase)
 }

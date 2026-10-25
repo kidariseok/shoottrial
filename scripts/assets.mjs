@@ -24,16 +24,12 @@ export const DEFAULT_FRINGE_PASSES = 3
  * 최소 프레임 수(frames)와 크기(w, h)는 src/assets.ts에서 파싱한다.
  */
 function getMaxFrames(key, minFrames) {
-  if (/^ally_.*_idle$/.test(key) || /^ally_.*_down$/.test(key) || key === 'boss_apc_hull') {
-    return 2
-  }
-  if (/^ally_.*_attack$/.test(key) || /^enemy_(inf|rpg)_walk$/.test(key) || key === 'enemy_dog_run') {
-    return 4
-  }
-  if (key === 'enemy_inf_attack' || key === 'enemy_rpg_fire' || /^enemy_.*_down$/.test(key)) {
-    return 3
-  }
-  return minFrames
+  if (/^ally_.*_(idle|attack)$/.test(key)) return 6
+  if (/^(ally|enemy)_.*_hit$/.test(key)) return 3
+  if (/^ally_.*_(down|promote)$/.test(key)) return 4
+  if (/^enemy_.*_(walk|run)$/.test(key)) return 8
+  if (/^enemy_.*_(attack|bite|fire|down)$/.test(key)) return 5
+  return key === 'boss_apc_hull' ? 2 : minFrames
 }
 
 /**

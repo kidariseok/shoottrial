@@ -6,6 +6,7 @@ export interface AssetContract {
   w: number
   h: number
   frames: number
+  maxFrames?: number
   color: string
   label: string
 }
@@ -16,10 +17,11 @@ function makeAllyContracts(): AssetContract[] {
   const contracts: AssetContract[] = []
   for (const c of CARDS) {
     contracts.push(
-      { key: `ally_${c}_idle`, w: 128, h: 128, frames: 1, color: '#4b5320', label: `ally_${c}_idle` },
-      { key: `ally_${c}_attack`, w: 128, h: 128, frames: 2, color: '#606b29', label: `ally_${c}_attack` },
+      { key: `ally_${c}_idle`, w: 128, h: 128, frames: 2, color: '#4b5320', label: `ally_${c}_idle` },
+      { key: `ally_${c}_attack`, w: 128, h: 128, frames: 3, color: '#606b29', label: `ally_${c}_attack` },
       { key: `ally_${c}_hit`, w: 128, h: 128, frames: 1, color: '#e0e0e0', label: `ally_${c}_hit` },
       { key: `ally_${c}_down`, w: 128, h: 128, frames: 1, color: '#707070', label: `ally_${c}_down` },
+      { key: `ally_${c}_promote`, w: 128, h: 128, frames: 4, color: '#c9b56c', label: `ally_${c}_promote` },
       { key: `card_${c}`, w: 256, h: 320, frames: 1, color: '#2b3e50', label: `card_${c}` },
       { key: `icon_${c}`, w: 64, h: 64, frames: 1, color: '#3a536b', label: `icon_${c}` },
     )
@@ -30,12 +32,15 @@ function makeAllyContracts(): AssetContract[] {
 const ENEMY_CONTRACTS: AssetContract[] = [
   { key: 'enemy_inf_walk', w: 128, h: 128, frames: 2, color: '#8b0000', label: 'enemy_inf_walk' },
   { key: 'enemy_inf_attack', w: 128, h: 128, frames: 2, color: '#a52a2a', label: 'enemy_inf_attack' },
+  { key: 'enemy_inf_hit', w: 128, h: 128, frames: 2, color: '#e0e0e0', label: 'enemy_inf_hit' },
   { key: 'enemy_inf_down', w: 128, h: 128, frames: 1, color: '#696969', label: 'enemy_inf_down' },
   { key: 'enemy_dog_run', w: 128, h: 128, frames: 2, color: '#8b4513', label: 'enemy_dog_run' },
   { key: 'enemy_dog_bite', w: 128, h: 128, frames: 2, color: '#a0522d', label: 'enemy_dog_bite' },
+  { key: 'enemy_dog_hit', w: 128, h: 128, frames: 2, color: '#e0e0e0', label: 'enemy_dog_hit' },
   { key: 'enemy_dog_down', w: 128, h: 128, frames: 1, color: '#696969', label: 'enemy_dog_down' },
   { key: 'enemy_rpg_walk', w: 128, h: 128, frames: 2, color: '#b22222', label: 'enemy_rpg_walk' },
   { key: 'enemy_rpg_fire', w: 128, h: 128, frames: 2, color: '#cd5c5c', label: 'enemy_rpg_fire' },
+  { key: 'enemy_rpg_hit', w: 128, h: 128, frames: 2, color: '#e0e0e0', label: 'enemy_rpg_hit' },
   { key: 'enemy_rpg_down', w: 128, h: 128, frames: 1, color: '#696969', label: 'enemy_rpg_down' },
   { key: 'boss_apc_hull', w: 256, h: 256, frames: 1, color: '#4a5d4e', label: 'boss_apc_hull' },
   { key: 'boss_apc_turret', w: 128, h: 128, frames: 1, color: '#3b493e', label: 'boss_apc_turret' },
@@ -61,11 +66,21 @@ const FX_AND_BOARD_CONTRACTS: AssetContract[] = [
   { key: 'tile_hover', w: 128, h: 128, frames: 1, color: '#3e4e5e', label: 'tile_hover' },
 ]
 
+// 처리 도구의 getMaxFrames와 같은 상한. 단일 정적 그림은 기존 최소치를 유지한다.
+export function maxAssetFrames(key: string, minimum: number): number {
+  if (/^ally_.*_(idle|attack)$/.test(key)) return 6
+  if (/^(ally|enemy)_.*_hit$/.test(key)) return 3
+  if (/^ally_.*_(down|promote)$/.test(key)) return 4
+  if (/^enemy_.*_(walk|run)$/.test(key)) return 8
+  if (/^enemy_.*_(attack|bite|fire|down)$/.test(key)) return 5
+  return key === 'boss_apc_hull' ? 2 : minimum
+}
+
 export const ASSET_CONTRACTS: AssetContract[] = [
   ...makeAllyContracts(),
   ...ENEMY_CONTRACTS,
   ...FX_AND_BOARD_CONTRACTS,
-]
+].map((c) => ({ ...c, maxFrames: maxAssetFrames(c.key, c.frames) }))
 
 export const invalidTextures = new Set<string>()
 
@@ -141,7 +156,7 @@ export function validateLoadedTexture(scene: Scene, contract: AssetContract): bo
     console.warn(`[Assets] ${contract.key} height mismatch: expected ${contract.h}, got ${h}`)
     valid = false
   }
-  if (w % contract.w !== 0 || w < contract.w * contract.frames) {
+  if (w % contract.w !== 0 || w < contract.w * contract.frames || w > contract.w * (contract.maxFrames ?? contract.frames)) {
     console.warn(`[Assets] ${contract.key} width mismatch: expected multiple of ${contract.w} (min ${contract.w * contract.frames}), got ${w}`)
     valid = false
   }
