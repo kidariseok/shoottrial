@@ -8,24 +8,28 @@ describe('에셋 계약 표 (docs/ART.md §4)', () => {
     expect(set.size).toBe(keys.length)
   })
 
-  it('아군 10종 카드(rifle, sniper, blower, cook, miner, chem + M6 medic, mortar, antitank, signal)의 6개 키가 모두 존재한다', () => {
+  it('아군 10종 카드(rifle, sniper, blower, cook, miner, chem + M6 medic, mortar, antitank, signal)의 7개 키가 모두 존재한다', () => {
     const keys = new Set(ASSET_CONTRACTS.map((c) => c.key))
     for (const card of CARDS) {
       expect(keys.has(`ally_${card}_idle`)).toBe(true)
       expect(keys.has(`ally_${card}_attack`)).toBe(true)
       expect(keys.has(`ally_${card}_hit`)).toBe(true)
       expect(keys.has(`ally_${card}_down`)).toBe(true)
+      expect(keys.has(`ally_${card}_promote`)).toBe(true)
       expect(keys.has(`card_${card}`)).toBe(true)
       expect(keys.has(`icon_${card}`)).toBe(true)
     }
   })
 
-  it('적 키 11종이 모두 존재한다', () => {
+  it('적 키 14종이 모두 존재한다', () => {
     const keys = new Set(ASSET_CONTRACTS.map((c) => c.key))
     const expectedEnemies = [
       'enemy_inf_walk',
       'enemy_inf_attack',
       'enemy_inf_down',
+      'enemy_inf_hit',
+      'enemy_dog_hit',
+      'enemy_rpg_hit',
       'enemy_dog_run',
       'enemy_dog_bite',
       'enemy_dog_down',
@@ -65,8 +69,8 @@ describe('에셋 계약 표 (docs/ART.md §4)', () => {
     }
   })
 
-  it('총 키 개수가 88개이고 모든 규격(w, h, frames)이 유효하다', () => {
-    expect(ASSET_CONTRACTS.length).toBe(88)
+  it('총 키 개수가 101개이고 모든 규격(w, h, frames)이 유효하다', () => {
+    expect(ASSET_CONTRACTS.length).toBe(101)
     for (const item of ASSET_CONTRACTS) {
       expect(item.w).toBeGreaterThan(0)
       expect(item.h).toBeGreaterThan(0)

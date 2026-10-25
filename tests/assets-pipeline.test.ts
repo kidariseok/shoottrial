@@ -17,6 +17,7 @@ import {
   generateFixtures,
   getPixel,
   loadAssetContracts,
+  mergeFramesToSheet,
   processAllAssets,
   processAssetKey,
   readFixturePng,
@@ -32,7 +33,7 @@ describe('H-102 에셋 파이프라인 및 계약 검사 (scripts/assets.mjs, sc
     generateFixtures(FIXTURES_DIR)
   })
 
-  it('src/assets.ts에서 계약 표 63개 키를 중복·복사 없이 정확히 파싱한다', () => {
+  it('src/assets.ts에서 계약 표 101개 키를 중복·복사 없이 정확히 파싱한다', () => {
     const parsed = loadAssetContracts(ROOT_DIR)
     expect(parsed.length).toBe(ASSET_CONTRACTS.length)
     for (let i = 0; i < ASSET_CONTRACTS.length; i++) {
@@ -42,6 +43,7 @@ describe('H-102 에셋 파이프라인 및 계약 검사 (scripts/assets.mjs, sc
       expect(actual.w).toBe(expected.w)
       expect(actual.h).toBe(expected.h)
       expect(actual.frames).toBe(expected.frames)
+      expect(actual.maxFrames).toBe(expected.maxFrames)
     }
   })
 
@@ -105,22 +107,24 @@ describe('H-102 에셋 파이프라인 및 계약 검사 (scripts/assets.mjs, sc
 
   it('전체 변환(processAllAssets) 후 index.json·LEDGER.json이 갱신되고 assets:check를 통과한다', () => {
     withTempWorkspace((ws) => {
+      // 최소 프레임 계약에 맞춘 테스트 원본을 임시 작업 폴더에만 만든다.
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_idle.png'), createTwoSoldierIdleSheet())
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_attack.png'), createIrregularThreeSoldierSheet())
+      ws.writePng(ws.joinPath(ws.inboxDir, 'fx_muzzle.png'), readFixturePng('source/fx_muzzle/sheet.png'))
+      ws.writeJson(ws.joinPath(ws.inboxDir, 'fx_muzzle.json'), { split: 'even' })
       const results = processAllAssets({
-        rootDir: ROOT_DIR,
-        sourceDir: `${FIXTURES_DIR}/source`,
-        outAssetsDir: ws.outAssetsDir,
-        ledgerPath: ws.ledgerPath,
-        indexPath: ws.indexPath,
+        rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir,
+        outAssetsDir: ws.outAssetsDir, ledgerPath: ws.ledgerPath, indexPath: ws.indexPath,
       })
 
       expect(results.length).toBe(3)
 
       const riflePng = readPngFile(ws.joinPath(ws.outAssetsDir, 'ally_rifle_idle.png'))
-      expect(riflePng.width).toBe(128)
+      expect(riflePng.width).toBe(256)
       expect(riflePng.height).toBe(128)
 
       const attackPng = readPngFile(ws.joinPath(ws.outAssetsDir, 'ally_rifle_attack.png'))
-      expect(attackPng.width).toBe(256)
+      expect(attackPng.width).toBe(384)
       expect(attackPng.height).toBe(128)
 
       const muzzlePng = readPngFile(ws.joinPath(ws.outAssetsDir, 'fx_muzzle.png'))
@@ -285,9 +289,9 @@ describe('H-103 에셋 받은편지함: 자동 분리 및 자동 축소 5종 테
 
   it('4) 덩어리 수가 허용 프레임 범위 밖이거나 계약에 없는 키이면 상세 정보와 함께 실패한다', () => {
     withTempWorkspace((ws) => {
-      // ally_rifle_idle은 1~2프레임만 허용하는데 5덩어리 시트를 넣음
+      // 아군 피격은 1~3프레임만 허용하는데 5덩어리 시트를 넣음
       const fiveChunk = createFiveChunkSheet()
-      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_idle.png'), fiveChunk)
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_hit.png'), fiveChunk)
 
       expect(() =>
         processAllAssets({
@@ -298,7 +302,7 @@ describe('H-103 에셋 받은편지함: 자동 분리 및 자동 축소 5종 테
           ledgerPath: ws.ledgerPath,
           indexPath: ws.indexPath,
         })
-      ).toThrow(/5덩어리.*1~2.*15\.\.74/)
+      ).toThrow(/5덩어리.*1~3.*15\.\.74/)
     })
 
     withTempWorkspace((ws) => {
@@ -352,5 +356,31 @@ describe('H-103 에셋 받은편지함: 자동 분리 및 자동 축소 5종 테
       const cornerPx = getPixel(outBg, 10, 10)
       expect(cornerPx.a).toBe(255)
     })
+  })
+})
+
+
+describe('T-111 모션 프레임 상한', () => {
+  it('6프레임 대기 시트를 처리하고 결과 계약 검사도 통과한다', () => {
+    withTempWorkspace((ws) => {
+      const sheet = createTwoSoldierIdleSheet()
+      // 두 프레임 시트 세 장을 가로로 이어 붙여 실제 처리 입력을 만든다.
+      const six = createMagentaBackgroundFixture(sheet.width * 3, sheet.height)
+      for (let y = 0; y < sheet.height; y++) {
+        const row = sheet.data.subarray(y * sheet.width * 4, (y + 1) * sheet.width * 4)
+        for (let i = 0; i < 3; i++) six.data.set(row, (y * six.width + i * sheet.width) * 4)
+      }
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_rifle_idle.png'), six)
+      const options = { rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir, outAssetsDir: ws.outAssetsDir, ledgerPath: ws.ledgerPath, indexPath: ws.indexPath }
+      const res = processAssetKey('ally_rifle_idle', options)
+      expect(res.frames).toBe(6)
+      expect(checkAssets({ rootDir: ROOT_DIR, assetsDir: ws.outAssetsDir, ledgerPath: ws.ledgerPath, indexPath: ws.indexPath }).ok).toBe(true)
+    })
+  })
+  it('대기 7프레임은 상한 초과로 거절한다', () => {
+    const contract = loadAssetContracts(ROOT_DIR).find((c) => c.key === 'ally_rifle_idle')!
+    const sheet = createMagentaBackgroundFixture(128, 128)
+    // 처리 파이프라인의 최종 병합에서도 범위를 검사한다.
+    expect(() => mergeFramesToSheet(Array(7).fill(sheet), contract)).toThrow('계약 범위(2~6)')
   })
 })

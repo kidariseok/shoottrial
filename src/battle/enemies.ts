@@ -1,7 +1,8 @@
 import type { Scene, GameObjects } from 'phaser'
 import { ABILITY, ART, BATTLE, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
-import { artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
-import { addSprite, hasArt, hitSprite, playAct, tickHit } from './art'
+import { motionPhase, artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
+import { debug } from '../debug'
+import { addSprite, setupMotion, moveMotion, leanMotion, hasArt, hitSprite, playAct, tickHit } from './art'
 import type { Board } from './board'
 import { comboText, dmgText, explosion, hitFlash, hitStop, laneFlash, shake } from './fx'
 import { damageAlly, type Ally } from './units'
@@ -61,6 +62,11 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
     if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
     view.add(body)
   }
+  view.setData('base', key)
+  const serial = (scene.data.get('motionSerial') as number | undefined) ?? 0
+  scene.data.set('motionSerial', serial + 1)
+  setupMotion(view, key, motionPhase(debug.seed, serial), 1)
+  moveMotion(view, ENEMIES[ev.type].speed, true)
   // 취약 표식: 체력바 위 붉은 아래 화살표(코드 도형). 취약 시간 동안 깜빡인다
   const { w, h, color, gap } = FX.vuln
   const mark = scene.add
@@ -97,6 +103,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
   const reached: Enemy[] = []
   for (const e of ctx.enemies) {
     if (e.hp <= 0 || e.gone) continue
+    moveMotion(e.view, ENEMIES[e.type].speed, false)
     tickHit(e.view, dt)
     const place = () => {
       const p = ctx.board.toScreen(e.col, e.y)
@@ -132,7 +139,9 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       e.dogMoved = true
       const counts = Array<number>(LAYOUT.cols).fill(0)
       for (const a of ctx.allies) if (a.alive) counts[a.col] = (counts[a.col] ?? 0) + 1
+      const oldCol = e.col
       e.col = pickDogLane(e.col, counts, ctx.dogRand)
+      leanMotion(e.view, e.col - oldCol)
       ctx.scene.tweens.add({ targets: e.view, x: ctx.board.toScreen(e.col, e.y).x, duration: DOG.laneMs })
     }
     // 6. 교전 판정: 근접 거리(RPG병은 사거리) 안 아군 중 도발 우선, 가까운 순. 없으면 계속 걷는다
@@ -145,10 +154,11 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
         e.ready -= ENEMIES[e.type].interval
         damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)
         if (e.type === 'rpg') explosion(ctx.scene, foe.view.x, foe.view.y) // RPG 폭발
-        if (e.type !== 'boss') playAct(e.view, artKey('enemy', e.type, 'act')) // 때리는 순간 1회. 보스는 공격 그림이 없어 건너뛴다(없는 키로 artKey가 던지는 것을 막는다)
+        if (e.type !== 'boss') playAct(e.view, artKey('enemy', e.type, 'act'), ENEMIES[e.type].interval) // 때리는 순간 1회. 보스는 공격 그림이 없어 건너뛴다(없는 키로 artKey가 던지는 것을 막는다)
       }
     } else {
       e.ready = 0
+      moveMotion(e.view, ENEMIES[e.type].speed, true)
       e.y += ENEMIES[e.type].speed * dt
     }
     // 4(뒤로 옮김). 보스: 걸어서 배치 구역에 들어선 그 틱에 충격파(밀려나거나 기절 중에는 걷지 않으므로 여기서만 판정해도 같다)

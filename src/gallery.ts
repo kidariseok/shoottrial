@@ -1,4 +1,6 @@
 import { Scene, Math as PMath } from 'phaser'
+import { ART } from './data'
+import { frameCount } from './rules'
 import { ASSET_CONTRACTS, loadOrGenerateAssets, invalidTextures } from './assets'
 
 export class GalleryScene extends Scene {
@@ -55,12 +57,21 @@ export class GalleryScene extends Scene {
       const scale = Math.min(maxBox / contract.w, maxBox / contract.h, 1)
       const preview = this.add.sprite(0, -25, contract.key, 0)
       preview.setScale(scale)
+      const texture = this.textures.get(contract.key)
+      const count = frameCount(texture.getSourceImage().width, contract.w)
+      if (!isInvalid && count > 1) {
+        for (let f = 0; f < count; f++) if (!texture.has(String(f))) texture.add(f, 0, f * contract.w, 0, contract.w, contract.h)
+        const key = `gallery_${contract.key}`
+        if (this.anims.exists(key)) this.anims.remove(key)
+        this.anims.create({ key, frames: Array.from({ length: count }, (_, f) => ({ key: contract.key, frame: f })), frameRate: ART.fps.loop, repeat: -1 })
+        preview.play(key)
+      }
 
       // 라벨 정보 텍스트
       const labelText = this.add.text(
         0,
         45,
-        `${contract.key}\n${contract.w}×${contract.h} | frames: ${contract.frames}`,
+        `${contract.key}\n${contract.w}×${contract.h} | ${count}프레임 (계약 ${contract.frames}~${contract.maxFrames})`,
         {
           color: isInvalid ? '#ff6666' : '#cbd5e1',
           fontSize: '13px',
