@@ -37,7 +37,7 @@
 | 0 | 사용자가 #36·#37 병합 | 완료(실제 조회 확인) |
 | 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25); 브랜치 `kidariseok/t111-motion`) |
 | 1' | **A-105 모션 그림62장**(1묶음32+2묶음30) | 처리·갤러리 완료. 기존6종 피격/쓰러짐/진급 실제 연결 확인, [PR #39](https://github.com/kidariseok/shoottrial/pull/39) 병합 확인 완료(2026-10-25). 제품 연결 코드는 T-111에 이미 있음 |
-| 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 초안 작성·읽기 전용 계획 검토 중. 브랜치 `kidariseok/t112-rank-specialty`, 사용자 계획 승인 후 구현 |
+| 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 작성·Orca 검토2건 완료. 기획 질문2건(전투 중 특기 선택·화학병 보호 범위) 및 계획 승인 대기. 브랜치 `kidariseok/t112-rank-specialty` |
 | 3 | **M6 단계 9: 새 카드 4종 구현** | 티켓 없음(`T-113`). 그림 A-104는 처리 완료(도형이 아니라 그림이 나온다) |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
 | 5 | 레인 A 잔여: 일일 첫 접속 보너스, 전투 소리 연결(`playSfx`/`playBgm`) | 대기 |
@@ -108,3 +108,7 @@
 - 2026-10-25 (T-112 시작): 사용자 이어가기 및 필요 시 Orca orchestration 사용 승인. #39 실제 병합(2026-10-25T11:22:29Z) 확인, origin/main 40549d494ba3에서 `kidariseok/t112-rank-specialty` 생성. 기존6종만 대상으로 티켓·작업 계획 초안 작성. Orca 읽기 전용 규칙/합성 검토와 UI/선택흐름 검토를 분리 의뢰, 조정자는 티켓·HANDOFF만 수정한다. 제품 코드 미변경, 계획 승인 전 구현하지 않는다.
 
 - T-112 Orca 검토 상태: Run `run_4cc8ebfe5f0c`, 규칙 Dispatch `ctx_096109986c0d`, UI Dispatch `ctx_0606ca6dc702`. 두 하위Codex가 로컬 `orca orchestration check` 실행 승인 대기(live). 사용자에게 하위창2개 승인 요청을 보냈다. 결과를 받기 전 완료/실패 처리나 작업자 정리를 하지 않는다. 재개 시 T-112 진행 기록의 실제 ID로 상태 확인.
+
+- T-112 Orca 승인 재개: 사용자가 "승인해줄게…너가 해줘"로 명시 위임. 두 실제 하위창의 `orca orchestration` 통신 명령 허용 옵션을 Orca CLI로 선택, 승인 반영 및 두 검토 작업자의 읽기 재개 확인. 검토 결과 수신 후 작업자 정리까지 이어간다.
+
+- T-112 계획 검토 완료: Orca 규칙/UI 작업자 모두 succeeded·기록 보존·release·delivery ack 완료, reclaimable0. 승인 대기는 해소했다. 규칙 검토에서 GDD §4 전투 합성 허용↔§5.3 준비 단계 특기 선택, 화학병 제독범위+1↔같은범위 면역의 두 문서 결정이 필요함을 발견해 티켓 질문에 기록. 추천은 전투를 잠시 멈춰 즉시 선택 및 화학병 제독/보호 함께 확대. 사용자에게2개 선택 질문 전송, 답변 전 제품 코드 변경하지 않음. UI 계약·연쇄 비용/선택·입력 잠금·지뢰 출처·정산 보급·상태이상 테스트 계획 보완. 이번 계획 검토에서 npm run verify 미실행.
