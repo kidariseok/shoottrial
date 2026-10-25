@@ -4,20 +4,22 @@
   --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   --sa-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 
-  /* 군용 올리브·카키 팔레트 (Figma 6:33 및 ART §1·§2 기준) */
-  --outline-dark: #1b1d26;
-  --olive-bg-dark: #23291a;
-  --olive-panel: #363f27;
-  --olive-panel-light: #485434;
-  --olive-header: #2b321f;
-  --khaki-surface: #5a6346;
-  --khaki-border: #78825e;
-  --khaki-muted: #8c9478;
-  --text-cream: #f0ecd8;
-  --text-dim: #b4b09b;
-  --accent-brass: #d4af37;
-  --accent-supply: #e2c044;
-  --ally-green: #689f38;
+  /* T-110 야간 작전(시안 A): 어두운 철판 + 금테. 변수 이름은 옛 올리브 시절 그대로 두고 값만 바꿨다 */
+  --outline-dark: #0b0e12;
+  --olive-bg-dark: #10151a;
+  --olive-panel: #1b2229;
+  --olive-panel-light: #26303a;
+  --olive-header: #141a20;
+  --khaki-surface: #232b33;
+  --khaki-border: #c9a24a;
+  --khaki-muted: #8a8473;
+  --text-cream: #ece6d3;
+  --text-dim: #9a9484;
+  --accent-brass: #e8c35a;
+  --accent-supply: #e8c35a;
+  --ally-green: #8fae3a;
+  --gold: #c9a24a;
+  --gold-bright: #e8c35a;
 
   /* 경보·적 전용 색상 (ART §2: 붉은색·주황은 적·경보에만 사용) */
   --alert-orange: #e67e22;
@@ -1404,4 +1406,100 @@ html, body {
 
 .lobby-px-btn:disabled {
   opacity: 0.5;
+}
+
+/* T-110 야간 작전(시안 A) 전투 화면: 금테 버튼·체력 막대·카드 그림 칸 */
+.mil-btn {
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--outline-dark), var(--inner-bevel);
+}
+
+.mil-btn.brass {
+  background: linear-gradient(#7a6224, #54421a);
+  color: #fff6d1;
+}
+
+.mil-btn.action-go {
+  background: linear-gradient(#5d6b2a, #3f4a1c);
+  color: #ffffff;
+}
+
+.ui-hud {
+  background: linear-gradient(180deg, #141a20 0%, #0e1318 100%);
+  border-bottom: 2px solid var(--gold);
+}
+
+.hud-wave-box,
+.hud-stat-pill,
+.hud-prep-pill {
+  border: 1.5px solid rgba(201, 162, 74, 0.6);
+  border-radius: 6px;
+}
+
+/* 위병소 HP 막대: --hp는 screens.ts가 시작 HP 대비 비율로 넣는다 */
+.hud-stat-pill.hp-pill {
+  min-width: 108px;
+  justify-content: space-between;
+  background: linear-gradient(90deg, rgba(143, 174, 58, 0.55) var(--hp, 100%), #0b0e12 var(--hp, 100%));
+}
+
+.hud-stat-pill.hp-pill.danger {
+  background: linear-gradient(90deg, rgba(211, 47, 47, 0.75) var(--hp, 100%), #0b0e12 var(--hp, 100%));
+}
+
+.hud-stat-pill.hp-pill.danger .val {
+  color: #ffb3a6;
+}
+
+.ui-shop {
+  background: linear-gradient(180deg, #141a20 0%, #0b0e12 100%);
+  border-top: 2px solid var(--gold);
+}
+
+.shop-card {
+  border: 2px solid rgba(201, 162, 74, 0.55);
+  border-radius: 8px;
+}
+
+.shop-card:not(.insufficient):not(.empty) {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 6px rgba(232, 195, 90, 0.45), var(--inner-bevel);
+}
+
+.shop-card.has-art {
+  position: relative;
+  background-color: #10151a;
+  background-size: cover;
+  background-position: center 18%;
+  background-repeat: no-repeat;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.shop-card.has-art .shop-card-initial {
+  display: none;
+}
+
+.shop-card.has-art .shop-card-name {
+  width: 100%;
+  padding-top: 8px;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85));
+  text-shadow: 0 1px 2px #000;
+  text-align: center;
+}
+
+.shop-card.has-art .shop-card-cost {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--gold);
+  color: #1a1608;
+}
+
+.shop-btn-go {
+  white-space: normal;
+  line-height: 1.15;
+  text-align: center;
+  min-width: 54px;
 }
