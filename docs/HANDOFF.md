@@ -1,7 +1,7 @@
 # 인계 문서 (Claude Code → Codex 등 다른 에이전트)
 
 > 이 문서는 **작업자가 바뀌어도 이어갈 수 있게** 지금 상태·다음 할 일·함정을 적는다. 작업 단계를 끝낼 때마다 갱신한다.
-> 마지막 갱신: 2026-10-26(Codex, #40 실제 병합 확인·T-113 계획 작성). 갱신 로그는 맨 아래.
+> 마지막 갱신: 2026-10-26(Codex, T-113 구현·검증 완료, 사용자 PR 병합 대기). 갱신 로그는 맨 아래.
 > **Codex에게 시키는 프롬프트는 `docs/CODEX-START.md`에 있다.**
 
 ## 0. 먼저 읽을 것 (순서대로)
@@ -38,7 +38,7 @@
 | 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25); 브랜치 `kidariseok/t111-motion`) |
 | 1' | **A-105 모션 그림62장**(1묶음32+2묶음30) | 처리·갤러리 완료. 기존6종 피격/쓰러짐/진급 실제 연결 확인, [PR #39](https://github.com/kidariseok/shoottrial/pull/39) 병합 확인 완료(2026-10-25). 제품 연결 코드는 T-111에 이미 있음 |
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, [PR #40](https://github.com/kidariseok/shoottrial/pull/40) 실제 병합 확인(2026-10-25T12:18:10Z). 브랜치 `kidariseok/t112-rank-specialty` |
-| 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 사용자 승인 후 구현 중. 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. 새4종 그림 준비 완료 |
+| 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 구현·검증 완료(341테스트·83에셋·빌드), 사용자 PR 병합 대기. 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
 | 5 | 레인 A 잔여: 일일 첫 접속 보너스, 전투 소리 연결(`playSfx`/`playBgm`) | 대기 |
 | 6 | **T-108 출시 준비**(AAB 서명, 개인정보처리방침, 스토어 등록물, PX 광고 해금 연결) | **사용자가 구글 콘솔을 뒤로 미룸.** 사용자가 다시 꺼낼 때 시작(참고 `docs/research/play-launch.md`) |
@@ -78,12 +78,14 @@
 
 - **카드 키**: `src/data.ts`의 `CARD_KEYS`·`CARDS`(새 4종 추가: `medic`, `mortar`, `antitank`, `signal`), `SYNERGY`, `src/ui/helpers.ts`의 `CARD_META`·`ALL_CARDS`. 그림 계약은 이미 `src/assets.ts`의 `CARDS`에 새 4종이 들어 있다.
 - **특기(일병 선택)**: 유닛에 `spec?: 'A' | 'B'`를 더한다. 합성 규칙은 `rules.ts`(합성 순수 함수), 전투 중 저장은 하지 않는다(TECH §5, persist.ts는 판 기록용). 합성 UI 흐름은 `src/battle/board.ts`와 `src/ui/screens.ts`(선택 모달은 새 `BattleCtl`/`Hud` 필드가 필요하면 `docs/TECH.md` §8을 함께 고친다). 특기 효과 수치는 `data.ts`의 새 표 하나에 모은다(GDD §5.3 표 그대로).
-- **T-112 완료 계약**: 전투 중에도 잠시 멈춰 즉시 특기 선택, 화학병 A는 제독/보호 모두 확대. 다른 특기 합성은 병장까지 재선택. mineTokenPlan은 생산자별 anti/stun 스냅샷, 보급 취사병은 클리어당1회. 기존 cardInfo를 보존한 cardInfoDetail/chooseSpecialty와 art.applyRankArt가 연결돼 있다. T-113에서 새4종을 이 계약에 추가한다.
+- **T-112 완료 계약**: 전투 중에도 잠시 멈춰 즉시 특기 선택, 화학병 A는 제독/보호 모두 확대. 다른 특기 합성은 병장까지 재선택. mineTokenPlan은 생산자별 anti/stun 스냅샷, 보급 취사병은 클리어당1회. 기존 cardInfo를 보존한 cardInfoDetail/chooseSpecialty와 art.applyRankArt가 연결돼 있다. T-113에서 새4종을 이 계약에 추가 완료했다.
 - **진급 연출·칭호·대사**: 계급 링·후광·오라는 코드 도형, 대사 30개는 GDD §5.3 표 그대로를 `data.ts`에 둔다. 진급 지점의 연결 함수는 T-111이 `promoteMotion(view, rank)`(`src/battle/art.ts`)로 열어 둔다.
 - **해금 순서**: `rules.ts`의 `mergeUnlocked`/`afterRun`(`grep`으로 찾는다)과 `save.ts`의 해금 목록. 순서는 GDD §7.
 - **새 카드 동작**: `src/battle/units.ts`의 카드별 `switch`에 `medic`(소생), `mortar`(2~8칸 지연 낙하 원형 피해), `antitank`(장갑 ×2), `signal`(인접 간격 −15% 오라, 화력 지원 +1)를 더한다. 쓰러진 아군은 "그 웨이브 동안 쓰러져 있다"는 기존 규칙(GDD §4)을 의무병이 되돌린다.
 - **테스트**: 특기와 새 카드의 수치 규칙은 `tests/rules-*.test.ts`에 순수 함수로(GDD 표와 1:1).
 - **상점 희석 주의**: 카드가 10종이라 균등 확률이면 원하는 카드가 덜 나온다. 해금이 단계적이라 일단 균등 유지하고, 사용자 플레이테스트 뒤 조정한다.
+
+- **T-113 완료 계약**: CARD_KEYS/인물/특기/시너지10종, 해금 순서는 의무→통신→박격포→대전차. 의무 처치/포탄 예약은 units의 게임dt 상태이며 clearAlliedActions가 정산/종료에서 지운다. 통신 오라는 가장 강한 하나, 지원 보너스는 출처(deployed/synergy/specialty)별 판당1회라 재배치 충전 없음. 지원 피해는 열 선택 때 저장한다. 박격포 범위 피해에 화학병 직접 공격 버프를 곱하지 않는다.
 
 ## 9. 갱신 로그
 
@@ -127,3 +129,5 @@
 - T-113 사용자 ‘진행’ 승인, 기준선 verify319테스트·83에셋·빌드 통과. 구현 Run `run_3b58d8d3abf0`: data/rules/tests `ctx_6af1ce26e288`, 전투 `ctx_f2eae57ea1b0`, UI `ctx_053f84cedca2`; 조정자는 Scene/board/debug/검증. 지원 출처 최초 자격만 충전, 병장 지원 피해는 열 선택 시 snapshot, 예약/처치 정리 hook 연결 중.
 
 - T-113 통합341테스트/21파일·83에셋·빌드 통과. 소유 경로 밖 구표 비교2테스트는 사용자 승인 후 경로 추가·부분 비교로 수정. 새4종 실제 모달/도감/해금/구매·주요전투/정산과 모션0/그림0 확인. Orca 구현3건 succeeded, UI창 release, 계산/전투창은 runtime이 user_takeover로 retained하여 보존, reclaimable0. 다음: 검증 캡처/결과 보고 정리·PR.
+
+- 2026-10-26 03:26 (T-113 완료): 새4종 기본/특기8개/상병·병장·시너지·해금·상점·도감/정보·인물12대사 연결. 기존6종 수치 유지. 사용자 승인 후 테스트2경로 추가, 구표6종 고정 비교만 부분 비교로 전환. verify21파일341테스트·83에셋·타입/빌드 통과, 기존 번들 경고 유지. 실제 Phaser 입력/게임 함수로 소생·기절/보호·포격 시간/빗나감/정산·장갑/관통·지원 중복충전 방지/예약300/판초기화·도감/모달·구매/해금 확인. 세로 Safe Area 사진9장 `docs/shots/T-113*.png`. 실기기·광고SDK·전체10웨이브 밸런스/성능 미확인. 서버/브라우저 종료. Orca3건 succeeded·ack·reclaimable0, UI창release·계산/전투창user_takeover retained. 다음: 사용자 PR 병합 후 새4종 플레이테스트 및 다음 티켓 선택.
