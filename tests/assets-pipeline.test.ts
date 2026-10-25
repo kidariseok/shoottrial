@@ -17,6 +17,7 @@ import {
   generateFixtures,
   getPixel,
   loadAssetContracts,
+  ingestInbox,
   mergeFramesToSheet,
   processAllAssets,
   processAssetKey,
@@ -381,5 +382,47 @@ describe('T-111 모션 프레임 상한', () => {
     const sheet = createMagentaBackgroundFixture(128, 128)
     // 처리 파이프라인의 최종 병합에서도 범위를 검사한다.
     expect(() => mergeFramesToSheet(Array(7).fill(sheet), contract)).toThrow('계약 범위(2~6)')
+  })
+})
+
+
+describe('A-105 서로 다른 원본 크기의 시트 연결', () => {
+  it('첫 자세 크기를 맞추고 시트 안 동작 크기와 발 기준선은 유지한다', () => {
+    withTempWorkspace((ws) => {
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_cook_idle.png'), createTwoSoldierIdleSheet([240, 240]))
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_cook_attack.png'), createIrregularThreeSoldierSheet([160, 180, 140]))
+      const attackDir = ws.joinPath(ws.sourceDir, 'ally_cook_attack')
+      // metadata 디렉터리는 입력을 이관하는 기존 함수를 통해 만든다.
+      ingestInbox({ rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir })
+      ws.writeJson(ws.joinPath(attackDir, 'meta.json'), { matchFirstFrame: true })
+      const results = processAllAssets({ rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir, outAssetsDir: ws.outAssetsDir, ledgerPath: ws.ledgerPath, indexPath: ws.indexPath })
+      const idle = results.find((r) => r.key === 'ally_cook_idle')!
+      const attack = results.find((r) => r.key === 'ally_cook_attack')!
+      expect(idle.poseHeight).toBe(96)
+      expect(attack.poseHeight).toBe(idle.poseHeight)
+      expect(attack.scale).toBeCloseTo(96 / 160)
+      expect(attack.ledgerEntry.matchFirstFrame).toBe(true)
+      const sheet = readPngFile(attack.outPngPath)
+      const boxes = [0, 1, 2].map((i) => findBoundingBox(sliceSheetFrame(sheet, i, 128))!)
+      expect(boxes.map((b) => b.height)).toEqual([96, 108, 84])
+      expect(boxes.every((b) => b.maxY === BASELINE_Y)).toBe(true)
+    })
+  })
+  it('첫 자세보다 큰 동작은 캔버스 상한을 지켜 잘리지 않게 축소한다', () => {
+    withTempWorkspace((ws) => {
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_cook_idle.png'), createTwoSoldierIdleSheet([240, 240]))
+      ws.writePng(ws.joinPath(ws.inboxDir, 'ally_cook_attack.png'), createIrregularThreeSoldierSheet([120, 260, 100]))
+      ingestInbox({ rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir })
+      ws.writeJson(ws.joinPath(ws.sourceDir, 'ally_cook_attack', 'meta.json'), { matchFirstFrame: true })
+      const results = processAllAssets({ rootDir: ROOT_DIR, inboxDir: ws.inboxDir, sourceDir: ws.sourceDir, outAssetsDir: ws.outAssetsDir, ledgerPath: ws.ledgerPath, indexPath: ws.indexPath })
+      const attack = results.find((r) => r.key === 'ally_cook_attack')!
+      const sheet = readPngFile(attack.outPngPath)
+      for (let i = 0; i < 3; i++) {
+        const box = findBoundingBox(sliceSheetFrame(sheet, i, 128))!
+        expect(box.height).toBeLessThanOrEqual(BASELINE_Y + 1)
+        expect(box.width).toBeLessThanOrEqual(128)
+      }
+      expect(attack.poseHeight).toBeLessThan(96)
+    })
   })
 })

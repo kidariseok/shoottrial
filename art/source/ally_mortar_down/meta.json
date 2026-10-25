@@ -1,0 +1,5 @@
+{
+  "tool": "chatgpt-image",
+  "prompt": "docs/tickets/A-105-motion-art.md",
+  "matchFirstFrame": true
+}
