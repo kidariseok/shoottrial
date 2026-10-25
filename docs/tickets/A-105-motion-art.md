@@ -236,3 +236,5 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 - [x] 갤러리32장·기존6종/적3종 전투 재생 확인 및 사진16장
 - [x] 원본 PNG는 미추적, 백업과 원본32장 해시 일치, 2묶음 보존
 - [x] 처리 결과·원본 재제작 권장 사항·미확인 범위 기록
+
+- PR(1묶음): https://github.com/kidariseok/shoottrial/pull/39 — 사용자 병합 대기,2묶음은 이 PR에 포함하지 않음.
