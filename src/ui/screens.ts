@@ -2,12 +2,14 @@
 import { watchAd } from '../ads'
 import { fetchAvailableAssets } from '../assets'
 import { playSfx } from '../audio'
-import { BATTLE } from '../data'
+import { BATTLE, SPECIALTIES, type CardKey } from '../data'
 import {
   canFireSupport,
   cloneHud,
   getCardInitial,
   getCardName,
+  getCharacterName,
+  getCharacterIntro,
   getRankBars,
   getRankName,
   isSameHud,
@@ -61,6 +63,7 @@ interface UiRefs {
   rerollBtn: HTMLButtonElement
   freeRerollBtn: HTMLButtonElement
   goBtn: HTMLButtonElement
+  specialtyBackdrop: HTMLElement
   cardInfoBackdrop: HTMLElement
   bannerEl: HTMLElement
   defconFlashEl: HTMLElement
@@ -242,6 +245,9 @@ function ensureRefs(): UiRefs | null {
     if (e.target === cardInfoBackdrop) cardInfo(null)
   })
 
+  const specialtyBackdrop = document.createElement('div')
+  specialtyBackdrop.className = 'ui-modal-backdrop specialty-backdrop hidden'
+
   // 중앙 배너
   const bannerEl = document.createElement('div')
   bannerEl.className = 'ui-banner hidden'
@@ -271,6 +277,7 @@ function ensureRefs(): UiRefs | null {
     synergyRail,
     shopEl,
     cardInfoBackdrop,
+    specialtyBackdrop,
     bannerEl,
     defconFlashEl,
     pauseBackdrop,
@@ -298,6 +305,7 @@ function ensureRefs(): UiRefs | null {
     freeRerollBtn,
     goBtn,
     cardInfoBackdrop,
+    specialtyBackdrop,
     bannerEl,
     defconFlashEl,
     pauseBackdrop,
@@ -359,6 +367,7 @@ function openPauseModal(): void {
   quitBtn.textContent = '포기'
   quitBtn.addEventListener('click', () => {
     r.pauseBackdrop.classList.add('hidden')
+    chooseSpecialty(null)
     currentCtl?.quit()
   })
 
@@ -480,6 +489,12 @@ export function shop(
 }
 
 export function cardInfo(card: string | null, rank?: number): void {
+  cardInfoDetail(card, rank)
+}
+
+export type CardDetail = { name?: string; spec?: 'A' | 'B'; rows?: [string, string][] }
+
+export function cardInfoDetail(card: string | null, rank?: number, detail?: CardDetail): void {
   const r = ensureRefs()
   if (!r) return
 
@@ -523,12 +538,13 @@ export function cardInfo(card: string | null, rank?: number): void {
   grid.className = 'card-sheet-grid'
 
   const rows: [string, string][] = [
+    ['인물', getCharacterName(card, rank, detail?.name)],
+    ['소개', getCharacterIntro(card)],
     ['보직명', getCardName(card)],
     ['계급(짬)', getRankName(rank)],
-    ['공격 / HP', '—'],
-    ['사거리 / 간격', '—'],
-    ['고유 능력', '—'],
-    ['보직 시너지', '—'],
+    ['특기', detail?.spec ? `${detail.spec} · ${SPECIALTIES[card as CardKey]?.[detail.spec]?.name ?? '—'}` : '미선택'],
+    ...(detail?.spec ? [['특기 효과', SPECIALTIES[card as CardKey]?.[detail.spec]?.description ?? '—'] as [string, string]] : []),
+    ...(detail?.rows ?? []),
   ]
 
   for (const [label, val] of rows) {
@@ -724,12 +740,14 @@ export type BattleCtl = {
 }
 
 export function bindBattle(ctl: BattleCtl | null): void {
+  if (ctl !== currentCtl || ctl === null) chooseSpecialty(null)
   currentCtl = ctl
   ensureRefs()
   syncCtlButtons()
 }
 
 export function lobby(): void {
+  chooseSpecialty(null)
   currentCtl = null
   hpMax = BATTLE.baseHp
   lastHud = null
@@ -814,4 +832,57 @@ export function handleBack(onExit: () => void): void {
     return
   }
   confirmExit(onExit, () => {})
+}
+
+// 선택은 한 번만 처리한다. 숨겨진 옛 버튼과 종료된 판의 콜백은 폐기한다.
+let specialtyPick: ((spec: 'A' | 'B') => void) | undefined
+export function chooseSpecialty(
+  request: { card: string; rank: number; name?: string } | null,
+  onPick?: (spec: 'A' | 'B') => void
+): void {
+  specialtyPick = undefined
+  const r = ensureRefs()
+  if (!r) return
+  r.specialtyBackdrop.replaceChildren()
+  r.specialtyBackdrop.classList.add('hidden')
+  if (!request) return
+  cardInfo(null)
+  const choices = SPECIALTIES[request.card as CardKey]
+  if (!choices) return
+  specialtyPick = onPick
+  const panel = document.createElement('div')
+  panel.className = 'ui-modal-card specialty-card'
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-modal', 'true')
+  panel.setAttribute('aria-label', '특기 선택')
+  const header = document.createElement('div')
+  header.className = 'modal-header'
+  header.textContent = `${getCharacterName(request.card, request.rank, request.name)} · ${getRankName(request.rank)}`
+  const note = document.createElement('div')
+  note.className = 'modal-note'
+  note.textContent = '특기를 선택하십시오. 선택하는 동안 작전은 멈춥니다.'
+  const options = document.createElement('div')
+  options.className = 'specialty-options'
+  for (const spec of ['A', 'B'] as const) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'mil-btn specialty-option'
+    const name = document.createElement('strong')
+    name.textContent = `${spec} · ${choices[spec].name}`
+    const description = document.createElement('span')
+    description.textContent = choices[spec].description
+    button.append(name, description)
+    button.addEventListener('click', () => {
+      if (!panel.isConnected || !specialtyPick || !r.pauseBackdrop.classList.contains('hidden')) return
+      const pick = specialtyPick
+      options.querySelectorAll('button').forEach((b) => { b.disabled = true })
+      chooseSpecialty(null)
+      pick(spec)
+    })
+    options.append(button)
+  }
+  panel.append(header, note, options)
+  r.specialtyBackdrop.append(panel)
+  r.specialtyBackdrop.classList.remove('hidden')
+  options.querySelector('button')?.focus()
 }

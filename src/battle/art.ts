@@ -1,6 +1,6 @@
 import { Math as PMath, TintModes, type GameObjects, type Scene } from 'phaser'
 import { ASSET_CONTRACTS } from '../assets'
-import { ART, DOG, UI } from '../data'
+import { ART, DOG, UI, LAYOUT, CHARACTERS, RANK_VISUAL, type CardKey } from '../data'
 import { artLoops, frameCount, clipFps, motionEnabled, walkFps } from '../rules'
 
 // 실제 그림이 있는 키 모음. 없는 키는 도형이 그대로 쓰인다.
@@ -173,8 +173,22 @@ export function leanMotion(view: GameObjects.Container, direction: number): void
   if (m) m.lane = Math.sign(direction)
 }
 
-// 다음 계급 티켓에서 링·후광·오라를 붙일 연결 지점. 이 티켓에서는 선택적 경례 클립만 연다.
+// 진급 경례와 대사. 초기 배치에는 applyRankArt만 호출해 대사가 나오지 않는다.
 export function promoteMotion(view: GameObjects.Container, rank: number): void {
+  const card = view.getData('rankCard') as CardKey | undefined
+  const quote = card ? CHARACTERS[card]?.quotes[rank - 2] : undefined
+  if (quote) {
+    ;(view.getData('rankBubble') as GameObjects.Text | undefined)?.destroy()
+    const p = RANK_VISUAL.bubble
+    const bubble = view.scene.add.text(0, p.y, `${RANK_VISUAL.promoteText}\n${quote}`, {
+      fontFamily: UI.text.fontFamily, fontSize: `${p.fontPx}px`, color: p.color,
+      backgroundColor: p.background, padding: { x: p.padding, y: p.padding }, align: 'center',
+    }).setOrigin(0.5, 1)
+    const half = bubble.width * view.scaleX / 2
+    bubble.x = (PMath.Clamp(view.x, half, LAYOUT.width - half) - view.x) / view.scaleX
+    view.add(bubble)
+    view.setData('rankBubble', bubble).setData('quoteLeft', RANK_VISUAL.quoteMs / UI.fx.msPerSec)
+  }
   const base = view.getData('base') as string | undefined
   if (rank > 1 && base && hasArt(base.replace(/_idle$/, '_promote'))) beginAct(view, 'promote', base.replace(/_idle$/, '_promote'), ART.motion.promoteSec)
 }
@@ -197,13 +211,21 @@ export function restoreMotion(view: GameObjects.Container): void {
   m.act = 'idle'
   m.elapsed = 0
   m.key = view.getData('base') as string
-  m.body.setPosition(0, ART.footY).setScale(1).setAngle(0)
+  m.body.setPosition(0, ART.footY).setScale((view.getData('rankScale') as number | undefined) ?? 1).setAngle(0)
   tickHit(view, Infinity)
   view.setAlpha(1)
 }
 
 export function tickMotion(view: GameObjects.Container, dt: number): void {
   tickHit(view, dt)
+  const quoteLeft = (view.getData('quoteLeft') as number | undefined) ?? 0
+  if (quoteLeft > 0) {
+    view.setData('quoteLeft', Math.max(0, quoteLeft - dt))
+    if (quoteLeft <= dt) {
+      ;(view.getData('rankBubble') as GameObjects.Text | undefined)?.destroy()
+      view.setData('rankBubble', undefined)
+    }
+  }
   const m = motionOf(view)
   if (!m) return
   const p = ART.motion
@@ -245,7 +267,8 @@ export function tickMotion(view: GameObjects.Container, dt: number): void {
   } else if (m.facing > 0 && m.moving && !hasArt(base)) {
     sy += Math.sin((m.age * Math.max(ART.fps.minWalk, m.speed * ART.fps.walkPerSpeed) / ART.fps.loop + m.phase) * Math.PI * 2) * p.walkBob
   }
-  m.body.setPosition(0, ART.footY + y).setScale(scale, scale * sy).setAngle(angle)
+  const growth = (view.getData('rankScale') as number | undefined) ?? 1
+  m.body.setPosition(0, ART.footY + y).setScale(scale * growth, scale * sy * growth).setAngle(angle)
   const shadow = view.getData('shadow') as GameObjects.Ellipse | undefined
   shadow?.setScale(1 - breath * p.shadowScale, 1)
   const s = spriteOf(view)
@@ -261,4 +284,50 @@ export function tickMotion(view: GameObjects.Container, dt: number): void {
     frame = Math.min(n - 1, Math.floor(m.elapsed * clipFps(n, m.seconds)))
   }
   if (s.texture.key !== key || s.frame.name !== String(frame)) s.setTexture(key, frame)
+}
+
+// 몸만 발끝 기준으로 키운다. 바깥 컨테이너 크기와 드래그 영역은 그대로다.
+export function applyRankArt(view: GameObjects.Container, card: string, rank: number, name?: string): void {
+  const p = RANK_VISUAL
+  view.setData('rankCard', card).setData('rankName', name)
+  const growth = p.scale[rank - 1] ?? 1
+  view.setData('rankScale', growth)
+  let body = motionOf(view)?.body ?? view.getData('rankBody') as GameObjects.Container | undefined
+  if (!body) {
+    // motion=0도 같은 발 피벗을 쓴다. 장식을 넣기 전에 기존 몸 두 조각만 옮긴다.
+    const sprite = spriteOf(view)
+    const pieces = sprite ? [sprite] : view.list.slice(0, 2)
+    body = view.scene.add.container(0, ART.footY)
+    for (const child of pieces) {
+      view.remove(child)
+      ;(child as GameObjects.Sprite).y -= ART.footY
+      body.add(child)
+    }
+    view.addAt(body, sprite ? 1 : 0)
+    view.setData('rankBody', body)
+  }
+  body.setScale(growth)
+  ;(view.getData('rankDecoration') as GameObjects.Container | undefined)?.destroy()
+  const decoration = view.scene.add.container(0, 0)
+  view.addAt(decoration, 0)
+  view.setData('rankDecoration', decoration)
+  if (rank >= 2) {
+    const r = p.ringShape
+    decoration.add(view.scene.add.ellipse(0, ART.footY, r.w, r.h).setStrokeStyle(r.lineW, p.ring, r.alpha))
+  }
+  if (rank >= 3) {
+    const h = p.halo
+    decoration.add(view.scene.add.ellipse(0, h.y, h.w, h.h, p.aura, h.alpha))
+  }
+  ;(view.getData('rankTitle') as GameObjects.Text | undefined)?.destroy()
+  view.setData('rankTitle', undefined)
+  if (rank >= 4) {
+    const a = p.star
+    decoration.add(view.scene.add.star(0, a.y, a.points, a.innerRadius, a.outerRadius, p.aura, a.alpha))
+    const title = view.scene.add.text(0, p.title.y, p.veteran, {
+      fontFamily: UI.text.fontFamily, fontSize: `${p.title.fontPx}px`, color: UI.text.popupColor,
+    }).setOrigin(0.5)
+    view.add(title)
+    view.setData('rankTitle', title)
+  }
 }

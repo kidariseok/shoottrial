@@ -34,6 +34,35 @@ const shopWith = (offers: (CardKey | null)[]) => {
   return s
 }
 
+describe('선택을 기다리는 연쇄 구매', () => {
+  it('각 진급 선택 뒤에 다음 단계로 가고 중복 콜백과 재구매를 무시한다', () => {
+    const board = fakeBoard(null, [b(0, 'rifle', 1), b(1, 'rifle', 2), d(0, 'rifle', 3)])
+    const choices: (() => void)[] = []
+    const calls: number[] = []
+    const pending = {
+      ...board,
+      promote: (_zone: 'bench' | 'deploy', i: number, _absorb?: Spot, done?: () => void) => {
+        calls.push(i)
+        choices.push(done!)
+        return true
+      },
+    }
+    const shop = shopWith(['rifle'])
+    let completed = 0
+    expect(buyCard(shop, pending, 0, 99, () => completed++)).toEqual({ kind: 'merge', cost: 1, card: 'rifle' })
+    expect(shop.offers[0]).toBeNull()
+    expect(calls).toHaveLength(1)
+    expect(buyCard(shop, pending, 0, 99).kind).toBe('none')
+    choices[0]!(); choices[0]!()
+    expect(calls).toHaveLength(2)
+    expect(completed).toBe(0)
+    choices[1]!()
+    expect(calls).toHaveLength(3)
+    choices[2]!(); choices[2]!()
+    expect(completed).toBe(1)
+  })
+})
+
 describe('createShop / refill', () => {
   it('같은 시드와 풀이면 같은 offers, 길이는 shopSize, 모두 풀 안', () => {
     const a = createShop(42)

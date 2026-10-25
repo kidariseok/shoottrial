@@ -152,7 +152,7 @@ describe('gasPlan', () => {
 
 describe('chemReach · inChemReach · gasHits', () => {
   it('계급별 범위: 이등병·일병 1, 상병 이상 2', () => {
-    expect([1, 2, 3, 4].map(chemReach)).toEqual([1, 1, 2, 2])
+    expect([1, 2, 3, 4].map((rank) => chemReach(rank))).toEqual([1, 1, 2, 2])
   })
   it('이등병 범위는 인접 8칸과 자기 칸', () => {
     const c = [chem(2, 1)]

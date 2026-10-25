@@ -15,6 +15,9 @@ import {
   MINES,
   RANKS,
   SYNERGY,
+  SPECIALTIES,
+  SPECIALTY_RULES,
+  type Specialty,
   SYN_FX,
   UNLOCK,
   type CardKey,
@@ -22,7 +25,7 @@ import {
 } from './data'
 import { STAGE1, WAVES } from './stages'
 
-export type Unit = { card: CardKey; rank: number }
+export type Unit = { card: CardKey; rank: number; spec?: Specialty }
 export type Cell = { x: number; y: number; free: boolean }
 export type Outcome = 'move' | 'merge' | 'swap'
 
@@ -35,9 +38,9 @@ export function merge(a: Unit, b: Unit): number | null {
 }
 
 // 이등병 수치 x 1.5^(계급-1). 반올림하지 않는다
-export function stats(card: CardKey, rank: number): { hp: number; atk: number } {
+export function stats(card: CardKey, rank: number, spec?: Specialty): { hp: number; atk: number } {
   const m = RANKS.mult ** (clampRank(rank) - 1)
-  return { hp: CARDS[card].hp * m, atk: CARDS[card].atk * m }
+  return { hp: CARDS[card].hp * m * (card === 'blower' && spec === 'A' ? SPECIALTIES.blower.A.hp : 1), atk: CARDS[card].atk * m }
 }
 
 // 켜진 시너지 단계 수
@@ -167,7 +170,7 @@ export function allyY(row: number): number {
 // 칸 좌표. col은 열, y는 칸 단위 중심(아군은 allyY(row), 적은 e.y)
 export type Pos = { col: number; y: number }
 type Foe = Pos & { hp: number; gone?: boolean }
-type Friend = Pos & { alive: boolean; taunt?: boolean }
+type Friend = Pos & { alive: boolean; taunt?: boolean; tauntReach?: number }
 
 // GDD §5.1. 유닛 중심 사이 거리(칸)
 export function dist(a: Pos, b: Pos): number {
@@ -209,7 +212,7 @@ export function onRay(origin: Pos, target: Pos, p: Pos, width: number): boolean 
 // GDD §5.1·§5.2. 적이 때릴 아군. reach 안 산 아군 중 도발이 있으면 도발끼리, 가장 가까운 것(같으면 위쪽, 왼쪽 열). 없으면 null
 export function engageTarget<T extends Friend>(enemy: Pos, allies: T[], reach: number = COMBAT.meleeReach): T | null {
   const near = allies.filter((a) => a.alive && dist(enemy, a) <= reach + COMBAT.tieEps)
-  const taunting = near.filter((a) => a.taunt)
+  const taunting = allies.filter((a) => a.alive && a.taunt && dist(enemy, a) <= (a.tauntReach ?? reach) + COMBAT.tieEps)
   const pool = taunting.length > 0 ? taunting : near
   let best: T | null = null
   let bd = Infinity
@@ -234,8 +237,8 @@ export function damageTaken(base: number, vuln: number, buff = 1): number {
 }
 
 // GDD §5.2. 아군이 받는 피해: 제설병은 x blowerArmor
-export function allyDamageTaken(dmg: number, card: CardKey): number {
-  return card === 'blower' ? dmg * COMBAT.blowerArmor : dmg
+export function allyDamageTaken(dmg: number, card: CardKey, spec?: Specialty): number {
+  return card === 'blower' ? dmg * (spec === 'A' ? SPECIALTIES.blower.A.armor : COMBAT.blowerArmor) : dmg
 }
 
 // GDD §5.2. 밀린(pushedAt) 뒤 minePushSec 안에 터진 지뢰의 피해 배율. 밀린 적이 아니면 -Infinity를 넣는다
@@ -259,26 +262,28 @@ export function withinReach(dc: number, dr: number, reach: number): boolean {
 }
 
 // GDD §5.2·§5.3·§5.4·§4.1·§5.6. 공격 간격 = 기본 x (소총수만 병장·시너지) x 데프콘 1 x (가스 위면 slow). 곱으로 겹친다
-export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean, gassed = false): number {
+export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean, gassed = false, spec?: Specialty): number {
   let v = CARDS[card].interval
   if (card === 'rifle') {
     if (rank >= ABILITY.sergeant) v *= ABILITY.sergeantRifleInterval
     v *= SYN_FX.rifleInterval[synergyTier(card, synergyCount)] ?? 1
   }
+  if (card === 'rifle' && spec) v *= SPECIALTIES.rifle[spec].interval
+  if (card === 'blower' && spec === 'B') v *= SPECIALTIES.blower.B.interval
   if (defcon1) v *= BATTLE.defcon1AllyInterval
   return gassed ? v * GAS.slow : v
 }
 
 // GDD §5.3·§5.4. atk = stats().atk. k는 관통 순서(0부터). 상병 이상은 감소 없음, 시너지 단계로 배율
-export function sniperDamage(atk: number, k: number, rank: number, tier = 0): number {
-  const fall = rank >= ABILITY.corporal ? 1 : Math.max(0, 1 - ABILITY.sniperFalloff * k)
-  return atk * fall * (SYN_FX.sniperDamage[tier] ?? 1)
+export function sniperDamage(atk: number, k: number, rank: number, tier = 0, spec?: Specialty): number {
+  const fall = rank >= ABILITY.corporal ? 1 : Math.max(0, 1 - (spec === 'B' ? SPECIALTIES.sniper.B.falloff : ABILITY.sniperFalloff) * k)
+  return atk * fall * (SYN_FX.sniperDamage[tier] ?? 1) * (spec === 'A' && k === 0 ? SPECIALTIES.sniper.A.damage : 1)
 }
 
 // GDD §5.3·§5.4·§5.6. 밀어내기 칸 수 = (병장이면 큰 값) x 적 배율 x 시너지 배율
-export function knockback(enemy: EnemyType, rank: number, blowerCount: number): number {
+export function knockback(enemy: EnemyType, rank: number, blowerCount: number, spec?: Specialty): number {
   const base = rank >= ABILITY.sergeant ? ABILITY.knockSergeant : ABILITY.knockBase
-  return base * ENEMIES[enemy].knock * (SYN_FX.blowerKnock[synergyTier('blower', blowerCount)] ?? 1)
+  return base * (spec === 'B' ? SPECIALTIES.blower.B.knock : 1) * ENEMIES[enemy].knock * (SYN_FX.blowerKnock[synergyTier('blower', blowerCount)] ?? 1)
 }
 
 // GDD §5.4. 제설병 사거리(칸) = 기본 + 시너지 가산
@@ -293,15 +298,17 @@ export function cookReach(rank: number, cookCount: number): number {
 }
 
 // GDD §5.3·§5.4·§5.5. 지뢰 토큰 합 = Σ(계급 수 + 병장 보너스) + 시너지 보너스(전체에 한 번)
-export function mineTokens(miners: { rank: number }[]): number {
-  const sum = miners.reduce(
-    (s, m) => s + (MINES.tokensByRank[clampRank(m.rank) - 1] ?? 0) + (m.rank >= ABILITY.sergeant ? MINES.sergeantBonus : 0),
-    0,
-  )
-  return sum + (synergyTier('miner', miners.length) >= 1 ? MINES.synergyBonus : 0)
+export type MineToken = { anti: boolean; stun: boolean }
+export function mineTokenPlan(miners: { rank: number; spec?: Specialty }[]): MineToken[] {
+  const tokens = miners.flatMap((m) => Array.from({ length: (MINES.tokensByRank[clampRank(m.rank) - 1] ?? 0) + (m.rank >= ABILITY.sergeant ? MINES.sergeantBonus : 0) + (m.spec === 'A' ? SPECIALTIES.miner.A.tokens : 0) }, () => ({ anti: m.rank >= ABILITY.corporal, stun: m.spec === 'B' })))
+  if (synergyTier('miner', miners.length) >= 1) for (let i = 0; i < MINES.synergyBonus; i++) tokens.push({ anti: false, stun: false })
+  return tokens
+}
+export function mineTokens(miners: { rank: number; spec?: Specialty }[]): number {
+  return mineTokenPlan(miners).length
 }
 
-// GDD §5.3. 상병 이상 지뢰설치병이 한 명이라도 있으면 그 준비 단계의 지뢰는 전부 대전차
+// 기존 호출 호환용 집계. 실제 지뢰 속성은 mineTokenPlan의 생산자 스냅샷을 쓴다.
 export function hasAntiTank(miners: { rank: number }[]): boolean {
   return miners.some((m) => m.rank >= ABILITY.corporal)
 }
@@ -332,13 +339,13 @@ export function inBlast(enemyY: number, mineRow: number): boolean {
 
 // GDD §5.5. 폭발 피해. 대전차는 보스에게 bossMult배
 export function mineDamage(enemy: EnemyType, anti: boolean): number {
-  return MINES.damage * (anti && enemy === 'boss' ? MINES.bossMult : 1)
+  return MINES.damage * (anti && (enemy === 'boss' || enemy === 'dogPlus') ? MINES.bossMult : 1)
 }
 
 // ---- 4단계: 화학전 ----
 
 export type GasDrop = { t: number; col: number; row: number } // col·row는 2x2 왼쪽 위 칸(배치 구역 기준)
-export type Chem = { col: number; row: number; rank: number } // 살아 있는 화학병만 넣는다(쓰러진 화학병 = 입력에서 빠짐)
+export type Chem = { col: number; row: number; rank: number; spec?: Specialty } // 살아 있는 화학병만 넣는다(쓰러진 화학병 = 입력에서 빠짐)
 
 // 배치 구역 크기의 가스 남은 시간 표(행 x 열). 0이면 가스 없음
 export function emptyGas(): number[][] {
@@ -359,13 +366,13 @@ export function gasPlan(wave: number, plan: SpawnEvent[], rand: () => number, ex
 }
 
 // GDD §5.3. 화학병 범위(칸): 상병 이상은 넓다
-export function chemReach(rank: number): number {
-  return GAS.reach[rank >= ABILITY.corporal ? 1 : 0] as number
+export function chemReach(rank: number, spec?: Specialty): number {
+  return (GAS.reach[rank >= ABILITY.corporal ? 1 : 0] as number) + (spec === 'A' ? SPECIALTIES.chem.A.reach : 0)
 }
 
 // 어느 화학병이든 범위 안(자기 칸 포함)이면 가스 면역
 export function inChemReach(chems: Chem[], col: number, row: number): boolean {
-  return chems.some((c) => withinReach(col - c.col, row - c.row, chemReach(c.rank)))
+  return chems.some((c) => withinReach(col - c.col, row - c.row, chemReach(c.rank, c.spec)))
 }
 
 // 가스 피해·감속을 받는 칸인가: 가스가 있고 면역이 아니다
@@ -386,7 +393,7 @@ export function gasCellsAfterDrop(
     for (let c = drop.col; c < drop.col + GAS.size; c++) {
       const row = out[r]
       if (!row || row[c] === undefined) continue
-      if (synergyOn && inChemReach(chems, c, r)) cleared++
+      if (synergyOn && inChemReach(chems, c, r)) { row[c] = 0; cleared++ }
       else row[c] = GAS.life
     }
   }
@@ -398,7 +405,7 @@ export function cleanseCells(cells: number[][], chem: Chem): { cells: number[][]
   let n = 0
   const out = cells.map((row, r) =>
     row.map((v, c) => {
-      if (!withinReach(c - chem.col, r - chem.row, chemReach(chem.rank))) return v
+      if (!withinReach(c - chem.col, r - chem.row, chemReach(chem.rank, chem.spec))) return v
       if (v > 0) n++
       return 0
     }),
@@ -598,4 +605,53 @@ export function motionEnabled(value: string | null): boolean {
 export function motionPhase(seed: number, index: number): number {
   const phase = (seed + ART.motion.seedSalt) * ART.motion.phaseStep + index * ART.motion.phaseStep
   return phase - Math.floor(phase)
+}
+
+// 합성 뒤 undefined면 즉시 선택을 받아야 한다. 입력을 바꾸지 않는다.
+export function mergeSpecialty(a: Unit, b: Unit): Specialty | undefined {
+  return merge(a, b) !== null && a.rank > 1 && a.spec === b.spec ? a.spec : undefined
+}
+export function attackRange(card: CardKey, spec?: Specialty): number {
+  return CARDS[card].range + (card === 'rifle' && spec ? SPECIALTIES.rifle[spec].range : 0)
+}
+export function rifleDamage(atk: number, distance: number, spec?: Specialty): number {
+  return atk * (spec === 'B' && distance <= SPECIALTIES.rifle.B.reach + COMBAT.tieEps ? SPECIALTIES.rifle.B.damage : 1)
+}
+export function sniperWidth(spec?: Specialty): number { return spec === 'B' ? SPECIALTIES.sniper.B.width : COMBAT.pierceWidth }
+export function blowerTaunt(spec?: Specialty): number { return spec === 'A' ? SPECIALTIES.blower.A.taunt : COMBAT.meleeReach }
+export function blowerVuln(spec?: Specialty): number { return spec === 'B' ? SPECIALTIES.blower.B.vuln : COMBAT.vulnSec }
+export function cookHeal(spec?: Specialty): number { return spec === 'A' ? SPECIALTIES.cook.A.heal : ABILITY.cookHeal }
+export function cookTargets(rank: number, count: number): number { return synergyTier('cook', count) > 0 ? Infinity : rank >= ABILITY.corporal ? SPECIALTY_RULES.cookTargets : 1 }
+export function cookSupplyBonus(units: Unit[]): number { return units.filter((u) => u.card === 'cook' && u.spec === 'B').length * SPECIALTIES.cook.B.supply }
+export function chemInterval(spec?: Specialty): number { return spec === 'A' ? SPECIALTIES.chem.A.interval : GAS.cleanse }
+// 남은 지속 시간만 피해를 준다. 화상과 중독은 각각 호출해 서로 독립적으로 흐른다.
+export function dotTick(remaining: number, dt: number, dps: number, vuln = 0): { remaining: number; damage: number } {
+  const elapsed = Math.min(Math.max(0, remaining), Math.max(0, dt))
+  const vulnerable = Math.min(elapsed, Math.max(0, vuln))
+  return { remaining: Math.max(0, remaining - elapsed), damage: dps * (elapsed + vulnerable * (COMBAT.vulnMult - 1)) }
+}
+
+// 정산 호출자는 배치 유닛만 넘기고 클리어 때 한 번 가산한다(쓰러진 유닛 포함).
+export const cookWaveBonus = cookSupplyBonus
+export function unitInfoRows(unit: Unit, synergyCount = 1, defcon1 = false): [string, string][] {
+  const { card, rank, spec } = unit
+  const value = stats(card, rank, spec)
+  const num = (n: number) => Number(n.toFixed(3)).toString()
+  const rows: [string, string][] = [['최대 HP', num(value.hp)], ['직접 공격', num(value.atk)], ['공격 간격', `${num(interval(card, rank, synergyCount, defcon1, false, spec))}초`]]
+  if (spec) rows.push(['특기', `${SPECIALTIES[card][spec].name} · ${SPECIALTIES[card][spec].description}`])
+  if (card === 'cook') {
+    const reach = cookReach(rank, synergyCount)
+    rows.push(['회복', `${cookHeal(spec)} · ${cookTargets(rank, synergyCount) === Infinity ? '전원' : cookTargets(rank, synergyCount) + '명'}`], ['회복 범위', reach === Infinity ? '배치 구역 전원' : `${reach}칸`])
+  } else if (card === 'blower') rows.push(['사거리', `${blowerRange(synergyCount)}칸`], ['도발', `${blowerTaunt(spec)}칸`], ['취약', `${blowerVuln(spec)}초`])
+  else rows.push(['사거리', `${attackRange(card, spec)}칸`])
+  if (card === 'chem') rows.push(['제독·보호', `${chemReach(rank, spec)}칸`], ['제독 주기', `${chemInterval(spec)}초`])
+  if (card === 'miner') rows.push(['개인 지뢰 토큰', `${mineTokenPlan([{ rank, spec }]).length}개`], ['지뢰', rank >= ABILITY.corporal ? '대전차' : '일반'])
+  if (rank >= ABILITY.corporal) rows.push(['상병 능력', { rifle: '2점사', sniper: '관통 감쇠 없음', blower: '밀어낸 적 3초 화상 · 초당 8', cook: '2명 동시 회복', miner: '장갑 지뢰 피해 ×3', chem: '제독 기본 범위 2칸' }[card]])
+  if (rank >= ABILITY.sergeant) rows.push(['병장 능력', { rifle: '공격 간격 −20%', sniper: '첫 대상 1초 기절', blower: '기본 밀기 2칸', cook: '회복 범위 2칸', miner: '지뢰 토큰 +2', chem: '인접 아군 직접 공격 +15%' }[card]])
+  return rows
+}
+
+// 살아 있는 다친 대상만 고른다. 자기 자신·거리 필터는 호출자가 먼저 적용한다.
+export function cookHealing<T extends { hp: number; maxHp: number; taunt?: boolean; alive: boolean }>(patients: T[], rank: number, count: number, spec?: Specialty): { target: T; amount: number }[] {
+  return healOrder(patients.filter((p) => p.alive && p.hp > 0 && p.hp < p.maxHp)).slice(0, cookTargets(rank, count)).map((target) => ({ target, amount: Math.min(cookHeal(spec), target.maxHp - target.hp) }))
 }

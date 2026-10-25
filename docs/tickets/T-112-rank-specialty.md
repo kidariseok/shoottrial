@@ -1,6 +1,6 @@
 # T-112 기존 6종 계급·특기와 성장 연출
 
-상태: 계획 작성 완료·기획 결정 및 구현 승인 대기
+상태: 진행 중
 담당: Codex(구현·통합), Orca 작업자(현재 읽기 전용 계획 검토)
 
 ## 목표
@@ -178,3 +178,8 @@
 - [x] 2026-10-25 Orca 검토2건 완료: 규칙 Task `task_e5e00822cf75`/Dispatch `ctx_096109986c0d` succeeded, UI Task `task_9b4ec1eee6f2`/Dispatch `ctx_0606ca6dc702` succeeded. 둘 다 제품/문서 수정·검증 실행 없음. 검토 결과를 위 계획·계약·테스트 예시에 반영했다.
 - [x] 두 worker_done의 Task/Dispatch를 확인하고 각각 기록 보존 후 worker-release 완료. 두 delivery ack 완료, reclaimable 작업자0 확인. 승인창 문제는 사용자 위임으로 해소됐으며 현재 작업자 승인 대기는 없다.
 - [ ] 남은 선행: 위 기획 질문2건과 전체 작업 계획에 대한 사용자 답변. AGENTS.md의 문서 충돌 처리 규칙에 따라 제품 코드는 미변경 상태로 유지한다.
+
+- [x] 사용자 구현 승인 및 기획 결정 확정: 전투 중에는 일시 정지 후 즉시 특기 선택. 화학병 제독 A는 가스 제거와 아군 보호 범위 모두 +1. 구현 Run `run_eb539ebc6ced`. 이전 미확정·승인 대기 문구는 이 결정으로 대체한다.
+- 구현 소유권: 계산 작업자는 data/rules 및 units/enemies/gas, 합성 작업자는 board/shop/BattleScene/debug, 화면 작업자는 ui 및 art/fx와 TECH §8. 조정자는 문서와 통합 검증. 성장 훅은 art.applyRankArt(view, card, rank, name?)를 board에서 호출한다.
+
+- [x] 구현3건 완료·worker_done 수신, 각 Task/Dispatch 확인 후 기록 보존/release/ack 완료. reclaimable0. 초기 통합 verify318테스트·83에셋·빌드 통과. 사용자 TECH §8 수정 별도 승인 수신 후 기존 cardInfo를 보존하는 cardInfoDetail 및 chooseSpecialty 계약 반영. 실제 선택/시간·입력 잠금/일시정지 복귀/중복 선택 확인. 다음: 연쇄 구매·전투 효과·계급 화면 QA와 최종 검증.

@@ -28,15 +28,33 @@ export function toOffers(shop: Shop): Offer[] {
 export type BuyResult = { kind: BuyOutcome['kind'] | 'none'; cost: number; card: CardKey | null }
 
 // 성공(bench·merge)일 때만 board를 바꾸고 칸을 비운다. 보급 차감은 호출한 쪽이 cost로 한다
-export function buyCard(shop: Shop, board: Pick<Board, 'benchFree' | 'units' | 'place' | 'promote'>, i: number, supply: number): BuyResult {
+export function buyCard(shop: Shop, board: Pick<Board, 'benchFree' | 'units' | 'place' | 'promote'>, i: number, supply: number, done?: () => void): BuyResult {
   const card = shop.offers[i] ?? null
   if (!card) return { kind: 'none', cost: 0, card: null }
   const free = board.benchFree()
   const out = buyOutcome(card, supply, free !== null, board.units())
   if (out.kind === 'poor' || out.kind === 'full') return { kind: out.kind, cost: 0, card }
-  if (out.kind === 'bench') board.place('bench', free as number, { card, rank: 1 })
-  else for (const step of out.steps) board.promote(step.promote.zone, step.promote.i, step.remove)
   shop.offers[i] = null
+  if (out.kind === 'bench') {
+    board.place('bench', free as number, { card, rank: 1 })
+    done?.()
+  } else {
+    let index = 0
+    const next = () => {
+      const step = out.steps[index++]
+      if (!step) return done?.()
+      let advanced = false
+      const advance = () => {
+        if (advanced) return
+        advanced = true
+        next()
+      }
+      const waiting = board.promote(step.promote.zone, step.promote.i, step.remove, advance)
+      // ponytail: 기존 동기 보드는 반환값·콜백이 없다. true만 선택 대기로 취급한다.
+      if (waiting !== true) advance()
+    }
+    next()
+  }
   return { kind: out.kind, cost: CARDS[card].cost, card }
 }
 

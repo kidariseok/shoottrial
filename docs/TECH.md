@@ -154,6 +154,9 @@ export type Offer = { card: string; cost: number } | null
 export function hud(h: Hud): void                                              // 매 프레임이 아니라 값이 바뀔 때만
 export function shop(open: boolean, offers: Offer[], supply: number, onBuy: (i: number) => void, onReroll: () => void, onGo: () => void): void
 export function cardInfo(card: string | null, rank?: number): void            // null이면 닫기
+export type CardDetail = { name?: string; spec?: 'A' | 'B'; rows?: [string, string][] }
+export function cardInfoDetail(card: string | null, rank?: number, detail?: CardDetail): void
+export function chooseSpecialty(request: { card: string; rank: number; name?: string } | null, onPick?: (spec: 'A' | 'B') => void): void
 export function banner(text: string, kind: 'flag' | 'defcon' | 'info'): void
 export function result(r: { win: boolean; wave: number; kills: number; unlocked?: string }, onAgain: () => void, onLobby: () => void): void
 export function askRevive(onYes: () => void, onNo: () => void): void
@@ -180,6 +183,8 @@ export function lobby(): void  // M3: A가 결과 화면 "생활관"에서 battl
 - A는 해금·최고 기록 저장에 B의 `save.ts`(`load()`/`save()`)를 import해 쓴다(06-02부터). `?scene=log`는 B의 `main.ts`가 `battle` 씬으로 시작하고, A가 그 안에서 기록 화면을 그린다.
 - **M4(2026-10-23)**: A는 전투 소리를 위해 B의 `audio.ts`에서 `playSfx(key)`·`playBgm(key | null)`만 import해 부른다(T-106이 제공). 생활관 배경음·버튼 클릭음은 B가 한다.
 - **M3 변경(2026-10-22)**: `Hud.support`와 `BattleCtl.fireSupport()`를 더했다. B는 전투 단계이고 `support > 0`일 때만 버튼을 켠다(T-104).
+- **T-112(2026-10-25 사용자 승인)**: 기존 `cardInfo`2인자 호출을 유지하고 `cardInfoDetail`로 인물·특기·실제 계산 수치 행을 전달한다. 수치는 A의 순수 계산에서 만들고 DOM은 표시만 한다.
+- `chooseSpecialty`는 준비/전투 중 합성 직후 호출한다. 선택 중 게임시간·구매·드래그·전투 투입을 잠그며, 전투 중에도 잠시 멈춰 즉시 고른다. null·씬 종료·unbind는 콜백을 폐기한다. 한 번 선택한 콜백은 다시 실행하지 않는다. 뒤로가기로 일시정지 후 계속하면 선택으로 돌아간다.
 - 광고 슬롯 중 `revive`는 `askRevive`, `unlock`은 로비(B)가 처리한다. `reroll`·`supply`만 `ctl`을 거친다.
 
 ## 9. 디버그 URL

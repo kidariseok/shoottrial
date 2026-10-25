@@ -9,6 +9,8 @@ import {
   cloneHud,
   formatBriefingText,
   getCardInitial,
+  getCharacterName,
+  getCharacterIntro,
   getCardName,
   getRankBars,
   getRankName,
@@ -254,5 +256,22 @@ describe('T-109 걷는 생활관 헬퍼', () => {
     expect(readAlarmFx(null)).toBe(true)
     expect(readAlarmFx('1')).toBe(true)
     expect(readAlarmFx('0')).toBe(false)
+  })
+})
+
+describe('T-112 인물 표시', () => {
+  it('소총수는 신병 이름을 상속하고 말년은 표시에서만 붙는다', () => {
+    const name = '김신병'
+    expect(getCharacterName('rifle', 2, name)).toBe(name)
+    expect(getCharacterName('rifle', 4, name)).toBe('말년 김신병')
+    expect(name).toBe('김신병')
+    expect(getCharacterName('rifle', 1)).toBe('김신병')
+  })
+  it('보직 인물·소개를 표시하고 모르는 카드는 안전하게 반환한다', () => {
+    expect(getCharacterName('sniper', 3)).toBe('이상병')
+    expect(getCharacterName('sniper', 4)).toBe('말년 이상병')
+    expect(getCharacterIntro('cook')).toBe('밥심을 믿는 취사반장')
+    expect(getCharacterName('unknown')).toBe('unknown')
+    expect(getCharacterIntro('unknown')).toBe('—')
   })
 })
