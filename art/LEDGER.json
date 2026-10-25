@@ -99,7 +99,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.126582
     },
     {
@@ -110,7 +110,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.126957
     },
     {
@@ -121,7 +121,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.129534
     },
     {
@@ -145,7 +145,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.128096
     },
     {
@@ -182,7 +182,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.213068
     },
     {
@@ -219,7 +219,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.127986
     },
     {
@@ -308,7 +308,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.118397
     },
     {
@@ -319,7 +319,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.077628
     },
     {
@@ -330,7 +330,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.059138
     },
     {
@@ -341,7 +341,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.159557
     },
     {
@@ -352,7 +352,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.16732
     },
     {
@@ -363,7 +363,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.538318
     },
     {
@@ -374,7 +374,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.121008
     },
     {
@@ -385,7 +385,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.402797
     },
     {
@@ -396,7 +396,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.031964
     },
     {
@@ -407,7 +407,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.030236
     },
     {
@@ -418,7 +418,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.56686
     },
     {
@@ -455,7 +455,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.213068
     },
     {
@@ -492,7 +492,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.213371
     },
     {
@@ -529,7 +529,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.217234
     },
     {
@@ -566,7 +566,7 @@
       "prompt": "docs/ART.md#3.2",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-24",
+      "checked": "2026-10-25",
       "scale": 0.212164
     },
     {
@@ -645,6 +645,396 @@
       "checked": "2026-10-25",
       "scale": 0.203863,
       "poseHeight": 95,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_rifle_hit",
+      "file": "public/assets/ally_rifle_hit.png",
+      "source": "art/source/ally_rifle_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.188755,
+      "poseHeight": 94,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_rifle_down",
+      "file": "public/assets/ally_rifle_down.png",
+      "source": "art/source/ally_rifle_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.213636,
+      "poseHeight": 94,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_rifle_promote",
+      "file": "public/assets/ally_rifle_promote.png",
+      "source": "art/source/ally_rifle_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.209354,
+      "poseHeight": 94,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_sniper_hit",
+      "file": "public/assets/ally_sniper_hit.png",
+      "source": "art/source/ally_sniper_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.22673,
+      "poseHeight": 95,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_sniper_down",
+      "file": "public/assets/ally_sniper_down.png",
+      "source": "art/source/ally_sniper_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.266106,
+      "poseHeight": 95,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_sniper_promote",
+      "file": "public/assets/ally_sniper_promote.png",
+      "source": "art/source/ally_sniper_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.261161,
+      "poseHeight": 91,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_blower_hit",
+      "file": "public/assets/ally_blower_hit.png",
+      "source": "art/source/ally_blower_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.195378,
+      "poseHeight": 93,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_blower_down",
+      "file": "public/assets/ally_blower_down.png",
+      "source": "art/source/ally_blower_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.219858,
+      "poseHeight": 93,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_blower_promote",
+      "file": "public/assets/ally_blower_promote.png",
+      "source": "art/source/ally_blower_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.21934,
+      "poseHeight": 93,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_cook_hit",
+      "file": "public/assets/ally_cook_hit.png",
+      "source": "art/source/ally_cook_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.191235,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_cook_down",
+      "file": "public/assets/ally_cook_down.png",
+      "source": "art/source/ally_cook_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.225882,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_cook_promote",
+      "file": "public/assets/ally_cook_promote.png",
+      "source": "art/source/ally_cook_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.220183,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_miner_hit",
+      "file": "public/assets/ally_miner_hit.png",
+      "source": "art/source/ally_miner_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.206522,
+      "poseHeight": 95,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_miner_down",
+      "file": "public/assets/ally_miner_down.png",
+      "source": "art/source/ally_miner_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.224057,
+      "poseHeight": 95,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_miner_promote",
+      "file": "public/assets/ally_miner_promote.png",
+      "source": "art/source/ally_miner_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.213483,
+      "poseHeight": 95,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_chem_hit",
+      "file": "public/assets/ally_chem_hit.png",
+      "source": "art/source/ally_chem_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.213333,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_chem_down",
+      "file": "public/assets/ally_chem_down.png",
+      "source": "art/source/ally_chem_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.223776,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_chem_promote",
+      "file": "public/assets/ally_chem_promote.png",
+      "source": "art/source/ally_chem_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.21286,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_medic_hit",
+      "file": "public/assets/ally_medic_hit.png",
+      "source": "art/source/ally_medic_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.201258,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_medic_down",
+      "file": "public/assets/ally_medic_down.png",
+      "source": "art/source/ally_medic_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.221709,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_medic_promote",
+      "file": "public/assets/ally_medic_promote.png",
+      "source": "art/source/ally_medic_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.203822,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_mortar_hit",
+      "file": "public/assets/ally_mortar_hit.png",
+      "source": "art/source/ally_mortar_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.222749,
+      "poseHeight": 94,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_mortar_down",
+      "file": "public/assets/ally_mortar_down.png",
+      "source": "art/source/ally_mortar_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.306189,
+      "poseHeight": 94,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_mortar_promote",
+      "file": "public/assets/ally_mortar_promote.png",
+      "source": "art/source/ally_mortar_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.247881,
+      "poseHeight": 81,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_antitank_hit",
+      "file": "public/assets/ally_antitank_hit.png",
+      "source": "art/source/ally_antitank_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.215247,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_antitank_down",
+      "file": "public/assets/ally_antitank_down.png",
+      "source": "art/source/ally_antitank_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.24,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_antitank_promote",
+      "file": "public/assets/ally_antitank_promote.png",
+      "source": "art/source/ally_antitank_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.210989,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_signal_hit",
+      "file": "public/assets/ally_signal_hit.png",
+      "source": "art/source/ally_signal_hit",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.191617,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_signal_down",
+      "file": "public/assets/ally_signal_down.png",
+      "source": "art/source/ally_signal_down",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.19917,
+      "poseHeight": 96,
+      "matchFirstFrame": true
+    },
+    {
+      "id": "ally_signal_promote",
+      "file": "public/assets/ally_signal_promote.png",
+      "source": "art/source/ally_signal_promote",
+      "tool": "chatgpt-image",
+      "prompt": "docs/tickets/A-105-motion-art.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-25",
+      "scale": 0.190099,
+      "poseHeight": 96,
       "matchFirstFrame": true
     }
   ]
