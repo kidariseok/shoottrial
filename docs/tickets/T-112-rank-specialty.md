@@ -180,3 +180,5 @@
 - Orca 구현 Run `run_eb539ebc6ced`: 계산 Task `task_5f95a7fc042d`/Dispatch `ctx_019c93031459`, 합성 Task `task_b8ce19c2c34f`/Dispatch `ctx_f644255dc8db`, UI Task `task_abb7489794f3`/Dispatch `ctx_f6df872a823b` 모두 succeeded·기록 보존·release·delivery ack 완료. reclaimable0.
 - 사용자 결정은 GDD에, 추가 DOM 계약은 사용자 별도 승인 후 TECH §8에 반영. 기존 cardInfo2인자는 보존하고 상세정보 cardInfoDetail을 신설했다.
 - 검증용 서버와 브라우저 종료. 임시 Playwright 로그는 최종 변경에서 제거하고 허용 스크린샷8장만 보존한다.
+
+- PR: https://github.com/kidariseok/shoottrial/pull/40 (사용자 병합 대기, 에이전트 병합 없음). 완료 저장·push 성공.

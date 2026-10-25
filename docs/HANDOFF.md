@@ -37,7 +37,7 @@
 | 0 | 사용자가 #36·#37 병합 | 완료(실제 조회 확인) |
 | 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25); 브랜치 `kidariseok/t111-motion`) |
 | 1' | **A-105 모션 그림62장**(1묶음32+2묶음30) | 처리·갤러리 완료. 기존6종 피격/쓰러짐/진급 실제 연결 확인, [PR #39](https://github.com/kidariseok/shoottrial/pull/39) 병합 확인 완료(2026-10-25). 제품 연결 코드는 T-111에 이미 있음 |
-| 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, 사용자 PR 병합 대기. 브랜치 `kidariseok/t112-rank-specialty` |
+| 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, [PR #40](https://github.com/kidariseok/shoottrial/pull/40) 사용자 병합 대기. 브랜치 `kidariseok/t112-rank-specialty` |
 | 3 | **M6 단계 9: 새 카드 4종 구현** | 티켓 없음(`T-113`). 그림 A-104는 처리 완료(도형이 아니라 그림이 나온다) |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
 | 5 | 레인 A 잔여: 일일 첫 접속 보너스, 전투 소리 연결(`playSfx`/`playBgm`) | 대기 |
@@ -119,3 +119,5 @@
 - 구현 분담: 계산/전투 Task `task_5f95a7fc042d` Dispatch `ctx_019c93031459`; 합성/씬 Task `task_b8ce19c2c34f` Dispatch `ctx_f644255dc8db`; UI/성장 Task `task_abb7489794f3` Dispatch `ctx_f6df872a823b`. 기준선 verify294테스트·83에셋·빌드 통과. TECH §8 수정은 자동 승인 검토에서 읽기 전용 사유로 거절되어 사용자에게 별도 승인 질문을 보냄. 문서 제외 구현은 계속한다.
 
 - 2026-10-25 21:16 (T-112 완료): 기존6종12특기·누적 계급 능력·합성 선택/연쇄 구매·성장 장식·인물/진급18대사·실제 정보 수치 구현. 사용자 결정2건을 GDD에 반영하고 별도 승인된 TECH §8 계약 추가. 최종 verify319테스트/20파일·83에셋·타입/빌드 통과, 기존 번들 경고. Safe Area 사진8장 `docs/shots/T-112*.png`. 실제 Phaser 입력·전투 함수로 합성/구매1회 차감/선택 중 잠금·중복콜백/핵심 효과 확인. 실기기/광고복귀/전체밸런스 미확인. Orca 구현3건 succeeded·release·ack 완료, reclaimable0, 검증 서버/브라우저 종료. 다음: 사용자 PR 병합 후 새 대화에서 T-113 티켓부터.
+
+- T-112 PR: https://github.com/kidariseok/shoottrial/pull/40, 완료 저장·push 성공. 다음 작업자는 #40 실제 병합 확인 후 T-113을 별도 대화·origin/main 새 브랜치에서 시작한다.
