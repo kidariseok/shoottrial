@@ -144,8 +144,10 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
   - 프레임 수는 열 덩어리 세기로 32장 모두 맞음(`node count.mjs`로 확인, 스크래치패드 도구). 화학병·박격포병 공격은 프레임이 맞닿아 스크립트로 잘라 간격을 140px로 벌려 넣음.
   - 남은 이슈(작음): 제설병 공격 6번째 노즐 끝이 캔버스 끝에서 살짝 잘림 / 의무병 공격 1·6번 프레임에 손에 든 작은 구급함이 빠짐 / 군견 달리기 3번 프레임 붉은 눈 위치가 다름 / RPG병 쓰러짐 1·4번 프레임이 캔버스 가장자리에 닿음 / 지뢰설치병 대기 3번에 공중에 뜬 지뢰가 몸과 떨어져 있음.
   - 주의: `art/inbox/`와 `art/ref/`는 gitignore라 GitHub에 안 올라간다. 원본 PNG 백업은 이 컴퓨터의 `art/ref/a105/`(아군)와 스크래치패드뿐이므로, 컴퓨터가 지워지기 전에 T-111이 처리하거나 따로 백업할 것.
-- 2026-10-25 **2묶음 진행 중**(그림마다 바로 `art/inbox/` + 홈 백업 `~/moonfish-backup/a105-inbox-2026-10-25/`에 저장, 그 폴더의 `progress.log`가 저장 순서 기록): 소총수·저격수·제설병의 `hit`(2)·`down`(4)·`promote`(4) 완료.
-  - 다음: T-111이 프레임 상한을 늘린 뒤 `node scripts/assets.mjs` 처리 → `?scene=gallery`·`?scene=battle` 확인. 그 뒤 2묶음(피격·쓰러짐·진급 30장)은 사용자 판단.
+- 2026-10-25 **2묶음 30장 전부 제작 완료**(브랜치 `kidariseok/m6-chars`, Claude Code, ChatGPT High 한 대화). 그림마다 바로 `art/inbox/ally_<카드>_<hit|down|promote>.png` + 홈 백업 `~/moonfish-backup/a105-inbox-2026-10-25/`(1묶음 32+2묶음 30=62장, `progress.log`에 저장 순서)에 저장했고, 아군 10종 모두 `hit`(2)·`down`(4)·`promote`(4) 프레임 수를 열 덩어리 세기로 확인했다. 처리(`node scripts/assets.mjs`)는 아직 안 함.
+  - 손본 것: 화학병 `down`은 프레임이 맞닿아 스크립트로 간격을 벌려 저장(원본 `chem_down_raw.png`는 스크래치패드), 제설병 `down`은 재킷이 검정이라 올리브색으로 다시 뽑음.
+  - 남은 이슈(작음): 지뢰설치병 `down`의 손이 노란색으로 바뀜 / 의무병 `hit`·`down`·`promote`는 구급함 모양이 대기와 거의 같게 나왔으나 1묶음 `medic_attack`의 구급함 누락은 그대로.
+  - 처리할 때 주의: 2묶음도 `matchFirstFrame: true`로 기준 대기 첫 자세 높이를 맞춘다(인계 메모 참고). 처리 후 `art/inbox/`는 비워지므로 원본 백업은 홈 폴더에 남아 있다.
 
 - 2026-10-25 (Codex, 1묶음 처리 시작)
   - 기준 커밋: `65b222a2f11e` (`origin/main`, #38 실제 병합 확인).
