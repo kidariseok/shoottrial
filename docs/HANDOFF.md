@@ -1,7 +1,7 @@
 # 인계 문서 (Claude Code → Codex 등 다른 에이전트)
 
 > 이 문서는 **작업자가 바뀌어도 이어갈 수 있게** 지금 상태·다음 할 일·함정을 적는다. 작업 단계를 끝낼 때마다 갱신한다.
-> 마지막 갱신: 2026-10-26(Codex, T-113 구현·검증 완료, 사용자 PR 병합 대기). 갱신 로그는 맨 아래.
+> 마지막 갱신: 2026-10-26(Codex, #41 실제 병합 확인·T-114 전투 소리 계획). 갱신 로그는 맨 아래.
 > **Codex에게 시키는 프롬프트는 `docs/CODEX-START.md`에 있다.**
 
 ## 0. 먼저 읽을 것 (순서대로)
@@ -38,9 +38,9 @@
 | 1 | **T-111 모션 엔진**(프레임 상한 확장 + 동작 사이 연결, 코드). 그림 없이도 끝낼 수 있다 | `docs/tickets/T-111-motion-engine.md`(구현·화면 검증 완료; `npm run verify` 292테스트 통과, [PR #38](https://github.com/kidariseok/shoottrial/pull/38) 병합 확인 완료(2026-10-25); 브랜치 `kidariseok/t111-motion`) |
 | 1' | **A-105 모션 그림62장**(1묶음32+2묶음30) | 처리·갤러리 완료. 기존6종 피격/쓰러짐/진급 실제 연결 확인, [PR #39](https://github.com/kidariseok/shoottrial/pull/39) 병합 확인 완료(2026-10-25). 제품 연결 코드는 T-111에 이미 있음 |
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, [PR #40](https://github.com/kidariseok/shoottrial/pull/40) 실제 병합 확인(2026-10-25T12:18:10Z). 브랜치 `kidariseok/t112-rank-specialty` |
-| 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 구현·검증 완료(341테스트·83에셋·빌드), [PR #41](https://github.com/kidariseok/shoottrial/pull/41) 사용자 병합 대기. 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. |
+| 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 구현·검증 완료(341테스트·83에셋·빌드), [PR #41](https://github.com/kidariseok/shoottrial/pull/41) 실제 병합 확인(2026-10-25T18:56:00Z). 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
-| 5 | 레인 A 잔여: 일일 첫 접속 보너스, 전투 소리 연결(`playSfx`/`playBgm`) | 대기 |
+| 5 | **T-114 전투 소리 연결** | `docs/tickets/T-114-battle-audio.md` 계획 작성·사용자 승인 대기. 브랜치 `kidariseok/t114-battle-audio`. 일일 첫 접속 보너스는 별도 대기 |
 | 6 | **T-108 출시 준비**(AAB 서명, 개인정보처리방침, 스토어 등록물, PX 광고 해금 연결) | **사용자가 구글 콘솔을 뒤로 미룸.** 사용자가 다시 꺼낼 때 시작(참고 `docs/research/play-launch.md`) |
 | 7 | 글꼴 번들(시안의 Black Han Sans, 파일 다운로드가 필요해 사용자 승인) | **출시 직전에 결정** |
 | 8 | 최종 난이도: 사용자 플레이테스트로 확정(튜닝 봇은 낡았다) | 사용자 |
@@ -133,3 +133,5 @@
 - 2026-10-26 03:26 (T-113 완료): 새4종 기본/특기8개/상병·병장·시너지·해금·상점·도감/정보·인물12대사 연결. 기존6종 수치 유지. 사용자 승인 후 테스트2경로 추가, 구표6종 고정 비교만 부분 비교로 전환. verify21파일341테스트·83에셋·타입/빌드 통과, 기존 번들 경고 유지. 실제 Phaser 입력/게임 함수로 소생·기절/보호·포격 시간/빗나감/정산·장갑/관통·지원 중복충전 방지/예약300/판초기화·도감/모달·구매/해금 확인. 세로 Safe Area 사진9장 `docs/shots/T-113*.png`. 실기기·광고SDK·전체10웨이브 밸런스/성능 미확인. 서버/브라우저 종료. Orca3건 succeeded·ack·reclaimable0, UI창release·계산/전투창user_takeover retained. 다음: 사용자 PR 병합 후 새4종 플레이테스트 및 다음 티켓 선택.
 
 - T-113 PR https://github.com/kidariseok/shoottrial/pull/41 생성·완료 저장/push 성공. 다음은 사용자 병합·플레이테스트이며 추가 구현은 새 티켓/브랜치에서 시작한다.
+
+- 2026-10-26 (T-114 계획/중단 복구): 사용자 #41 병합·다음 단계 요청 후 중단 재개. #41 MERGED 실제 확인, origin/main a897bb073f1f에서 새 브랜치 `kidariseok/t114-battle-audio`. 미완료 코드 없음, verify341테스트·83에셋·빌드 재통과. A-103 생활관 그림은 미입고라 대기. T-106 음원/API는 있으나 전투 모듈에 호출이 없어 다음 준비 가능한 큐 항목으로 T-114 티켓 작성. BGM/사격/회복·소생/폭발/구매·합성 연결과 재생 중 음소거 검증 계획, 제품 코드 미변경. start-ticket 계획 승인 뒤 구현.
