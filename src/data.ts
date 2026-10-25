@@ -45,6 +45,33 @@ export const CARDS: Record<
   chem: { name: '화학병', initial: '화', color: 0xb0b420, cost: 2, hp: 90, atk: 6, interval: 1.0, range: 3 }, // §5.2 지뢰설치병과 같은 단발 사격. 노랑 계열(r > g 금지)
 }
 
+// GDD §5.3 기존 6종 특기·인물. 효과 수치도 이 표에서만 읽는다.
+export type Specialty = 'A' | 'B'
+export const SPECIALTIES = {
+  rifle: { A: { name: '사수', description: '사거리 +1.5칸, 공격 간격 ×1.15', range: 1.5, interval: 1.15 }, B: { name: '돌격', description: '사거리 −1칸, 간격 ×0.75, 1.5칸 안 피해 ×1.3', range: -1, interval: 0.75, reach: 1.5, damage: 1.3 } },
+  sniper: { A: { name: '정밀', description: '첫 명중 대상 피해 ×1.5', damage: 1.5 }, B: { name: '관통', description: '사선 폭 0.8칸, 관통 감쇠 10%', width: 0.8, falloff: 0.1 } },
+  blower: { A: { name: '방벽', description: 'HP ×1.2, 받는 피해 −25%, 도발 2.5칸', hp: 1.2, armor: 0.75, taunt: 2.5 }, B: { name: '돌풍', description: '밀기 ×1.5, 취약 3.5초, 간격 ×0.8', knock: 1.5, vuln: 3.5, interval: 0.8 } },
+  cook: { A: { name: '영양', description: '회복량 18', heal: 18 }, B: { name: '보급', description: '웨이브 클리어 보급 +1', supply: 1 } },
+  miner: { A: { name: '다량 매설', description: '지뢰 토큰 +1', tokens: 1 }, B: { name: '부비트랩', description: '폭발 범위 안 적 1초 기절', stun: 1 } },
+  chem: { A: { name: '제독', description: '제독·보호 범위 +1칸, 제독 주기 2초', reach: 1, interval: 2 }, B: { name: '화생방 사격', description: '직접 공격에 3초 중독, 초당 4 피해', poisonSec: 3, poisonDps: 4 } },
+} as const
+export const CHARACTERS = {
+  rifle: { name: '{이름}', intro: '방금 자대에 온 신병', quotes: ['총은 몸이 기억한다.', '이제 눈 감고도 쏩니다.', '말년엔 총알도 아낍니다.'] },
+  sniper: { name: '이상병', intro: '말수 적은 K14 사수', quotes: ['숨 한 번, 방아쇠 한 번.', '한 줄이면 충분합니다.', '조준경 너머로 다 보입니다.'] },
+  blower: { name: '최제설', intro: '눈 치우던 솜씨로 막는 제설 담당', quotes: ['눈 치우던 솜씨로 막습니다.', '밀어낼수록 편해집니다.', '여긴 한 발짝도 못 넘습니다.'] },
+  cook: { name: '박취사', intro: '밥심을 믿는 취사반장', quotes: ['든든히 먹어야 버팁니다.', '밥심이 전투력입니다.', '짬밥 내공 보여드리죠.'] },
+  miner: { name: '조지뢰', intro: '깔아 둔 건 정직하다고 믿는 공병', quotes: ['밟으면 끝입니다.', '깔아 둔 건 정직합니다.', '길은 제가 만들어 둡니다.'] },
+  chem: { name: '한화학', intro: '방독면을 늘 챙기는 화생방 담당', quotes: ['방독면은 잊지 마세요.', '공기부터 지킵니다.', '독가스는 여기서 끝납니다.'] },
+} as const
+export const RANK_VISUAL = {
+  scale: [1, 1, 1.1, 1.2], quoteMs: 1500, veteran: '말년', ring: 0xffe066, aura: 0xffd56a, promoteText: '진급!',
+  bubble: { y: -88, fontPx: 20, color: '#ffffff', background: '#141c26', padding: 6 },
+  ringShape: { w: 96, h: 24, lineW: 3, alpha: 0.85 },
+  halo: { y: -10, w: 100, h: 120, alpha: 0.12 },
+  star: { y: 52, points: 5, innerRadius: 18, outerRadius: 46, alpha: 0.4 },
+  title: { y: -80, fontPx: 20 },
+} as const
+
 // GDD §5.3. copies는 계급별 이등병 환산 장수(판매 환급·합성 재료 수)
 export const RANKS = {
   names: ['이등병', '일병', '상병', '병장'],
@@ -395,7 +422,7 @@ export const ABILITY = {
   burnDps: 8,
   cookHeal: 12,
   cookBuff: 0.2,
-  cookRevive: 0.5,
+  cookRevive: 0.5, // 기존 수치 계약 호환용. 취사병은 소생하지 않는다.
   cookReachSergeant: 2,
 }
 
@@ -494,3 +521,5 @@ export const ART = {
     rpg: { id: 'rpg', move: 'walk', act: 'fire' },
   },
 } as const
+
+export const SPECIALTY_RULES = { cookTargets: 2 } as const

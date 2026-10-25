@@ -1,13 +1,13 @@
 import { Scene, type GameObjects, type Input } from 'phaser'
-import { BATTLE, CARD_KEYS, CARDS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
+import { BATTLE, CARD_KEYS, CARDS, CHARACTERS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
 import { createRng, debug } from '../debug'
-import { motionPhase, artKey, afterRun, colAt, defconOf, gasPlan, hasAntiTank, income, mineTokens, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
+import { motionPhase, artKey, afterRun, colAt, defconOf, gasPlan, income, mineTokenPlan, cookSupplyBonus, unitInfoRows, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { defaultSave, load, save, type Save } from '../save'
 import { WAVES } from '../stages'
 import * as ui from '../ui/screens'
 import { art, downMotion, loadArt, promoteMotion, setupArt, setupMotion, tickMotion } from './art'
 import { armGas, clearGas, createGas, tickGas, type Gas } from './gas'
-import { createBoard, deployIndex, type Board } from './board'
+import { createBoard, deployIndex, type Board, type Unit } from './board'
 import { drawLog } from './log'
 import { hurtEnemy, removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
 import { colBand, explosion, fall, hitStop, laneFlash, resetStop, shake, stopping } from './fx'
@@ -48,6 +48,12 @@ export class BattleScene extends Scene {
   public picking = 0
   public strikes: { col: number; left: number; line: GameObjects.Rectangle }[] = []
   private pickBands: GameObjects.Rectangle[] = []
+  public selecting = false
+  public buying = false
+  private runGeneration = 0
+  private selectionUnit: Unit | null = null
+  private selectionPick: ((spec: 'A' | 'B') => void) | null = null
+  private waveRewarded = false
   public paused = false
   public hudCalls = 0 // ui.hud를 실제로 부른 횟수(헤드리스가 읽는다)
   private hudKey = ''
@@ -74,6 +80,13 @@ export class BattleScene extends Scene {
 
   // 클래스 필드 초기값은 생성자에서 한 번만 돈다. 씬 재시작은 create만 다시 부르므로 판 상태는 여기서 전부 되돌린다
   private resetRun() {
+    this.runGeneration += 1
+    this.selecting = false
+    this.buying = false
+    this.selectionUnit = null
+    this.selectionPick = null
+    this.waveRewarded = false
+    ui.chooseSpecialty(null)
     this.phase = 'prep'
     this.wave = Math.min(WAVES.length, Math.max(1, debug.wave ?? 1))
     this.baseHp = BATTLE.baseHp
@@ -118,6 +131,9 @@ export class BattleScene extends Scene {
 
   // 웨이브 클리어 기록. 정산 수입을 더하기 전 값이다
   private clearWave() {
+    if (this.waveRewarded) return
+    this.waveRewarded = true
+    this.supply += cookSupplyBonus(this.board.deployed().map((d) => d.unit))
     this.flushVulnKills()
     this.log({ e: 'wave_clear', wave: this.wave, base_hp: Math.max(0, this.baseHp), supply: this.supply })
   }
@@ -155,14 +171,18 @@ export class BattleScene extends Scene {
     this.gasExtra = Number(new URLSearchParams(location.search).get('gas') ?? 0) || 0
     this.store = createShop(base + 2)
     this.ready = false
+    const generation = this.runGeneration
     this.events.once('shutdown', () => {
+      this.runGeneration += 1
+      this.ready = false
+      this.cancelSelection()
       ui.bindBattle(null)
       ui.cardInfo(null)
     })
     // 로드가 끝나기 전에는 판을 만들지 않는다. 실패해도 기본 저장으로 진행한다
     load()
       .catch(() => defaultSave())
-      .then((sv) => this.begin(sv, dy))
+      .then((sv) => { if (generation === this.runGeneration) this.begin(sv, dy) })
   }
 
   // 저장을 읽은 뒤 판 만들기(보드·신병·덱·첫 상점)
@@ -179,19 +199,21 @@ export class BattleScene extends Scene {
 
     this.board = createBoard(this, {
       dy,
+      name: (card) => card === 'rifle' ? sv.name || ROOKIE.name : CHARACTERS[card].name,
+      onSpecialty: (unit, done) => this.chooseSpecialty(unit, done),
       onSell: (refund) => {
         this.supply += refund
       },
       onMerge: (card, rank) => this.log({ e: 'merge', card, rank }),
       onHold: (u) => {
-        if (u) ui.cardInfo(u.card, u.rank)
+        if (u) ui.cardInfoDetail(u.card, u.rank, { name: u.name, spec: u.spec, rows: unitInfoRows(u, this.board.deployed().filter((d) => d.unit.card === u.card).length, defconOf(this.wave) === 1) })
         else ui.cardInfo(null)
       },
     })
     // 신병을 먼저 놓아야 디버그 덱이 같은 칸을 차지하지 않는다
     this.board.place('deploy', deployIndex(ROOKIE.col, ROOKIE.row), { card: ROOKIE.card, rank: 1, name: sv.name || ROOKIE.name })
     this.gas = createGas(this, this.board)
-    this.board.dealDeck(debug.deck ?? [])
+    this.board.dealDeck(debug.deck ?? [], debug.rank, debug.spec)
 
     this.setSpeed(debug.speed ?? 1)
     ui.bindBattle({
@@ -204,7 +226,7 @@ export class BattleScene extends Scene {
       fireSupport: () => this.fireSupport(),
     })
     this.input.on('pointerdown', (p: Input.Pointer) => {
-      if (this.picking > 0) this.pickColumn(colAt(p.worldX))
+      if (!this.inputBlocked() && this.picking > 0) this.pickColumn(colAt(p.worldX))
     })
     this.ready = true
     this.startPrep()
@@ -214,16 +236,65 @@ export class BattleScene extends Scene {
   pause() {
     if (this.result) return
     this.paused = true
+    this.syncLock()
     this.tweens.pauseAll()
   }
 
   resume() {
     this.paused = false
-    this.tweens.resumeAll()
+    if (!this.selecting && !this.modal) this.tweens.resumeAll()
+    this.syncLock()
+    if (this.selecting) this.showSelection()
+  }
+
+  private inputBlocked() {
+    return !this.ready || !!this.result || this.paused || this.modal || this.selecting || this.buying
+  }
+
+  private syncLock() {
+    this.board?.lock(this.inputBlocked() || this.picking > 0)
+  }
+
+  private chooseSpecialty(unit: Unit, done: (spec: 'A' | 'B') => void) {
+    this.selecting = true
+    this.selectionUnit = unit
+    this.selectionPick = done
+    this.tweens.pauseAll()
+    this.syncLock()
+    this.syncShop()
+    this.showSelection()
+  }
+
+  private showSelection() {
+    const unit = this.selectionUnit
+    const done = this.selectionPick
+    if (!unit || !done) return
+    const generation = this.runGeneration
+    ui.chooseSpecialty(unit, (spec) => {
+      if (generation !== this.runGeneration || this.result || this.paused || !this.selecting || this.selectionUnit !== unit || this.selectionPick !== done) return
+      if (!this.board.units().some((entry) => entry.unit === unit)) return
+      this.selecting = false
+      this.selectionUnit = null
+      this.selectionPick = null
+      ui.chooseSpecialty(null)
+      done(spec)
+      if (!this.selecting && !this.paused && !this.modal) this.tweens.resumeAll()
+      this.syncLock()
+      this.syncShop()
+    })
+  }
+
+  private cancelSelection() {
+    this.selecting = false
+    this.buying = false
+    this.selectionUnit = null
+    this.selectionPick = null
+    ui.chooseSpecialty(null)
   }
 
   // 포기
   quit() {
+    this.cancelSelection()
     this.resume() // 트윈이 멈춘 채 결과로 가지 않게
     this.gaveUp = true
     this.finish(false)
@@ -231,13 +302,13 @@ export class BattleScene extends Scene {
 
   // 광고 자체는 M4에서 B가 연결, 여기서는 보상만 적용
   adReroll() {
-    if (this.phase !== 'prep' || this.result || !useAdReroll(this.store)) return
+    if (this.inputBlocked() || this.phase !== 'prep' || !useAdReroll(this.store)) return
     refill(this.store, this.pool)
     this.syncShop()
   }
 
   adSupply() {
-    if (this.result || !useAdSupply(this.store)) return
+    if (this.inputBlocked() || !useAdSupply(this.store)) return
     this.supply += REWARD.adSupplyAmount
   }
 
@@ -250,9 +321,9 @@ export class BattleScene extends Scene {
     this.phase = 'prep'
     this.board.setPhase('prep')
     // 지뢰설치병 수·계급·시너지로 이번 준비 단계 토큰이 정해진다(MINE-01)
-    const miners = this.board.deployed().filter((d) => d.unit.card === 'miner').map((d) => ({ rank: d.unit.rank }))
-    const anti = hasAntiTank(miners)
-    this.board.setTokens(mineTokens(miners), anti)
+    this.waveRewarded = false
+    const miners = this.board.deployed().filter((d) => d.unit.card === 'miner').map((d) => d.unit)
+    this.board.setTokens(mineTokenPlan(miners))
     this.prepLeft = this.wave === 1 ? BATTLE.prepFirst : BATTLE.prepNext
     if (this.wave === 1) ui.banner(UI.text.bannerIntro, 'info')
     this.pool = this.unlocked
@@ -274,6 +345,7 @@ export class BattleScene extends Scene {
   }
 
   startFight() {
+    if (this.inputBlocked() || this.phase !== 'prep') return
     this.phase = 'fight'
     this.board.setPhase('fight')
     this.board.setTokens(0, false) // 쓰지 않은 토큰은 사라지고 묻힌 지뢰는 남는다
@@ -294,7 +366,7 @@ export class BattleScene extends Scene {
 
   // 상점 패널. 값이 바뀔 때만 ui.shop을 부른다(부를 때마다 5칸을 새로 그린다)
   syncShop() {
-    const open = this.phase === 'prep' && !this.result
+    const open = this.phase === 'prep' && !this.inputBlocked()
     const key = `${open}|${this.supply}|${this.store.offers.join(',')}`
     if (key === this.shopKey) return
     this.shopKey = key
@@ -302,8 +374,18 @@ export class BattleScene extends Scene {
   }
 
   buy(i: number) {
-    if (this.phase !== 'prep' || this.result) return
-    const r = buyCard(this.store, this.board, i, this.supply)
+    if (this.inputBlocked() || this.phase !== 'prep') return
+    this.buying = true
+    this.syncLock()
+    const generation = this.runGeneration
+    const r = buyCard(this.store, this.board, i, this.supply, () => {
+      if (generation !== this.runGeneration || this.result) return
+      this.buying = false
+      this.syncLock()
+      this.syncShop()
+    })
+    if (r.kind !== 'bench' && r.kind !== 'merge') this.buying = false
+    this.syncLock()
     if (r.kind === 'poor') ui.banner(UI.text.bannerPoor, 'info')
     else if (r.kind === 'full') ui.banner(UI.text.bannerBenchFull, 'info')
     else if ((r.kind === 'bench' || r.kind === 'merge') && r.card) {
@@ -314,7 +396,7 @@ export class BattleScene extends Scene {
   }
 
   reroll() {
-    if (this.phase !== 'prep' || this.result) return
+    if (this.inputBlocked() || this.phase !== 'prep') return
     if (this.supply < ECONOMY.rerollCost) return ui.banner(UI.text.bannerPoor, 'info')
     this.supply -= ECONOMY.rerollCost
     refill(this.store, this.pool)
@@ -323,24 +405,24 @@ export class BattleScene extends Scene {
 
   // 전투 투입!: 준비 시간이 남은 채 누르면 조기 투입 보너스
   go() {
-    if (this.phase !== 'prep' || this.result) return
+    if (this.inputBlocked() || this.phase !== 'prep') return
     this.supply += ECONOMY.earlyBonus
     this.startFight()
   }
 
   // 화력 지원 열 고르기(전투 단계, 남은 횟수가 있을 때). 5열 강조 + 카드 입력 잠금
   fireSupport() {
-    if (this.phase !== 'fight' || this.result || this.support <= 0 || this.picking > 0) return
+    if (this.inputBlocked() || this.phase !== 'fight' || this.support <= 0 || this.picking > 0) return
     this.picking = SUPPORT.pickSec
     const y0 = this.board.worldY(LAYOUT.entryY)
     const y1 = this.board.worldY(LAYOUT.lineY)
     for (let c = 0; c < LAYOUT.cols; c++) this.pickBands.push(colBand(this, this.board.toScreen(c, 0).x, y0, y1, LAYOUT.cell, UI.colors.supportPick, UI.fx.supportPickAlpha))
-    this.board.lock(true)
+    this.syncLock()
   }
 
   // 열 확정. 판 밖(-1)이면 취소하고 횟수는 그대로
   pickColumn(col: number) {
-    if (this.picking <= 0) return
+    if (this.inputBlocked() || this.picking <= 0) return
     this.endPick()
     if (col < 0) return
     this.support -= 1
@@ -352,7 +434,7 @@ export class BattleScene extends Scene {
     this.picking = 0
     for (const b of this.pickBands) b.destroy()
     this.pickBands = []
-    this.board.lock(false)
+    this.syncLock()
   }
 
   // 전투가 끝나면 고르기·남은 포격을 버린다(줄어든 횟수는 돌려주지 않는다)
@@ -402,7 +484,7 @@ export class BattleScene extends Scene {
   }
 
   update(_time: number, delta: number) {
-    if (this.logOnly || !this.ready || this.paused || this.modal) return
+    if (this.logOnly || !this.ready || this.paused || this.modal || this.selecting || this.buying) return
     const real = Math.min(delta / 1000, BATTLE.maxDt)
     const dt = stopping(real) ? 0 : real * this.speed // 히트스톱 중에는 전투 시간이 흐르지 않는다
     // 새 카드(도형 포함)를 기존 보드 함수 변경 없이 찾아 몸 모션만 연결한다.
@@ -523,11 +605,14 @@ export class BattleScene extends Scene {
     if (this.reviveUsed) return this.finish(false)
     this.reviveUsed = true
     this.modal = true
+    this.syncLock()
     this.tweens.pauseAll()
     // 광고는 M4에서 B가 연결. 지금은 예 = 바로 부활
+    const generation = this.runGeneration
     ui.askRevive(
-      () => this.revive(),
+      () => { if (generation === this.runGeneration && !this.result && this.modal) this.revive() },
       () => {
+        if (generation !== this.runGeneration || this.result || !this.modal) return
         this.modal = false
         this.tweens.resumeAll()
         this.finish(false)
@@ -542,12 +627,15 @@ export class BattleScene extends Scene {
     this.lineMarks = []
     this.modal = false
     this.tweens.resumeAll()
+    this.syncLock()
     ui.banner(UI.text.bannerRevive, 'info')
   }
 
   private finish(win: boolean) {
     if (this.result) return
+    this.cancelSelection()
     this.result = win ? 'win' : 'lose'
+    this.syncLock()
     this.flushVulnKills() // 지는 웨이브의 취약 처치도 남긴다(이긴 판은 clearWave가 이미 비웠다)
     this.endSupport()
     clearGas(this.gas)

@@ -1,12 +1,13 @@
 import { Scene, GameObjects, type Input, type Time } from 'phaser'
 import { ART, CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
-import type { DeckItem } from '../debug'
-import { addSprite, hasArt } from './art'
+import { debug, type DeckItem } from '../debug'
+import { addSprite, applyRankArt, hasArt, setupMotion, promoteMotion } from './art'
 import { promoteFx } from './fx'
-import { artKey, canDrag, dropAllowed, dropOutcome, merge, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
+import { artKey, canDrag, dropAllowed, dropOutcome, merge, mergeSpecialty, motionPhase, nearestEmpty, sellValue, type FlowPhase, type Spot } from '../rules'
 
-// rules.Unit 확장. name은 신병 카드만 가진다
-export type Unit = { card: CardKey; rank: number; name?: string }
+// rules.Unit 확장. 인물 이름은 이동·합성 때 그대로 물려받는다
+export type Unit = { card: CardKey; rank: number; name?: string; spec?: 'A' | 'B' }
+export type MineToken = { anti: boolean; stun: boolean }
 export type Zone = 'deploy' | 'bench' | 'sell'
 export type BoardUnit = Spot & { unit: Unit }
 // x, y = 월드 좌표의 칸 중심(dy 반영)
@@ -18,11 +19,11 @@ export type Board = {
   // 첫 빈 대기석 번호. 가득 차면 null
   benchFree(): number | null
   // 그 칸 카드를 한 계급 올린다(병장이면 무시). 이름은 자기 것 ?? absorb 칸 것, absorb 칸은 치워진다(환급 없음)
-  promote(zone: 'bench' | 'deploy', i: number, absorb?: Spot): void
+  promote(zone: 'bench' | 'deploy', i: number, absorb?: Spot, done?: () => void): boolean | void
   // 프로그램용 이동(빈 칸으로만)
   move(from: Spot, to: Spot): boolean
-  dealDeck(deck: DeckItem[]): void
-  // 화력 지원 열 고르는 동안 카드 집기·길게 누르기를 막는다
+  dealDeck(deck: DeckItem[], rank?: number, spec?: 'A' | 'B'): void
+  // 모달·특기·화력 지원 선택 중 카드와 지뢰 입력을 막고 진행 중 입력을 되돌린다
   lock(on: boolean): void
   // 논리 좌표(열, 칸 단위 y: 적 진입 구역 맨 위 = 0) -> 월드 좌표(화면 내림 포함)
   toScreen(col: number, y: number): { x: number; y: number }
@@ -31,13 +32,13 @@ export type Board = {
   // 배치 구역에 놓인 카드(대기석 제외)
   deployed(): { unit: Unit; col: number; row: number; view: GameObjects.Container }[]
   setPhase(phase: FlowPhase): void
-  // 지뢰 토큰 n개(0이면 더미 숨김). anti = 이 단계 토큰이 대전차인지(더미 색)
-  setTokens(n: number, anti: boolean): void
+  // 생산자 속성을 복사한 지뢰 토큰. 숫자/anti 형식은 기존 호출 호환용이다
+  setTokens(n: number | MineToken[], anti?: boolean): void
   tokens(): number
   // 토큰 1개를 지뢰 구역 (col, row 0|1) 빈 칸에 묻는다. 토큰이 없거나 칸이 차 있으면 false
   bury(col: number, row: number): boolean
   // 묻힌 지뢰 (row 0 = 지뢰 구역 위 행)
-  mines(): { col: number; row: number; anti: boolean }[]
+  mines(): { col: number; row: number; anti: boolean; stun: boolean }[]
   // 묻힌 지뢰 제거(연출은 호출한 쪽)
   detonate(col: number, row: number): void
 }
@@ -58,7 +59,7 @@ export function drawRank(gfx: GameObjects.Graphics, rank: number): void {
 
 const labelStyle = (color: string) => ({ fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color })
 
-export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: number) => void; onMerge?: (card: CardKey, rank: number) => void; onHold?: (unit: Unit | null) => void }): Board {
+export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: number) => void; onMerge?: (card: CardKey, rank: number) => void; onHold?: (unit: Unit | null) => void; name?: (card: CardKey) => string; onSpecialty?: (unit: Unit, done: (spec: 'A' | 'B') => void) => void }): Board {
   const { dy } = opts
   const { cell, cols, marginX } = LAYOUT
   // 판 전체를 dy만큼 내린다. HUD 띠(0~hudH)는 이 컨테이너 밖이라 움직이지 않는다
@@ -145,11 +146,17 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     view.setSize(cell, cell)
     view.setScale(SPRITE_SCALE * (s.size / cell))
     view.setData('rank', rank)
+    const serial = (scene.data.get('motionSerial') as number | undefined) ?? 0
+    scene.data.set('motionSerial', serial + 1)
+    view.setData('base', idle).setData('motionReady', true)
+    setupMotion(view, idle, motionPhase(debug.seed, serial))
+    applyRankArt(view, unit.card, unit.rank, unit.name)
     return view
   }
 
   // 칸에 카드를 둔다: 뷰 생성 + 드래그 설정 + 뷰가 자기 칸을 안다
   const put = (s: Slot, unit: Unit) => {
+    unit.name ??= opts.name?.(unit.card)
     const view = makeView(unit, s)
     view.setData('slot', s)
     view.setInteractive({ draggable: true }) // 크기는 setSize(cell, cell), 히트 영역은 컨테이너 표시 원점(중심) 기준
@@ -187,19 +194,33 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   }
 
   // 대상 칸 카드를 새 계급으로 다시 만든다: 진급 연출(계급 작대기 확대 후 복귀 + 진급! 팝업, 도형·텍스트만) + onMerge
-  const promoteTo = (target: Slot, rank: number, name: string | undefined) => {
+  const promoteTo = (target: Slot, rank: number, name: string | undefined, spec: 'A' | 'B' | undefined, done?: () => void) => {
     const card = (target.unit as Unit).card
     scene.tweens.killTweensOf(target.view as GameObjects.Container) // 방금 옮겨져 스냅 중일 수 있다
     target.view?.destroy()
-    const view = put(target, { card, rank, name })
+    const view = put(target, { card, rank, name, spec })
     scene.tweens.add({ targets: view.getData('rank'), scale: UI.fx.promoteScale, duration: UI.fx.promoteMs, yoyo: true })
     const popup = scene.add
       .text(target.x, target.y, UI.text.promote, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.popupColor })
       .setOrigin(0.5)
       .setDepth(UI.fx.dragDepth)
     scene.tweens.add({ targets: popup, y: target.y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => popup.destroy() })
+    promoteMotion(view, rank)
     promoteFx(scene, target.x, target.y)
     opts.onMerge?.(card, rank)
+    if (spec || !opts.onSpecialty) {
+      done?.()
+      return false
+    }
+    const unit = target.unit as Unit
+    let picked = false
+    opts.onSpecialty(unit, (choice) => {
+      if (picked || target.unit !== unit || !view.active) return
+      picked = true
+      unit.spec = choice
+      done?.()
+    })
+    return true
   }
 
   // 합성: 드래그한 카드는 사라지고 대상 칸 카드가 진급한다. 이름은 재료 중 신병 것을 물려받는다
@@ -211,7 +232,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     from.view?.destroy()
     from.unit = null
     from.view = null
-    promoteTo(target, rank, b.name ?? a.name)
+    promoteTo(target, rank, b.name ?? a.name, mergeSpecialty(a, b))
   }
 
   // 판매: 환급은 sellValue(이등병 비용 x 재료 장수). 확인 창·되돌리기 없음
@@ -250,7 +271,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   // 흐름 단계와 지금 끌고 있는 카드(잠긴 드래그는 null)
   let phase: FlowPhase = 'prep'
   let active: GameObjects.Container | null = null
-  let locked = false // 화력 지원 열 고르기 중
+  let locked = false // 모달·선택·연쇄 합성 중
 
   // 길게 누르기: 정해진 시간(data.ts) 동안 거의 움직이지 않으면 onHold(unit), 손을 떼면 onHold(null). 드래그가 시작되면 열지 않는다
   // ponytail: 터치 실기기에서 손가락 오프셋·멀티터치는 확인 못 함, 실기기 확인 때 임계값 조정
@@ -303,7 +324,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('drag', (_p: unknown, obj: GameObjects.GameObject, dragX: number, dragY: number) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from || view !== active || holding) return // 정보가 열려 있는 동안은 카드를 끌지 않는다
+    if (locked || !from || view !== active || holding) return // 정보가 열려 있는 동안은 카드를 끌지 않는다
     view.x = dragX
     view.y = dragY
     const s = slotAt(dragX, dragY)
@@ -320,7 +341,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   scene.input.on('dragend', (_p: unknown, obj: GameObjects.GameObject) => {
     const view = obj as GameObjects.Container
     const from = view.getData('slot') as Slot | undefined
-    if (!from || view !== active) return
+    if (locked || !from || view !== active) return
     active = null
     stopFlash() // 대상 view가 destroy되기 전에 해제한다
     hl.clear()
@@ -350,17 +371,18 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
       .filter((s) => s.unit)
       .map((s) => ({ zone: s.zone as 'bench' | 'deploy', i: s.i, unit: s.unit as Unit }))
   const benchFree = () => slots.find((s) => s.zone === 'bench' && !s.unit)?.i ?? null
-  const promote = (zone: 'bench' | 'deploy', i: number, absorb?: Spot) => {
+  const promote = (zone: 'bench' | 'deploy', i: number, absorb?: Spot, done?: () => void) => {
     const s = slotOf(zone, i)
     if (!s?.unit || s.unit.rank >= RANKS.max) return
     const a = absorb ? slotOf(absorb.zone, absorb.i) : undefined
     const name = s.unit.name ?? a?.unit?.name
+    const spec = mergeSpecialty(s.unit, a?.unit ?? { card: s.unit.card, rank: 1 })
     if (a?.unit) {
       a.view?.destroy()
       a.unit = null
       a.view = null
     }
-    promoteTo(s, s.unit.rank + 1, name)
+    return promoteTo(s, s.unit.rank + 1, name, spec, done)
   }
   // ponytail: 프로그램용(튜닝 봇·디버그), 단계 잠금을 보지 않는다
   const move = (from: Spot, to: Spot) => {
@@ -376,13 +398,13 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     ...slots.filter((s) => s.zone === 'bench'),
     ...Array.from({ length: LAYOUT.deployRows }, (_, k) => LAYOUT.deployRows - 1 - k).flatMap((r) => slots.filter((s) => s.zone === 'deploy' && Math.floor(s.i / cols) === r)),
   ]
-  const dealDeck = (deck: DeckItem[]) => {
+  const dealDeck = (deck: DeckItem[], rank = 1, spec?: 'A' | 'B') => {
     // ponytail: 5칸을 넘는 덱은 배치 구역으로 넘치고 나머지는 버린다, 디버그 전용이라 경고 없음
     for (const item of deck) {
       if (!CARD_KEYS.includes(item.card as CardKey)) continue
       for (let k = 0; k < item.n; k++) {
         const s = dealOrder.find((d) => !d.unit)
-        if (s) place(s.zone as 'deploy' | 'bench', s.i, { card: item.card as CardKey, rank: 1 })
+        if (s) place(s.zone as 'deploy' | 'bench', s.i, { card: item.card as CardKey, rank, spec: rank > 1 ? spec : undefined })
       }
     }
   }
@@ -390,7 +412,8 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
   // ---- 지뢰 토큰 더미와 매설 ----
   let tokenCount = 0
   let trayAnti = false
-  const buried: { col: number; row: number; anti: boolean; view: GameObjects.Arc | GameObjects.Image }[] = []
+  let tokenQueue: MineToken[] = []
+  const buried: { col: number; row: number; anti: boolean; stun: boolean; view: GameObjects.Arc | GameObjects.Image }[] = []
   const home = toScreen(UI.mine.trayCol, UI.mine.trayY)
   const disc = scene.add.circle(0, 0, UI.mine.tokenR, UI.colors.mineToken)
   const count = scene.add.text(0, 0, '', { fontFamily: UI.text.fontFamily, fontSize: `${UI.mine.countPx}px`, color: UI.text.color }).setOrigin(0.5)
@@ -408,24 +431,27 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     return null
   }
   const bury = (col: number, row: number) => {
-    if (tokenCount <= 0 || hasMine(col, row)) return false
+    if (locked || phase !== 'prep' || tokenCount <= 0 || hasMine(col, row)) return false
+    const token = tokenQueue.shift() as MineToken
     tokenCount -= 1
     count.setText(String(tokenCount))
     tray.setVisible(tokenCount > 0)
     const p = mineCenter(col, row)
-    const mineKey = trayAnti ? 'mine_at' : 'mine'
+    const mineKey = token.anti ? 'mine_at' : 'mine'
     const view = hasArt(mineKey)
       ? scene.add.image(p.x, p.y, mineKey).setAlpha(UI.mine.alpha)
-      : scene.add.circle(p.x, p.y, UI.mine.buriedR, trayAnti ? UI.colors.mineAnti : UI.colors.mineBuried, UI.mine.alpha)
-    buried.push({ col, row, anti: trayAnti, view })
+      : scene.add.circle(p.x, p.y, UI.mine.buriedR, token.anti ? UI.colors.mineAnti : UI.colors.mineBuried, UI.mine.alpha)
+    buried.push({ col, row, ...token, view })
+    trayAnti = tokenQueue[0]?.anti ?? false
+    disc.setFillStyle(trayAnti ? UI.colors.mineAnti : UI.colors.mineToken)
     return true
   }
   const goHome = () => scene.tweens.add({ targets: tray, x: home.x, y: home.y, duration: UI.fx.snapMs })
   // ponytail: 한 번 묻은 지뢰는 다시 옮기지 못한다, 실수 되돌리기가 필요하면 지뢰를 더미로 끌어오는 기능을 추가
   let trayDragging = false
   tray.on('dragstart', () => {
-    trayDragging = phase === 'prep' && tokenCount > 0
-    if (!trayDragging) return
+    trayDragging = !locked && phase === 'prep' && tokenCount > 0
+    if (locked || !trayDragging) return
     scene.tweens.killTweensOf(tray)
     tray.setDepth(UI.fx.dragDepth)
     hl.clear().lineStyle(UI.fx.hlWidth, UI.colors.hlOk, UI.fx.hlAlpha)
@@ -437,12 +463,12 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
       }
   })
   tray.on('drag', (_p: unknown, dragX: number, dragY: number) => {
-    if (!trayDragging) return
+    if (locked || !trayDragging) return
     tray.x = dragX
     tray.y = dragY
   })
   tray.on('dragend', () => {
-    if (!trayDragging) return
+    if (locked || !trayDragging) return
     trayDragging = false
     hl.clear()
     const cellAt = mineCellAt(tray.x, tray.y)
@@ -451,14 +477,15 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     goHome()
   })
 
-  const setTokens = (n: number, anti: boolean) => {
-    tokenCount = n
-    trayAnti = anti
-    disc.setFillStyle(anti ? UI.colors.mineAnti : UI.colors.mineToken)
-    count.setText(String(n))
+  const setTokens = (n: number | MineToken[], anti = false) => {
+    tokenQueue = typeof n === 'number' ? Array.from({ length: n }, () => ({ anti, stun: false })) : n.map((token) => ({ ...token }))
+    tokenCount = tokenQueue.length
+    trayAnti = tokenQueue[0]?.anti ?? false
+    disc.setFillStyle(trayAnti ? UI.colors.mineAnti : UI.colors.mineToken)
+    count.setText(String(tokenCount))
     trayDragging = false
     scene.tweens.killTweensOf(tray)
-    tray.setPosition(home.x, home.y).setDepth(0).setVisible(n > 0)
+    tray.setPosition(home.x, home.y).setDepth(0).setVisible(tokenCount > 0)
   }
   const detonate = (col: number, row: number) => {
     const i = buried.findIndex((m) => m.col === col && m.row === row)
@@ -478,11 +505,27 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     worldY,
     deployed,
     setPhase: (p) => (phase = p),
-    lock: (on) => (locked = on),
+    lock: (on) => {
+      locked = on
+      if (!on) return
+      release()
+      if (active) {
+        const slot = active.getData('slot') as Slot
+        scene.tweens.killTweensOf(active)
+        active.setPosition(slot.x, slot.y).setDepth(0)
+      }
+      active = null
+      hover = null
+      stopFlash()
+      hl.clear()
+      trayDragging = false
+      scene.tweens.killTweensOf(tray)
+      tray.setPosition(home.x, home.y).setDepth(0)
+    },
     setTokens,
     tokens: () => tokenCount,
     bury,
-    mines: () => buried.map(({ col, row, anti }) => ({ col, row, anti })),
+    mines: () => buried.map(({ col, row, anti, stun }) => ({ col, row, anti, stun })),
     detonate,
   }
 }

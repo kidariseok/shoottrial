@@ -31,6 +31,13 @@ describe('debug 파라미터 파싱', () => {
     expect(config.safe).toBe(true)
   })
 
+  it('계급과 특기는 유효한 값만 받는다', () => {
+    expect(parseDebugParams('?rank=4&spec=A')).toMatchObject({ rank: 4, spec: 'A' })
+    expect(parseDebugParams('?rank=2&spec=B')).toMatchObject({ rank: 2, spec: 'B' })
+    for (const value of ['', '0', '5', '2.5', 'NaN']) expect(parseDebugParams('?rank=' + value).rank).toBeUndefined()
+    for (const value of ['', 'a', 'C']) expect(parseDebugParams('?spec=' + value).spec).toBeUndefined()
+  })
+
   it('deck 파싱', () => {
     expect(parseDeck('')).toEqual([])
     expect(parseDeck('rifle:4,sniper:2,miner')).toEqual([

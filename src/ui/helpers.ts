@@ -1,3 +1,4 @@
+import { CHARACTERS, RANK_VISUAL, ROOKIE, type CardKey } from '../data'
 import type { Hud, Phase } from './screens'
 
 const CARD_META: Record<string, { name: string; initial: string }> = {
@@ -211,4 +212,14 @@ export function saveAlarmFx(on: boolean): void {
   } catch {
     // 저장 못 해도 이번 실행에는 영향 없음
   }
+}
+
+export function getCharacterName(card: string, rank?: number, name?: string): string {
+  const person = CHARACTERS[card as CardKey]
+  const base = name || (card === 'rifle' ? ROOKIE.name : person?.name) || getCardName(card)
+  return rank === 4 ? `${RANK_VISUAL.veteran} ${base}` : base
+}
+
+export function getCharacterIntro(card: string): string {
+  return CHARACTERS[card as CardKey]?.intro ?? '—'
 }

@@ -7,6 +7,8 @@ export interface DeckItem {
 
 export interface DebugConfig {
   scene: string
+  rank?: number
+  spec?: 'A' | 'B'
   wave?: number
   unlock?: string
   supply?: number
@@ -58,6 +60,10 @@ export function parseDebugParams(search: string): DebugConfig {
   const deckParam = params.get('deck')
   const deck = deckParam !== null ? parseDeck(deckParam) : undefined
 
+  const rankParam = Number(params.get('rank'))
+  const rank = Number.isInteger(rankParam) && rankParam >= 1 && rankParam <= 4 ? rankParam : undefined
+  const specParam = params.get('spec')
+  const spec = specParam === 'A' || specParam === 'B' ? specParam : undefined
   const god = params.get('god') === '1'
 
   const speedParam = params.get('speed')
@@ -71,6 +77,8 @@ export function parseDebugParams(search: string): DebugConfig {
 
   return {
     scene,
+    rank,
+    spec,
     wave,
     unlock,
     supply,

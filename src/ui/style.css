@@ -1503,3 +1503,12 @@ html, body {
   text-align: center;
   min-width: 54px;
 }
+
+/* 특기 선택은 일시정지 아래, 전투 입력 위에 둔다. */
+.specialty-backdrop { z-index: 45; }
+.specialty-card { max-height: 100%; overflow-y: auto; }
+.specialty-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.specialty-option { display: flex; flex-direction: column; gap: 10px; white-space: normal; text-align: left; padding: 12px; }
+.specialty-option strong { color: var(--accent-brass); }
+.specialty-option span { font-size: 12px; line-height: 1.6; font-weight: 400; }
+.ui-card-sheet { max-height: 100%; overflow-y: auto; }

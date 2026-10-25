@@ -1,6 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
 import { FX, GAS, LAYOUT, UI } from '../data'
-import { allyY, cleanseCells, emptyGas, gasCellsAfterDrop, gasHits, synergyTier, type Chem, type GasDrop, type LogEvent } from '../rules'
+import { allyY, chemInterval, cleanseCells, emptyGas, gasCellsAfterDrop, gasHits, synergyTier, type Chem, type GasDrop, type LogEvent } from '../rules'
 import type { Board, Unit } from './board'
 import { hasArt } from './art'
 import { burst, shake } from './fx'
@@ -94,16 +94,16 @@ export function tickGas(
   const chems = chemsOf(allies)
   for (const a of allies) {
     if (a.unit.card !== 'chem' || !a.combat.alive) continue
-    const left = (g.cd.get(a.unit) ?? GAS.cleanse) - dt
+    const left = (g.cd.get(a.unit) ?? chemInterval(a.unit.spec)) - dt
     if (left > 0) {
       g.cd.set(a.unit, left)
       continue
     }
-    const chem: Chem = { col: a.col, row: a.row, rank: a.unit.rank }
+    const chem: Chem = { col: a.col, row: a.row, rank: a.unit.rank, spec: a.unit.spec }
     const r = cleanseCells(g.cells, chem)
     g.cells = r.cells
     if (r.n > 0) ctx.log({ e: 'gas_clear', n: r.n })
-    g.cd.set(a.unit, GAS.cleanse)
+    g.cd.set(a.unit, chemInterval(a.unit.spec))
   }
   // 5. 피해: 면역 아닌 가스 칸 위 아군은 조용히 피해를 받는다
   for (const a of allies) if (a.combat.alive && gasHits(g.cells, chems, a.col, a.row)) damageAlly(scene, a, GAS.dps * dt, true)

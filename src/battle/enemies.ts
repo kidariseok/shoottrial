@@ -1,6 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, ART, BATTLE, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
-import { motionPhase, artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
+import { ABILITY, ART, SPECIALTIES, BATTLE, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
+import { dotTick, motionPhase, artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
 import { debug } from '../debug'
 import { addSprite, setupMotion, moveMotion, leanMotion, hasArt, hitSprite, playAct, anticipateMotion } from './art'
 import type { Board } from './board'
@@ -16,6 +16,7 @@ export type Enemy = {
   maxHp: number
   ready: number // 공격 준비 누적 초. 막혀서 멈춘 동안만 쌓이고, 걷거나 밀리면 0
   stun: number // 남은 기절 초
+  poison: number // 남은 중독 초(화상과 독립)
   burn: number // 남은 화상 초
   vuln: number // 남은 취약 초(받는 피해 x COMBAT.vulnMult)
   pushedAt: number // 마지막으로 밀린 전투 시각(초). 안 밀렸으면 -Infinity. 지뢰 연계 판정용
@@ -76,7 +77,7 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
   view.setData('vulnMark', mark)
   view.add(bar)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
-  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, vuln: 0, pushedAt: -Infinity, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
+  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, poison: 0, vuln: 0, pushedAt: -Infinity, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
 }
 
 // 제거 판정은 호출한 쪽이 hp <= 0으로 거른다
@@ -108,16 +109,16 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       const p = ctx.board.toScreen(e.col, e.y)
       e.view.y = p.y
     }
-    // 0. 취약 시간 감소, 표시 갱신
+    // 지속 피해는 기절·밀림 중에도 흐른다. 만료를 넘는 dt와 취약 만료를 나눠 계산한다.
+    const burn = dotTick(e.burn, dt, ABILITY.burnDps, e.vuln)
+    const poison = dotTick(e.poison, dt, SPECIALTIES.chem.B.poisonDps, e.vuln)
+    e.burn = burn.remaining
+    e.poison = poison.remaining
+    e.hp -= burn.damage + poison.damage
+    if (burn.damage + poison.damage > 0) drawBar(e)
     e.vuln = Math.max(0, e.vuln - dt)
     ;(e.view.getData('vulnMark') as GameObjects.Triangle).setVisible(e.vuln > 0 && Math.floor(e.vuln * FX.vuln.blinkHz) % 2 === 0)
-    // 1. 화상
-    if (e.burn > 0) {
-      e.hp -= damageTaken(ABILITY.burnDps * dt, e.vuln)
-      e.burn -= dt
-      drawBar(e)
-      if (e.hp <= 0) continue
-    }
+    if (e.hp <= 0) continue
     // 2. 밀려남(히트백): 미끄러지는 동안 걷지도 때리지도 않는다
     if (e.knockLeft > 0) {
       const step = Math.min(e.knockLeft, BATTLE.slideSpeed * dt)
@@ -185,6 +186,7 @@ export function tickMines(ctx: { scene: Scene; board: Board; enemies: Enemy[]; c
         comboText(ctx.scene, e.view.x, e.view.y - LAYOUT.cell / 2)
       }
       hurtEnemy(ctx.scene, e, mineDamage(e.type, m.anti) * combo)
+      if (m.stun) e.stun = Math.max(e.stun, SPECIALTIES.miner.B.stun)
     }
     ctx.board.detonate(m.col, m.row)
     const p = ctx.board.toScreen(m.col, GRID.mineTop + m.row + 0.5)
