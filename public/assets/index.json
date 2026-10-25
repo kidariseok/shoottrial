@@ -45,5 +45,11 @@
   "card_antitank",
   "ally_signal_idle",
   "ally_signal_attack",
-  "card_signal"
+  "card_signal",
+  "enemy_inf_hit",
+  "enemy_inf_down",
+  "enemy_dog_hit",
+  "enemy_dog_down",
+  "enemy_rpg_hit",
+  "enemy_rpg_down"
 ]

@@ -757,7 +757,7 @@ function getUnitScaleInfo(key, ledgerEntries) {
  * 키 종류에 따라 모든 프레임을 한 배율로 자동 축소한다 (H-103 §3).
  * 확대는 하지 않는다 (scale <= 1).
  */
-export function fitFramesToContract(cleanedFrames, contract, ledgerEntries = []) {
+export function fitFramesToContract(cleanedFrames, contract, ledgerEntries = [], matchFirstFrame = false) {
   const croppedFrames = cleanedFrames.map((frame) => {
     const bbox = findBoundingBox(frame)
     if (!bbox) {
@@ -775,7 +775,11 @@ export function fitFramesToContract(cleanedFrames, contract, ledgerEntries = [])
   const unitInfo = getUnitScaleInfo(contract.key, ledgerEntries)
   if (unitInfo.isUnit) {
     if (unitInfo.refEntry) {
-      scale = unitInfo.refEntry.scale
+      // 서로 다른 해상도로 생성된 시트는 첫 대기 자세의 처리 후 높이를 맞춘다.
+      // 시트 전체에 같은 배율을 적용하므로 웅크림·반동·쓰러짐의 비율은 유지된다.
+      scale = matchFirstFrame
+        ? Math.min(1, (unitInfo.refEntry.poseHeight ?? UNIT_TARGET_HEIGHT) / croppedFrames[0].height)
+        : unitInfo.refEntry.scale
       scaleRefKey = unitInfo.refEntry.id
     } else {
       scale = Math.min(1, UNIT_TARGET_HEIGHT / maxH)
@@ -970,6 +974,7 @@ export function processAssetKey(key, options = {}) {
   let frameCount = 1
   let scale = 1
   let scaleRefKey = null
+  let poseHeight
 
   if (isBackground) {
     let rawBgPng
@@ -1005,12 +1010,13 @@ export function processAssetKey(key, options = {}) {
 
     let framesToAlign = cleanedFrames
     if (meta.fit !== false) {
-      const fitted = fitFramesToContract(cleanedFrames, contract, ledgerData.entries)
+      const fitted = fitFramesToContract(cleanedFrames, contract, ledgerData.entries, meta.matchFirstFrame === true)
       framesToAlign = fitted.frames
       scale = fitted.scale
       scaleRefKey = fitted.scaleRefKey
     }
 
+    if (/^(ally|enemy)_/.test(key)) poseHeight = findBoundingBox(framesToAlign[0])?.height
     const alignedFrames = framesToAlign.map((frame) => alignFrameToCanvas(frame, contract))
     sheetPng = mergeFramesToSheet(alignedFrames, contract)
     frameCount = alignedFrames.length
@@ -1048,6 +1054,8 @@ export function processAssetKey(key, options = {}) {
     edited: typeof meta.edited === 'boolean' ? meta.edited : true,
     checked: meta.checked ?? today,
     scale: Number(scale.toFixed(6)),
+    ...(poseHeight === undefined ? {} : { poseHeight }),
+    ...(meta.matchFirstFrame === true ? { matchFirstFrame: true } : {}),
   }
 
   const existingIdx = ledgerData.entries.findIndex((e) => e.id === key)
@@ -1067,6 +1075,7 @@ export function processAssetKey(key, options = {}) {
     frames: frameCount,
     scale,
     scaleRefKey,
+    poseHeight,
     ledgerEntry,
   }
   result.summary = formatAssetResultLine(result)

@@ -112,6 +112,9 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 - `docs/HANDOFF.md`
 - `docs/shots/A-105*.png`
 
+- `scripts/assets.mjs`
+- `tests/assets-pipeline.test.ts`
+
 ## 허용 의존성
 
 - 없음
@@ -126,7 +129,7 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 
 ## 질문
 
-- [ ] 처리 도구 수정 범위 승인 요청: `scripts/assets.mjs`와 `tests/assets-pipeline.test.ts`를 소유 경로에 추가해야 한다. 현재 도구는 캐릭터 대기/이동의 **원본 축소 비율**을 다른 시트에 그대로 적용한다. A-105는 프레임 수에 따라 원본 인물 크기가 달라 소총수가 대기96px→공격65px로 작아진다(다른 아군도 같은 문제, 적은 반대로 커짐). 새 시트의 첫/끝 대기 자세를 기준으로 **처리 후 몸 크기**를 맞추되, 쓰러짐·웅크림 같은 실제 동작은 시트 내 동일 배율로 보존하는 선택적 보정과 회귀 테스트가 필요하다. AGENTS.md 절대 규칙2에 따라 승인 전에는 도구를 수정하지 않는다.
+- [x] 처리 도구 수정 범위 승인(사용자: "크기 맞추고 나서 계속 진행"): `scripts/assets.mjs`와 `tests/assets-pipeline.test.ts`를 소유 경로에 추가해야 한다. 현재 도구는 캐릭터 대기/이동의 **원본 축소 비율**을 다른 시트에 그대로 적용한다. A-105는 프레임 수에 따라 원본 인물 크기가 달라 소총수가 대기96px→공격65px로 작아진다(다른 아군도 같은 문제, 적은 반대로 커짐). 새 시트의 첫/끝 대기 자세를 기준으로 **처리 후 몸 크기**를 맞추되, 쓰러짐·웅크림 같은 실제 동작은 시트 내 동일 배율로 보존하는 선택적 보정과 회귀 테스트가 필요하다. AGENTS.md 절대 규칙2에 따라 승인 전에는 도구를 수정하지 않는다.
 
 ## 진행 기록
 
@@ -141,6 +144,7 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
   - 프레임 수는 열 덩어리 세기로 32장 모두 맞음(`node count.mjs`로 확인, 스크래치패드 도구). 화학병·박격포병 공격은 프레임이 맞닿아 스크립트로 잘라 간격을 140px로 벌려 넣음.
   - 남은 이슈(작음): 제설병 공격 6번째 노즐 끝이 캔버스 끝에서 살짝 잘림 / 의무병 공격 1·6번 프레임에 손에 든 작은 구급함이 빠짐 / 군견 달리기 3번 프레임 붉은 눈 위치가 다름 / RPG병 쓰러짐 1·4번 프레임이 캔버스 가장자리에 닿음 / 지뢰설치병 대기 3번에 공중에 뜬 지뢰가 몸과 떨어져 있음.
   - 주의: `art/inbox/`와 `art/ref/`는 gitignore라 GitHub에 안 올라간다. 원본 PNG 백업은 이 컴퓨터의 `art/ref/a105/`(아군)와 스크래치패드뿐이므로, 컴퓨터가 지워지기 전에 T-111이 처리하거나 따로 백업할 것.
+- 2026-10-25 **2묶음 진행 중**(그림마다 바로 `art/inbox/` + 홈 백업 `~/moonfish-backup/a105-inbox-2026-10-25/`에 저장, 그 폴더의 `progress.log`가 저장 순서 기록): 소총수·저격수·제설병의 `hit`(2)·`down`(4)·`promote`(4) 완료.
   - 다음: T-111이 프레임 상한을 늘린 뒤 `node scripts/assets.mjs` 처리 → `?scene=gallery`·`?scene=battle` 확인. 그 뒤 2묶음(피격·쓰러짐·진급 30장)은 사용자 판단.
 
 - 2026-10-25 (Codex, 1묶음 처리 시작)
@@ -154,3 +158,33 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
   - [x] 32장 전체를 읽기 전용으로 분리·측정: 모든 시트의 프레임 수는 티켓과 일치하며 분리 실패 없음. 아군 공격 첫 자세의 기존 배율 적용 시 높이: 소총수65·저격수66·취사병71·제설병72·지뢰설치병74·화학병72·의무병83·박격포병72·대전차병72·통신병77px(대기는 약93~96px). 적 공격/피격은 반대로 더 커지거나 캔버스 상한 때문에 추가 축소돼 상태별 크기가 달라진다.
   - [x] 비교에서 발견한 부적합 출력2장은 origin/main 그림으로 되돌리고 장부·목록도 기준 상태로 복구. 소총수 원본2장은 art/inbox에 다시 복사해32장 모두 유지했다. 사용자의 홈 백업은 수정하지 않았다.
   - 다음: `## 질문`의 scripts/assets.mjs·tests/assets-pipeline.test.ts 수정 범위 승인 후 크기 보정 구현·테스트 → 캐릭터별 처리·검증·보고. 2묶음 소총수 hit/down/promote3장은 미변경.
+
+- [x] 사용자 승인 후 처리 도구·회귀 테스트를 소유 경로에 추가. 2묶음 제작자가 같은 티켓에 추가한 진행 기록은 보존한다. 크기 보정은 새 시트 metadata의 선택 항목으로 켜고 기존 처리 방식은 유지한다.
+
+  - [x] 처리/발 기준선 확인: ally_rifle_idle 4프레임(첫 자세 94px, 끝 94px, 최대 61×96, 발y116) / ally_rifle_attack 6프레임(첫 자세 94px, 끝 94px, 최대 72×94, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_sniper_idle 4프레임(첫 자세 95px, 끝 95px, 최대 81×96, 발y116) / ally_sniper_attack 6프레임(첫 자세 95px, 끝 95px, 최대 82×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_cook_idle 4프레임(첫 자세 96px, 끝 96px, 최대 61×96, 발y116) / ally_cook_attack 6프레임(첫 자세 96px, 끝 96px, 최대 74×105, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_blower_idle 4프레임(첫 자세 93px, 끝 94px, 최대 74×96, 발y116) / ally_blower_attack 6프레임(첫 자세 93px, 끝 93px, 최대 77×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_miner_idle 4프레임(첫 자세 95px, 끝 95px, 최대 63×96, 발y116) / ally_miner_attack 6프레임(첫 자세 95px, 끝 95px, 최대 66×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_chem_idle 4프레임(첫 자세 96px, 끝 96px, 최대 65×96, 발y116) / ally_chem_attack 6프레임(첫 자세 96px, 끝 96px, 최대 86×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_medic_idle 4프레임(첫 자세 96px, 끝 95px, 최대 53×96, 발y116) / ally_medic_attack 6프레임(첫 자세 96px, 끝 96px, 최대 69×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_mortar_idle 4프레임(첫 자세 94px, 끝 94px, 최대 101×96, 발y116) / ally_mortar_attack 6프레임(첫 자세 94px, 끝 95px, 최대 93×113, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_antitank_idle 4프레임(첫 자세 96px, 끝 95px, 최대 66×96, 발y116) / ally_antitank_attack 6프레임(첫 자세 96px, 끝 96px, 최대 69×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: ally_signal_idle 4프레임(첫 자세 96px, 끝 96px, 최대 49×96, 발y116) / ally_signal_attack 6프레임(첫 자세 96px, 끝 96px, 최대 63×96, 발y116)
+
+  - [x] 처리/발 기준선 확인: enemy_inf_walk 6프레임(첫 자세 95px, 끝 96px, 최대 52×96, 발y116) / enemy_inf_attack 4프레임(첫 자세 95px, 끝 95px, 최대 60×95, 발y116) / enemy_inf_hit 2프레임(첫 자세 95px, 끝 95px, 최대 68×95, 발y116) / enemy_inf_down 4프레임(첫 자세 95px, 끝 60px, 최대 85×95, 발y116)
+
+  - [x] 처리/발 기준선 확인: enemy_dog_run 6프레임(첫 자세 91px, 끝 88px, 최대 44×96, 발y116) / enemy_dog_bite 4프레임(첫 자세 91px, 끝 91px, 최대 59×91, 발y116) / enemy_dog_hit 2프레임(첫 자세 91px, 끝 91px, 최대 79×91, 발y116) / enemy_dog_down 4프레임(첫 자세 91px, 끝 40px, 최대 99×91, 발y116)
+
+  - [x] 처리/발 기준선 확인: enemy_rpg_walk 6프레임(첫 자세 95px, 끝 96px, 최대 57×96, 발y116) / enemy_rpg_fire 5프레임(첫 자세 95px, 끝 95px, 최대 67×98, 발y116) / enemy_rpg_hit 2프레임(첫 자세 95px, 끝 92px, 최대 69×95, 발y116) / enemy_rpg_down 4프레임(첫 자세 95px, 끝 60px, 최대 85×95, 발y116)
+
+- [x] 1묶음32장 모두 처리 성공, 프레임 수 일치·모든 프레임 발 기준선 y116. 아군/적의 연결 첫 자세 높이는 캐릭터 기준 자세와 정확히 같음. 캔버스 안전 상한 때문에 크기가 다시 줄어든 파일 없음. 다음: npm run verify와 갤러리·전투 화면 확인.
