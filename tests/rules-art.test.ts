@@ -19,8 +19,8 @@ describe('frameCount: 이미지 너비 / 계약 너비', () => {
 })
 
 describe('artKey: 키 이름 표(docs/ART.md §4)', () => {
-  it('아군 6종 x idle/attack', () => {
-    expect(CARD_KEYS.length).toBe(6)
+  it('아군 10종 x idle/attack', () => {
+    expect(CARD_KEYS.length).toBe(10)
     for (const c of CARD_KEYS) {
       expect(artKey('ally', c, 'idle')).toBe(`ally_${c}_idle`)
       expect(artKey('ally', c, 'attack')).toBe(`ally_${c}_attack`)

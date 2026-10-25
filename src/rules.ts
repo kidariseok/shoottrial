@@ -13,6 +13,8 @@ import {
   LAYOUT,
   LOG,
   MINES,
+  NEW_CARDS,
+  SUPPORT,
   RANKS,
   SYNERGY,
   SPECIALTIES,
@@ -20,6 +22,7 @@ import {
   type Specialty,
   SYN_FX,
   UNLOCK,
+  UI,
   type CardKey,
   type EnemyType,
 } from './data'
@@ -237,8 +240,8 @@ export function damageTaken(base: number, vuln: number, buff = 1): number {
 }
 
 // GDD §5.2. 아군이 받는 피해: 제설병은 x blowerArmor
-export function allyDamageTaken(dmg: number, card: CardKey, spec?: Specialty): number {
-  return card === 'blower' ? dmg * (spec === 'A' ? SPECIALTIES.blower.A.armor : COMBAT.blowerArmor) : dmg
+export function allyDamageTaken(dmg: number, card: CardKey, spec?: Specialty, hygieneMult = 1, protectionMult = 1): number {
+  return dmg * (card === 'blower' ? (spec === 'A' ? SPECIALTIES.blower.A.armor : COMBAT.blowerArmor) : 1) * hygieneMult * protectionMult
 }
 
 // GDD §5.2. 밀린(pushedAt) 뒤 minePushSec 안에 터진 지뢰의 피해 배율. 밀린 적이 아니면 -Infinity를 넣는다
@@ -262,7 +265,7 @@ export function withinReach(dc: number, dr: number, reach: number): boolean {
 }
 
 // GDD §5.2·§5.3·§5.4·§4.1·§5.6. 공격 간격 = 기본 x (소총수만 병장·시너지) x 데프콘 1 x (가스 위면 slow). 곱으로 겹친다
-export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean, gassed = false, spec?: Specialty): number {
+export function interval(card: CardKey, rank: number, synergyCount: number, defcon1: boolean, gassed = false, spec?: Specialty, signalMult = 1): number {
   let v = CARDS[card].interval
   if (card === 'rifle') {
     if (rank >= ABILITY.sergeant) v *= ABILITY.sergeantRifleInterval
@@ -270,7 +273,10 @@ export function interval(card: CardKey, rank: number, synergyCount: number, defc
   }
   if (card === 'rifle' && spec) v *= SPECIALTIES.rifle[spec].interval
   if (card === 'blower' && spec === 'B') v *= SPECIALTIES.blower.B.interval
+  if (card === 'mortar') v *= SYN_FX.mortarInterval[synergyTier(card, synergyCount)] ?? 1
+  if (card === 'antitank' && spec === 'B') v *= SPECIALTIES.antitank.B.interval
   if (defcon1) v *= BATTLE.defcon1AllyInterval
+  v *= signalMult
   return gassed ? v * GAS.slow : v
 }
 
@@ -633,25 +639,94 @@ export function dotTick(remaining: number, dt: number, dps: number, vuln = 0): {
 
 // 정산 호출자는 배치 유닛만 넘기고 클리어 때 한 번 가산한다(쓰러진 유닛 포함).
 export const cookWaveBonus = cookSupplyBonus
-export function unitInfoRows(unit: Unit, synergyCount = 1, defcon1 = false): [string, string][] {
+export function unitInfoRows(unit: Unit, synergyCount = 1, defcon1 = false, signalMult = 1): [string, string][] {
   const { card, rank, spec } = unit
   const value = stats(card, rank, spec)
   const num = (n: number) => Number(n.toFixed(3)).toString()
-  const rows: [string, string][] = [['최대 HP', num(value.hp)], ['직접 공격', num(value.atk)], ['공격 간격', `${num(interval(card, rank, synergyCount, defcon1, false, spec))}초`]]
+  const rows: [string, string][] = [['최대 HP', num(value.hp)], ['직접 공격', num(value.atk)], ['공격 간격', card === 'signal' ? '직접 공격 없음' : `${num(interval(card, rank, synergyCount, defcon1, false, spec, signalMult))}초`]]
   if (spec) rows.push(['특기', `${SPECIALTIES[card][spec].name} · ${SPECIALTIES[card][spec].description}`])
   if (card === 'cook') {
     const reach = cookReach(rank, synergyCount)
     rows.push(['회복', `${cookHeal(spec)} · ${cookTargets(rank, synergyCount) === Infinity ? '전원' : cookTargets(rank, synergyCount) + '명'}`], ['회복 범위', reach === Infinity ? '배치 구역 전원' : `${reach}칸`])
+  } else if (card === 'medic') {
+    rows.push(['소생 처치', `${num(medicTreatment(synergyCount, spec))}초`], ['소생 HP', `${num(medicReviveHp(UI.log.pct, spec))}%`], ['소생 횟수', `웨이브 ${medicUses(rank)}회`], ['처치 범위', `${CARDS.medic.range}칸`])
+    if (spec === 'B') rows.push(['위생 보호', '인접 아군 받는 피해 −10%'])
+  } else if (card === 'signal') {
+    rows.push(['지휘 범위', `${signalReach(rank)}칸`], ['아군 공격 간격', `×${num(spec === 'A' ? SPECIALTIES.signal.A.intervalMult : NEW_CARDS.signal.intervalMult)}`], ['지원 보너스', spec === 'B' ? '+2회 · 판당 출처별 1회' : '+1회 · 판당 출처별 1회'])
+    if (synergyTier('signal', synergyCount) > 0) rows.push(['2명 시너지', '화력 지원 +1회 · 판당 출처별 1회'])
+  } else if (card === 'mortar') {
+    rows.push(['사거리', `${NEW_CARDS.mortar.minRange}~${CARDS.mortar.range}칸`], ['폭발 반지름', `${num(mortarRadius(rank, spec))}칸`], ['낙하 지연', `${mortarDelay(rank)}초`])
+  } else if (card === 'antitank') {
+    rows.push(['사거리', `${attackRange(card, spec)}칸`], ['장갑 배율', `×${num(antitankDamage(1, 'boss', synergyCount, spec))}`])
   } else if (card === 'blower') rows.push(['사거리', `${blowerRange(synergyCount)}칸`], ['도발', `${blowerTaunt(spec)}칸`], ['취약', `${blowerVuln(spec)}초`])
   else rows.push(['사거리', `${attackRange(card, spec)}칸`])
   if (card === 'chem') rows.push(['제독·보호', `${chemReach(rank, spec)}칸`], ['제독 주기', `${chemInterval(spec)}초`])
   if (card === 'miner') rows.push(['개인 지뢰 토큰', `${mineTokenPlan([{ rank, spec }]).length}개`], ['지뢰', rank >= ABILITY.corporal ? '대전차' : '일반'])
-  if (rank >= ABILITY.corporal) rows.push(['상병 능력', { rifle: '2점사', sniper: '관통 감쇠 없음', blower: '밀어낸 적 3초 화상 · 초당 8', cook: '2명 동시 회복', miner: '장갑 지뢰 피해 ×3', chem: '제독 기본 범위 2칸' }[card]])
-  if (rank >= ABILITY.sergeant) rows.push(['병장 능력', { rifle: '공격 간격 −20%', sniper: '첫 대상 1초 기절', blower: '기본 밀기 2칸', cook: '회복 범위 2칸', miner: '지뢰 토큰 +2', chem: '인접 아군 직접 공격 +15%' }[card]])
+  if (rank >= ABILITY.corporal) rows.push(['상병 능력', { rifle: '2점사', sniper: '관통 감쇠 없음', blower: '밀어낸 적 3초 화상 · 초당 8', cook: '2명 동시 회복', miner: '장갑 지뢰 피해 ×3', chem: '제독 기본 범위 2칸', medic: '소생 후 3초 받는 피해 −50%', mortar: '0.5초 뒤 같은 위치에 두 번째 발사', antitank: '명중 대상 1초 기절', signal: '버프 범위 2칸' }[card]])
+  if (rank >= ABILITY.sergeant) rows.push(['병장 능력', { rifle: '공격 간격 −20%', sniper: '첫 대상 1초 기절', blower: '기본 밀기 2칸', cook: '회복 범위 2칸', miner: '지뢰 토큰 +2', chem: '인접 아군 직접 공격 +15%', medic: '웨이브당 소생 2회', mortar: '폭발 반지름 +0.5칸 · 낙하 지연 0.5초', antitank: '사선 뒤 적에게 50% 관통 피해', signal: '화력 지원 피해 300' }[card]])
   return rows
 }
 
 // 살아 있는 다친 대상만 고른다. 자기 자신·거리 필터는 호출자가 먼저 적용한다.
 export function cookHealing<T extends { hp: number; maxHp: number; taunt?: boolean; alive: boolean }>(patients: T[], rank: number, count: number, spec?: Specialty): { target: T; amount: number }[] {
   return healOrder(patients.filter((p) => p.alive && p.hp > 0 && p.hp < p.maxHp)).slice(0, cookTargets(rank, count)).map((target) => ({ target, amount: Math.min(cookHeal(spec), target.maxHp - target.hp) }))
+}
+
+// 새4종의 상태는 호출자가 보관한다. 오라 입력은 배치 구역만, alive=false는 제공하지 않는다.
+export type AuraUnit = { col: number; row: number; rank: number; spec?: Specialty; alive?: boolean }
+const auraNear = (u: AuraUnit, col: number, row: number, reach: number) => u.alive !== false && !(u.col === col && u.row === row) && withinReach(col - u.col, row - u.row, reach)
+
+export function medicTreatment(count = 1, spec?: Specialty): number {
+  return NEW_CARDS.medic.treatmentSec - (spec === 'A' ? SPECIALTIES.medic.A.treatmentReduction : 0) - (SYN_FX.medicTreatment[synergyTier('medic', count)] ?? 0)
+}
+export function medicReviveHp(maxHp: number, spec?: Specialty): number {
+  return maxHp * (spec === 'A' ? SPECIALTIES.medic.A.reviveRatio : NEW_CARDS.medic.reviveRatio)
+}
+export function medicUses(rank: number): number { return rank >= ABILITY.sergeant ? NEW_CARDS.medic.sergeantUses : NEW_CARDS.medic.uses }
+export function medicProtection(rank: number): { sec: number; mult: number } {
+  return rank >= ABILITY.corporal ? { sec: NEW_CARDS.medic.protectionSec, mult: NEW_CARDS.medic.protectionMult } : { sec: 0, mult: 1 }
+}
+export function medicDamageMult(medics: AuraUnit[], col: number, row: number): number {
+  return medics.some((u) => u.spec === 'B' && auraNear(u, col, row, CARDS.medic.range)) ? SPECIALTIES.medic.B.damageMult : 1
+}
+
+export function mortarRadius(rank: number, spec?: Specialty): number {
+  return NEW_CARDS.mortar.radius + (spec === 'A' ? SPECIALTIES.mortar.A.radius : 0) + (rank >= ABILITY.sergeant ? NEW_CARDS.mortar.sergeantRadius : 0)
+}
+export function mortarDelay(rank: number): number { return rank >= ABILITY.sergeant ? NEW_CARDS.mortar.sergeantDelay : NEW_CARDS.mortar.delay }
+// 발사 시점의 동일 위치를 예약하며 두 번째 발사도 게임 dt로 기다린다.
+export function mortarShotOffsets(rank: number): number[] { return rank >= ABILITY.corporal ? [0, NEW_CARDS.mortar.secondShotDelay] : [0] }
+export function mortarTarget<T extends Foe>(from: Pos, enemies: T[]): T | null {
+  return pickTarget(from, enemies.filter((e) => dist(from, e) >= NEW_CARDS.mortar.minRange - COMBAT.tieEps), CARDS.mortar.range)
+}
+export function mortarHits<T extends Foe>(point: Pos, enemies: T[], radius: number): T[] {
+  return enemies.filter((e) => e.hp > 0 && !e.gone && dist(point, e) <= radius + COMBAT.tieEps)
+}
+export function antitankDamage(atk: number, type: EnemyType, count = 1, spec?: Specialty, secondary = false): number {
+  const armored = type === 'boss' || type === 'dogPlus'
+  const armor = (spec === 'A' ? SPECIALTIES.antitank.A.armorMult : NEW_CARDS.antitank.armorMult) + (SYN_FX.antitankArmor[synergyTier('antitank', count)] ?? 0)
+  return atk * (armored ? armor : 1) * (secondary ? NEW_CARDS.antitank.pierceMult : 1)
+}
+export function antitankStun(rank: number): number { return rank >= ABILITY.corporal ? NEW_CARDS.antitank.stunSec : 0 }
+export function signalReach(rank: number): number { return rank >= ABILITY.corporal ? NEW_CARDS.signal.corporalReach : NEW_CARDS.signal.reach }
+export function signalIntervalMult(signals: AuraUnit[], col: number, row: number): number {
+  return signals.reduce((mult, u) => auraNear(u, col, row, signalReach(u.rank)) ? Math.min(mult, u.spec === 'A' ? SPECIALTIES.signal.A.intervalMult : NEW_CARDS.signal.intervalMult) : mult, 1)
+}
+
+// 출처는 판 동안 유지한다. 소비한 충전과 별개여서 판매/합성/웨이브 전환으로 다시 주지 않는다.
+export type SupportSource = 'deployed' | 'synergy' | 'specialty'
+export function supportSources(signals: AuraUnit[]): SupportSource[] {
+  const live = signals.filter((u) => u.alive !== false)
+  const sources: SupportSource[] = []
+  if (live.length > 0) sources.push('deployed')
+  if (synergyTier('signal', live.length) > 0) sources.push('synergy')
+  if (live.some((u) => u.spec === 'B')) sources.push('specialty')
+  return sources
+}
+export function supportGrant(previousSources: readonly SupportSource[], signals: AuraUnit[]): { sources: SupportSource[]; bonus: number } {
+  const sources = [...new Set([...previousSources, ...supportSources(signals)])].slice(0, NEW_CARDS.signal.maxBonus)
+  return { sources, bonus: Math.max(0, sources.length - new Set(previousSources).size) }
+}
+export function supportDamage(signals: AuraUnit[]): number {
+  return signals.some((u) => u.alive !== false && u.rank >= ABILITY.sergeant) ? NEW_CARDS.signal.sergeantDamage : SUPPORT.damage
 }

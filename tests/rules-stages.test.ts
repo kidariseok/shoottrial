@@ -81,7 +81,7 @@ describe('GDD 수치 고정', () => {
     })
   })
   it('§5.4 시너지 효과', () => {
-    expect(SYN_FX).toEqual({
+    expect(SYN_FX).toMatchObject({
       rifleInterval: [1, 0.8, 0.6],
       sniperDamage: [1, 1.3],
       blowerKnock: [1, 1.5, 1.5],

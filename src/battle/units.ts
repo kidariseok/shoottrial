@@ -1,35 +1,65 @@
 import { BlendModes, type Scene, type GameObjects } from 'phaser'
-import { ABILITY, CARDS, CARD_KEYS, FX, SPECIALTIES, LAYOUT, UI, type CardKey } from '../data'
-import { attackRange, rifleDamage, sniperWidth, blowerTaunt, blowerVuln, cookHealing, allyDamageTaken, allyY, artKey, blowerCone, blowerRange, chemDamageMult, cookReach, dist, gasHits, interval, knockback, onRay, pickTarget, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
+import { ABILITY, COMBAT, CARDS, CARD_KEYS, FX, SPECIALTIES, LAYOUT, UI, type CardKey } from '../data'
+import { medicTreatment, medicReviveHp, medicUses, medicProtection, medicDamageMult, mortarRadius, mortarDelay, mortarShotOffsets, mortarTarget, mortarHits, antitankDamage, antitankStun, signalIntervalMult, attackRange, rifleDamage, sniperWidth, blowerTaunt, blowerVuln, cookHealing, allyDamageTaken, allyY, artKey, blowerCone, blowerRange, chemDamageMult, cookReach, dist, gasHits, interval, knockback, onRay, pickTarget, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
 import { anticipateMotion, downMotion, hitSprite, playAct, restoreMotion } from './art'
 import { hurtEnemy, type Enemy } from './enemies'
-import { burst, dmgText, flame, healText, hitFlash, muzzle, shake, snipeLine, tracer, windWave } from './fx'
+import { explosion, medicChannel, mortarWarning, reviveFlash, burst, dmgText, flame, healText, hitFlash, muzzle, shake, snipeLine, tracer, windWave } from './fx'
 
 // 배치 카드의 전투 상태. Unit 객체가 키라 이동·교환은 상태가 따라간다
-export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number }
+export type Combat = { hp: number; maxHp: number; alive: boolean; stun: number; cd: number; reviveUsed: number; protection: number; protectionMult: number; revived: boolean }
 // alive는 combat.alive의 사본(rules.engageTarget이 alive 필드를 읽는다). collectAllies가 매번 채운다
 // taunt: 제설병은 살아 있는 동안 늘 도발 중이다(GDD §5.2)
 export type Ally = { unit: Unit; combat: Combat; col: number; row: number; alive: boolean; y: number; taunt: boolean; tauntReach: number; view: GameObjects.Container }
 
 const states = new WeakMap<Unit, Combat>()
+const alliesByScene = new WeakMap<Scene, Ally[]>()
+type Channel = { source: Unit; target: Unit; left: number; protect: number; protectionMult: number; hp: number; wave: number | undefined; mark: GameObjects.Line }
+type Shell = { source: Unit; wave: number | undefined; launchLeft: number; col: number; y: number; left: number; radius: number; atk: number; vuln: number; mark: GameObjects.Ellipse }
+const actions = new WeakMap<Scene, { channels: Channel[]; shells: Shell[] }>()
+
+function actionsOf(scene: Scene) {
+  let pending = actions.get(scene)
+  if (!pending) {
+    pending = { channels: [], shells: [] }
+    actions.set(scene, pending)
+    scene.events.once('shutdown', () => {
+      clearAlliedActions(scene)
+      actions.delete(scene)
+      alliesByScene.delete(scene)
+    })
+  }
+  return pending
+}
+
+// 정산·포기·씬 종료는 예약과 예고를 함께 버린다. 이미 발사한 탄은 발사자 사망에는 남는다.
+export function clearAlliedActions(scene: Scene): void {
+  const pending = actions.get(scene)
+  if (!pending) return
+  for (const action of [...pending.channels, ...pending.shells]) action.mark.destroy()
+  pending.channels.length = 0
+  pending.shells.length = 0
+}
 
 function combatOf(unit: Unit): Combat {
   let c = states.get(unit)
   if (!c) {
     // ponytail: 전투 중 합성하면 새 카드는 전체 HP로 시작
     const hp = stats(unit.card, unit.rank, unit.spec).hp
-    c = { hp, maxHp: hp, alive: true, stun: 0, cd: 0 }
+    c = { hp, maxHp: hp, alive: true, stun: 0, cd: 0, reviveUsed: 0, protection: 0, protectionMult: 1, revived: false }
     states.set(unit, c)
   }
   return c
 }
 
 export function collectAllies(board: Board): Ally[] {
-  return board.deployed().map((d) => {
+  const allies = board.deployed().map((d) => {
     const combat = combatOf(d.unit)
     return { unit: d.unit, combat, col: d.col, row: d.row, alive: combat.alive, y: allyY(d.row), taunt: d.unit.card === 'blower', tauntReach: blowerTaunt(d.unit.spec), view: d.view }
   })
+  const scene = allies[0]?.view.scene
+  if (scene) alliesByScene.set(scene, allies)
+  return allies
 }
 
 // 체력바: 카드 뷰마다 Graphics 하나를 재사용한다. 다친 카드만 보인다
@@ -67,7 +97,8 @@ export function chemsOf(allies: Ally[]): Chem[] {
 export function damageAlly(scene: Scene, ally: Ally, base: number, quiet = false): boolean {
   const c = ally.combat
   if (!c.alive) return false
-  const dmg = allyDamageTaken(base, ally.unit.card, ally.unit.spec) // 제설병은 덜 아프다
+  const medics = (alliesByScene.get(scene) ?? []).filter((a) => a.unit !== ally.unit && a.unit.card === 'medic').map((a) => ({ col: a.col, row: a.row, rank: a.unit.rank, spec: a.unit.spec, alive: a.combat.alive }))
+  const dmg = allyDamageTaken(base, ally.unit.card, ally.unit.spec, medicDamageMult(medics, ally.col, ally.row), c.protection > 0 ? c.protectionMult : 1)
   c.hp -= dmg
   if (!quiet) {
     if (!hitSprite(ally.view)) hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
@@ -77,6 +108,12 @@ export function damageAlly(scene: Scene, ally: Ally, base: number, quiet = false
     c.hp = 0
     c.alive = false
     ally.alive = false
+    const pending = actions.get(scene)
+    if (pending) pending.channels = pending.channels.filter((channel) => {
+      if (channel.source !== ally.unit) return true
+      channel.mark.destroy()
+      return false
+    })
     if (!downMotion(ally.view, true)) ally.view.setAlpha(UI.fx.fallenAlpha)
   }
   drawBar(ally)
@@ -85,6 +122,14 @@ export function damageAlly(scene: Scene, ally: Ally, base: number, quiet = false
 
 // 웨이브 시작: 살아 있는 취사병마다 자기를 뺀 인접 아군의 최대 HP를 올린다
 export function startWave(allies: Ally[]): void {
+  const scene = allies[0]?.view.scene
+  if (scene) clearAlliedActions(scene)
+  for (const a of allies) {
+    a.combat.reviveUsed = 0
+    a.combat.protection = 0
+    a.combat.protectionMult = 1
+    a.combat.revived = false
+  }
   for (const cook of allies) {
     if (cook.unit.card !== 'cook' || !cook.combat.alive) continue
     for (const a of allies) {
@@ -99,6 +144,8 @@ export function startWave(allies: Ally[]): void {
 
 // 웨이브 끝: 모두 전체 HP로 일어난다(LOOP-03)
 export function endWave(allies: Ally[]): void {
+  const scene = allies[0]?.view.scene
+  if (scene) clearAlliedActions(scene)
   for (const a of allies) {
     const c = a.combat
     c.maxHp = stats(a.unit.card, a.unit.rank, a.unit.spec).hp
@@ -107,6 +154,10 @@ export function endWave(allies: Ally[]): void {
     a.alive = true
     c.stun = 0
     c.cd = 0
+    c.reviveUsed = 0
+    c.protection = 0
+    c.protectionMult = 1
+    c.revived = false
     restoreMotion(a.view)
     a.view.setAlpha(1)
     const ring = a.view.getData('ring') as GameObjects.Ellipse | undefined
@@ -125,10 +176,72 @@ export function synergyCounts(allies: Ally[]): Record<CardKey, number> {
 }
 
 // 아군 한 틱. allies는 이번 틱에 한 번 모은 배열(ally.alive는 사본이라 combat.alive를 읽는다)
-export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean; gas: number[][]; clock: number }, dt: number): void {
+export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; allies: Ally[]; defcon1: boolean; gas: number[][]; clock: number; wave?: number }, dt: number): void {
   const { scene, enemies, allies } = ctx
   const counts = synergyCounts(allies)
   const chems = chemsOf(allies)
+  const signals = allies.filter((a) => a.unit.card === 'signal').map((a) => ({ col: a.col, row: a.row, rank: a.unit.rank, spec: a.unit.spec, alive: a.combat.alive }))
+  const pending = actionsOf(scene)
+  for (const a of allies) a.combat.protection = Math.max(0, a.combat.protection - dt)
+  // 처치 예약은 대상 하나당 하나. 재배치·합성으로 참조가 사라지거나 거리가 벌어져도 취소한다.
+  pending.channels = pending.channels.filter((channel) => {
+    const source = allies.find((a) => a.unit === channel.source)
+    const target = allies.find((a) => a.unit === channel.target)
+    if (!source?.combat.alive || !target || target.combat.alive || channel.wave !== ctx.wave || !withinReach(source.col - target.col, source.row - target.row, CARDS.medic.range)) {
+      channel.mark.destroy()
+      return false
+    }
+    channel.mark.setTo(source.view.x, source.view.y, target.view.x, target.view.y)
+    if (source.combat.stun > 0) return true
+    channel.left -= dt
+    if (channel.left > COMBAT.tieEps) return true
+    const c = target.combat
+    c.hp = Math.min(c.maxHp, channel.hp)
+    c.alive = true
+    target.alive = true
+    c.stun = 0
+    c.cd = 0
+    c.protection = channel.protect
+    c.protectionMult = channel.protectionMult
+    c.revived = true
+    source.combat.reviveUsed += 1
+    restoreMotion(target.view)
+    target.view.setAlpha(1)
+    drawBar(target)
+    reviveFlash(scene, target.view.x, target.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
+    healText(scene, target.view.x, target.view.y, c.hp)
+    channel.mark.destroy()
+    return false
+  })
+  // 포탄은 고정 좌표에 떨어진다. 시간은 Scene이 준 게임 dt만 쓴다.
+  pending.shells = pending.shells.filter((shell) => {
+    if (shell.wave !== ctx.wave) {
+      shell.mark.destroy()
+      return false
+    }
+    if (shell.launchLeft > 0) {
+      shell.launchLeft -= dt
+      if (shell.launchLeft <= COMBAT.tieEps) {
+        shell.launchLeft = 0
+        shell.mark.setVisible(true)
+        const source = allies.find((a) => a.unit === shell.source && a.combat.alive)
+        if (source) {
+          muzzle(scene, source.view.x, source.view.y - UI.fx.muzzleDy)
+          playAct(source.view, artKey('ally', 'mortar', 'attack'), mortarDelay(source.unit.rank))
+        }
+      }
+    }
+    shell.left -= dt
+    if (shell.left > COMBAT.tieEps) return true
+    for (const e of mortarHits(shell, enemies, shell.radius)) {
+      hurtEnemy(scene, e, shell.atk)
+      if (shell.vuln > 0) e.vuln = Math.max(e.vuln, shell.vuln)
+    }
+    explosion(scene, shell.mark.x, shell.mark.y)
+    shake(scene, 'light')
+    shell.mark.destroy()
+    return false
+  })
   for (const a of allies) {
     const c = a.combat
     if (a.taunt && c.alive) ensureRing(a)
@@ -139,13 +252,54 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
     }
     c.cd = Math.max(0, c.cd - dt)
     const { card, rank, spec } = a.unit
-    const iv = interval(card, rank, counts[card], ctx.defcon1, gasHits(ctx.gas, chems, a.col, a.row), spec)
+    const iv = interval(card, rank, counts[card], ctx.defcon1, gasHits(ctx.gas, chems, a.col, a.row), spec, signalIntervalMult(signals, a.col, a.row))
     anticipateMotion(a.view, c.cd, iv)
     if (c.cd > 0) continue
     const mx = a.view.x
     const my = a.view.y - UI.fx.muzzleDy
     const act = () => playAct(a.view, artKey('ally', card, 'attack'), iv) // 공격하는 순간 1회 재생
     switch (a.unit.card) {
+      case 'medic': {
+        if (c.reviveUsed >= medicUses(rank) || pending.channels.some((channel) => channel.source === a.unit)) break
+        const target = allies.filter((b) => b.unit !== a.unit && !b.combat.alive && withinReach(b.col - a.col, b.row - a.row, CARDS.medic.range) && !pending.channels.some((channel) => channel.target === b.unit))
+          .sort((p, q) => p.row - q.row || p.col - q.col)[0]
+        if (!target) break
+        const protection = medicProtection(rank)
+        pending.channels.push({ source: a.unit, target: target.unit, left: medicTreatment(counts.medic, spec), hp: medicReviveHp(target.combat.maxHp, spec), protect: protection.sec, protectionMult: protection.mult, wave: ctx.wave, mark: medicChannel(scene, a.view.x, a.view.y, target.view.x, target.view.y) })
+        act()
+        break
+      }
+      case 'signal':
+        break
+      case 'mortar': {
+        const target = mortarTarget(a, enemies)
+        if (!target) break
+        const point = { col: target.col, y: target.y }
+        const radius = mortarRadius(rank, spec)
+        const screen = ctx.board.toScreen(point.col, point.y)
+        for (const offset of mortarShotOffsets(rank)) pending.shells.push({ source: a.unit, wave: ctx.wave, launchLeft: offset, ...point, left: mortarDelay(rank) + offset, radius, atk: stats(card, rank, spec).atk, vuln: spec === 'B' ? SPECIALTIES.mortar.B.vulnSec : 0, mark: mortarWarning(scene, screen.x, screen.y, radius).setVisible(offset === 0) })
+        muzzle(scene, mx, my)
+        act()
+        c.cd = iv
+        break
+      }
+      case 'antitank': {
+        const first = pickTarget(a, enemies, CARDS.antitank.range)
+        if (!first) break
+        const behind = rank >= ABILITY.sergeant ? enemies.filter((e) => e !== first && e.hp > 0 && !e.gone && onRay(a, first, e, COMBAT.pierceWidth)).sort((p, q) => dist(a, p) - dist(a, q)) : []
+        const atk = stats(card, rank, spec).atk * chemDamageMult(chems, a.col, a.row)
+        for (const e of [first, ...behind]) {
+          hurtEnemy(scene, e, antitankDamage(atk, e.type, counts.antitank, spec, e !== first))
+          e.stun = Math.max(e.stun, antitankStun(rank))
+          burst(scene, 'spark', e.view.x, e.view.y)
+        }
+        muzzle(scene, mx, my)
+        const last = behind[behind.length - 1] ?? first
+        tracer(scene, mx, my, last.view.x, last.view.y, 0)
+        act()
+        c.cd = iv
+        break
+      }
       case 'rifle':
       case 'miner':
       case 'chem': {
@@ -208,7 +362,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
             }
           }
           hurtEnemy(scene, e, atk) // 취약은 이 피해 뒤에 건다(첫 타는 부풀리지 않는다)
-          e.vuln = blowerVuln(spec)
+          e.vuln = Math.max(e.vuln, blowerVuln(spec))
         }
         act()
         windWave(scene, a.view.x, my, ctx.board.toScreen(a.col, 0).y, rank >= ABILITY.corporal)

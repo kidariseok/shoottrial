@@ -1,14 +1,6 @@
-import { CHARACTERS, RANK_VISUAL, ROOKIE, type CardKey } from '../data'
+import { CARDS, CARD_KEYS, CHARACTERS, RANK_VISUAL, ROOKIE, type CardKey } from '../data'
+import { unitInfoRows } from '../rules'
 import type { Hud, Phase } from './screens'
-
-const CARD_META: Record<string, { name: string; initial: string }> = {
-  rifle: { name: '소총수', initial: '소' },
-  sniper: { name: '저격수', initial: '저' },
-  blower: { name: '제설병', initial: '제' },
-  cook: { name: '취사병', initial: '취' },
-  miner: { name: '지뢰설치병', initial: '지' },
-  chem: { name: '화학병', initial: '화' },
-}
 
 const RANK_NAMES: Record<number, string> = {
   1: '이등병',
@@ -18,11 +10,11 @@ const RANK_NAMES: Record<number, string> = {
 }
 
 export function getCardName(card: string): string {
-  return CARD_META[card]?.name ?? card
+  return CARDS[card as CardKey]?.name ?? card
 }
 
 export function getCardInitial(card: string): string {
-  return CARD_META[card]?.initial ?? (card.slice(0, 1).toUpperCase() || '?')
+  return CARDS[card as CardKey]?.initial ?? (card.slice(0, 1).toUpperCase() || '?')
 }
 
 export function getRankName(rank?: number): string {
@@ -84,7 +76,10 @@ export function cloneHud(h: Hud): Hud {
   }
 }
 
-export const ALL_CARDS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem'] as const
+export const ALL_CARDS = CARD_KEYS
+
+// 도감은 시너지 없는 이등병 기준. 전투 정보창은 배치 상태로 계산한 행을 받는다.
+export const getCodexRows = (card: CardKey): [string, string][] => unitInfoRows({ card, rank: 1 })
 
 export function sanitizeRookieName(raw: string, fallback = '김신병'): string {
   const trimmed = raw.trim().slice(0, 6)
