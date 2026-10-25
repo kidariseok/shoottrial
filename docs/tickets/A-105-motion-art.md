@@ -1,6 +1,6 @@
 # A-105 캐릭터 모션 확장 그림 (자연스러운 동작 + 동작 사이 연결)
 
-상태: 1묶음 처리 완료 / 2묶음 제작 중
+상태: 완료(62장 처리·연결 확인)
 담당: 사용자 (ChatGPT 이미지 High 또는 Gemini Argon). 넣은 뒤 처리는 Claude/Codex가 한다.
 짝 티켓: `T-111-motion-engine.md`(코드). 그림이 없어도 T-111은 도형·변형 모션으로 먼저 동작하고, 그림이 들어오면 그대로 바뀐다.
 
@@ -101,6 +101,9 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 
 - `public/assets/ally_*_idle.png`
 - `public/assets/ally_*_attack.png`
+- `public/assets/ally_*_hit.png`
+- `public/assets/ally_*_down.png`
+- `public/assets/ally_*_promote.png`
 - `public/assets/enemy_inf_*.png`
 - `public/assets/enemy_dog_*.png`
 - `public/assets/enemy_rpg_*.png`
@@ -196,7 +199,7 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 - [x] 갤러리: 새32개 시트 모두 프레임 수 일치와 0→1 재생 확인. 신규4종 대기/공격8장도 확인. 전투: 기존6종 공격 클립과 적3종 이동/공격/피격/쓰러짐 실제 키·프레임 전환 확인, 적 쓰러짐 마지막 프레임3까지 재생 후 페이드.
 - [x] 원본32장 모두 `art/source/<키>/sheet.png`와 홈 백업 해시 일치. 원본 PNG 추적 파일 없음. 2묶음은 별도 제작자가 계속 추가 중이며 작업 시작 시 존재하던14장 해시 불변 확인(이후 입고 파일도 처리하지 않음).
 
-## 결과 보고(이번 1묶음 처리)
+## 결과 보고(1묶음 처리 당시 기록)
 
 - 범위: 1묶음32장 처리 완료. 2묶음30장은 사용자 제작 중으로 이 PR 범위에서 제외한다.
 - 바뀐 파일: 처리 PNG32장, `public/assets/index.json`(47→53개 실제 그림), `art/LEDGER.json`, 32개 원본 폴더의 `meta.json`(텍스트만), `scripts/assets.mjs`, `tests/assets-pipeline.test.ts`, 이 티켓, `docs/HANDOFF.md`, `docs/shots/A-105*.png`.
@@ -227,7 +230,7 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 
 ## 인계 메모
 
-- 1묶음만 완료했다. 2묶음 진행 기록·새 원본은 계속 보존하며 이 티켓 전체62장 완료로 표시하지 않는다.
+- 현재는 두 묶음62장 모두 처리 완료했다. 원본·홈 백업은 유지한다. 아래의 과거 1묶음 당시 기록과 최종 결과 보고를 구분한다.
 - 2묶음 처리 때도 캐릭터 기준 시트를 먼저 확인하고, 해상도가 다르면 해당 키의 metadata에 `matchFirstFrame: true`를 설정해 몸 크기를 맞춘다. 새 시트의 첫 자세가 기준 자세와 다르면 높이 자동 일치만으로 정확한 체형을 보장할 수 없으므로 눈으로 확인한다.
 
 - [x] 마무리: 확인용 개발 서버·브라우저 종료. 추가 사망 장면 재촬영1회는 브라우저 screenshot 시간 초과로 중단했으며, 앞서 성공한 `A-105-enemy-down.png`와 프레임 관찰 결과를 유지한다. 원본·2묶음은 추가 처리하지 않았다.
@@ -240,4 +243,19 @@ Same character as the attached reference sheet ({CHAR}), same chibi pixel art st
 - [x] 원본 PNG는 미추적, 백업과 원본32장 해시 일치, 2묶음 보존
 - [x] 처리 결과·원본 재제작 권장 사항·미확인 범위 기록
 
-- PR(1묶음): https://github.com/kidariseok/shoottrial/pull/39 — 사용자 병합 대기,2묶음은 이 PR에 포함하지 않음.
+- PR(현재62장): https://github.com/kidariseok/shoottrial/pull/39 — 사용자 병합 대기, 두 묶음 모두 포함.
+
+
+## 최종 결과 보고(62장·실제 연결 확인)
+
+- 2026-10-25 (Codex, Claude의2묶음 처리 후 인수): PR #39 최신 HEAD `6a63d9b1558a`에서 상태를 확인했다. PR은 아직 OPEN이며 병합된 것으로 가정하지 않는다. 별도 기능 티켓은 origin/main에서 시작해야 하므로 이 브랜치에서는 A-105 연결 검증과 기록 정리만 진행했다.
+- [x] `npm run verify` 재실행: 19파일294테스트·실제 에셋83개 검사·빌드 통과(2026-10-25 16:53 KST, 종료 코드0). 기존 번들 크기 경고 유지.
+- [x] 기존6종(소총수·저격수·제설병·취사병·지뢰설치병·화학병) 실제 전투화면 연결 검증: `damageAlly`로 피격 시 각 `ally_*_hit` 프레임1 표시 후 대기 복귀. 큰 피해로 `ally_*_down` 프레임2→마지막3 표시, alive=false·alpha0.35 유지. `endWave` 정산 경로로 alive=true·alpha1·대기 복귀.
+- [x] 실제 보드 진급 경로 `board.promote`로 위6종을 일병으로 올려 각 `ally_*_promote` 프레임1(경례) 표시 확인. 클립 종료 후 계급2를 유지하며 대기 복귀. T-111의 기존 연결 함수가 이미 처리하므로 제품 코드 변경은 불필요했다.
+- [x] 갤러리2묶음30개 전부 재생 프레임0→1 확인. hit2·down4·promote4프레임 일치. 신규4종은 아직 전투 규칙(T-113)이 없으므로 갤러리 확인까지로 구분한다.
+- 스크린샷(390×844): `docs/shots/A-105-live-hit.png`, `A-105-live-down.png`, `A-105-live-down-held.png`, `A-105-live-promote.png`, `A-105-live-gallery.png`. 전투사진은 지정URL에 `&safe=1`을 붙인 디버그 배치에서 게임의 피해·정산·보드진급 함수를 호출해 재현했다. 자연 발생 피해·합성 전체 플레이테스트를 했다는 뜻은 아니다.
+- 확인 URL: `?scene=battle&wave=3&unlock=all&supply=99&seed=7&safe=1`, `?scene=gallery`.
+- 한계 유지: 저격수/박격포병 진급 시트의 캔버스 상한에 따른 크기 변화, 지뢰설치병 down의 노란 손 등 원본 재제작 사항은 남아 있다. 신규4종 전투 규칙·상병후광/병장오라·특기 모달·진급대사는 T-112/T-113 후속 범위다. 안드로이드 실기기는 미확인.
+- 다음: 사용자 PR #39 병합 → origin/main 새 브랜치에서 T-112 티켓·작업 계획 작성(기존6종 계급/특기/성장 연출). 새4종 동작은 T-112 병합 뒤 T-113으로 진행한다.
+
+- [x] 연결 검증 마무리: 개발 서버·브라우저 종료. 자동 저장에 포함된 임시 브라우저 콘솔 로그는 제거하고 검증 사진만 유지한다. PR #39 설명의 전투 미확인 문구를 실제 검증 범위로 갱신한다.
