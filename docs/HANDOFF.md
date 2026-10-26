@@ -1,7 +1,7 @@
 # 인계 문서 (Claude Code → Codex 등 다른 에이전트)
 
 > 이 문서는 **작업자가 바뀌어도 이어갈 수 있게** 지금 상태·다음 할 일·함정을 적는다. 작업 단계를 끝낼 때마다 갱신한다.
-> 마지막 갱신: 2026-10-26(Codex, T-114 전투 소리 구현·검증 완료). 갱신 로그는 맨 아래.
+> 마지막 갱신: 2026-10-26(Codex, #42 실제 병합 확인·T-115 통합 점검 계획). 갱신 로그는 맨 아래.
 > **Codex에게 시키는 프롬프트는 `docs/CODEX-START.md`에 있다.**
 
 ## 0. 먼저 읽을 것 (순서대로)
@@ -40,7 +40,8 @@
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, [PR #40](https://github.com/kidariseok/shoottrial/pull/40) 실제 병합 확인(2026-10-25T12:18:10Z). 브랜치 `kidariseok/t112-rank-specialty` |
 | 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 구현·검증 완료(341테스트·83에셋·빌드), [PR #41](https://github.com/kidariseok/shoottrial/pull/41) 실제 병합 확인(2026-10-25T18:56:00Z). 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
-| 5 | **T-114 전투 소리 연결** | `docs/tickets/T-114-battle-audio.md` 구현·검증 완료(358테스트·83에셋·빌드), [PR #42](https://github.com/kidariseok/shoottrial/pull/42) 사용자 병합 대기. 브랜치 `kidariseok/t114-battle-audio`. 일일 첫 접속 보너스는 별도 대기 |
+| 5 | **T-114 전투 소리 연결** | `docs/tickets/T-114-battle-audio.md` 구현·검증 완료(358테스트·83에셋·빌드), [PR #42](https://github.com/kidariseok/shoottrial/pull/42) 실제 병합 확인(2026-10-26T14:55:00Z). 브랜치 `kidariseok/t114-battle-audio`. 일일 첫 접속 보너스는 별도 대기 |
+| 5' | **T-115 통합 점검·플레이테스트 준비** | `docs/tickets/T-115-playtest-prep.md` 계획 작성·승인 대기, `kidariseok/t115-playtest-prep` 기준6488f08c01e6. 기술 점검과 사람 체감 평가를 구분 |
 | 6 | **T-108 출시 준비**(AAB 서명, 개인정보처리방침, 스토어 등록물, PX 광고 해금 연결) | **사용자가 구글 콘솔을 뒤로 미룸.** 사용자가 다시 꺼낼 때 시작(참고 `docs/research/play-launch.md`) |
 | 7 | 글꼴 번들(시안의 Black Han Sans, 파일 다운로드가 필요해 사용자 승인) | **출시 직전에 결정** |
 | 8 | 최종 난이도: 사용자 플레이테스트로 확정(튜닝 봇은 낡았다) | 사용자 |
@@ -145,3 +146,5 @@
 - 2026-10-26 (T-114 완료): 전투 BGM/효과음 연결, 재생 중 음소거·페이드/중복해제·슬롯 수명 보완. 게임 수치/규칙/자산/API 변경 없음. verify21파일358테스트·83에셋·빌드 통과, 기존 번들 경고. 실제 Audio 계측으로 행동별 호출·중복 방지·OR 음소거·설정/8상한·종료/생활관/재투입 확인, 사진4장 docs/shots/T-114*.png. 실기기/광고SDK와 귀로 듣는 음량/음색 체감은 미확인. Orca 오디오1건 succeeded/release/ack·reclaimable0, 검증 서버/탭 종료. 다음: 사용자 PR 병합 후 실제 듣기·플레이테스트, A-103 그림 입고 시 처리, 보너스/출시는 별도 티켓.
 
 - T-114 PR https://github.com/kidariseok/shoottrial/pull/42 생성·저장/push 성공. 다음은 사용자 병합 후 실제 듣기·플레이테스트다. 신규 구현은 별도 티켓/브랜치로 진행한다.
+
+- 2026-10-26 (T-115 계획): 사용자 #42 병합 후 이어가기 요청. #42 MERGED/열린 PR 없음 확인, origin/main6488f08c01e6에서 `kidariseok/t115-playtest-prep` 생성. 기준선 verify358테스트·83에셋·빌드 통과. A-103 미입고/출시보류 유지. 최신 완성본 동선·10웨이브 기계적 루프·사용자용 실행/기록표 준비 티켓 작성, 제품 코드 변경 없음. 계획 승인 후 점검한다. 실제 사람 플레이/밸런스 게이트는 미확인이다.
