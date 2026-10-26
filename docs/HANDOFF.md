@@ -40,7 +40,7 @@
 | 2 | **M6 단계 8: 계급·특기 시스템**(기존 6종) | `docs/tickets/T-112-rank-specialty.md` 구현·화면 검증 완료. verify319테스트·83에셋·빌드 통과, [PR #40](https://github.com/kidariseok/shoottrial/pull/40) 실제 병합 확인(2026-10-25T12:18:10Z). 브랜치 `kidariseok/t112-rank-specialty` |
 | 3 | **M6 단계 9: 새 카드 4종 구현** | `docs/tickets/T-113-new-cards.md` 구현·검증 완료(341테스트·83에셋·빌드), [PR #41](https://github.com/kidariseok/shoottrial/pull/41) 실제 병합 확인(2026-10-25T18:56:00Z). 브랜치 `kidariseok/t113-new-cards`, 기준40ef73845433. |
 | 4 | A-103 생활관 배경 `bg_barracks.png`(사용자가 그림) → 걷는 화면 좌표 맞춤(`src/ui/walk.ts` 맨 위 `L` 표, `?zones=1`) | 사용자 그림 대기 |
-| 5 | **T-114 전투 소리 연결** | `docs/tickets/T-114-battle-audio.md` 계획 작성·사용자 승인 대기. 브랜치 `kidariseok/t114-battle-audio`. 일일 첫 접속 보너스는 별도 대기 |
+| 5 | **T-114 전투 소리 연결** | `docs/tickets/T-114-battle-audio.md` 사용자 승인 후 구현 중. 브랜치 `kidariseok/t114-battle-audio`. 일일 첫 접속 보너스는 별도 대기 |
 | 6 | **T-108 출시 준비**(AAB 서명, 개인정보처리방침, 스토어 등록물, PX 광고 해금 연결) | **사용자가 구글 콘솔을 뒤로 미룸.** 사용자가 다시 꺼낼 때 시작(참고 `docs/research/play-launch.md`) |
 | 7 | 글꼴 번들(시안의 Black Han Sans, 파일 다운로드가 필요해 사용자 승인) | **출시 직전에 결정** |
 | 8 | 최종 난이도: 사용자 플레이테스트로 확정(튜닝 봇은 낡았다) | 사용자 |
@@ -135,3 +135,7 @@
 - T-113 PR https://github.com/kidariseok/shoottrial/pull/41 생성·완료 저장/push 성공. 다음은 사용자 병합·플레이테스트이며 추가 구현은 새 티켓/브랜치에서 시작한다.
 
 - 2026-10-26 (T-114 계획/중단 복구): 사용자 #41 병합·다음 단계 요청 후 중단 재개. #41 MERGED 실제 확인, origin/main a897bb073f1f에서 새 브랜치 `kidariseok/t114-battle-audio`. 미완료 코드 없음, verify341테스트·83에셋·빌드 재통과. A-103 생활관 그림은 미입고라 대기. T-106 음원/API는 있으나 전투 모듈에 호출이 없어 다음 준비 가능한 큐 항목으로 T-114 티켓 작성. BGM/사격/회복·소생/폭발/구매·합성 연결과 재생 중 음소거 검증 계획, 제품 코드 미변경. start-ticket 계획 승인 뒤 구현.
+
+- T-114 사용자 ‘진행’ 승인 후 구현. Orca Run `run_ad01213fc7e2`/오디오 Dispatch `ctx_6770f49de499`, audio.ts·audio.test.ts만 분담. 조정자가 data 음원표와 전투 사건/BGM 연결, 타입 검사 통과. 실제 Audio 호출/상태 계측·오디오 mute 검사 후 최종verify 예정.
+
+- T-114 구현·검증 중간점: BATTLE_AUDIO 매핑과 전투 사건·BGM 연결, audio 수명주기와24테스트 보완. verify358테스트/21파일·83에셋·빌드 통과, 오디오 작업자 succeeded/release/ack 완료. 브라우저 실제 Audio 계측으로 사격/회복/소생/박격포/지뢰/지원/구매·합성 호출과 재생 중 음소거·OR·설정·8슬롯·생활관 복귀 확인. 다음은 최종 결과/사진 정리·PR.

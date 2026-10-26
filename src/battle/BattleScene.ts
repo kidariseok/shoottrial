@@ -1,5 +1,6 @@
 import { Scene, type GameObjects, type Input } from 'phaser'
-import { BATTLE, CARD_KEYS, CARDS, CHARACTERS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
+import { BATTLE, BATTLE_AUDIO, CARD_KEYS, CARDS, CHARACTERS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
+import { playBgm, playSfx } from '../audio'
 import { createRng, debug } from '../debug'
 import { motionPhase, artKey, afterRun, colAt, defconOf, gasPlan, income, mineTokenPlan, cookSupplyBonus, unitInfoRows, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, signalIntervalMult, supportGrant, supportDamage, type SupportSource, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
 import { defaultSave, load, save, type Save } from '../save'
@@ -187,6 +188,8 @@ export class BattleScene extends Scene {
     this.ready = false
     const generation = this.runGeneration
     this.events.once('shutdown', () => {
+      // 결과에서는 이미 정지했다. 생활관이 켠 음악을 늦은 shutdown이 끄지 않는다.
+      if (!this.result) playBgm(null)
       clearAlliedActions(this)
       this.endSupport()
       this.runGeneration += 1
@@ -338,6 +341,7 @@ export class BattleScene extends Scene {
   }
 
   startPrep() {
+    playBgm(BATTLE_AUDIO.bgm[defconOf(this.wave)])
     this.phase = 'prep'
     this.board.setPhase('prep')
     // 지뢰설치병 수·계급·시너지로 이번 준비 단계 토큰이 정해진다(MINE-01)
@@ -366,6 +370,7 @@ export class BattleScene extends Scene {
 
   startFight() {
     if (this.inputBlocked() || this.phase !== 'prep') return
+    playBgm(BATTLE_AUDIO.bgm[defconOf(this.wave)])
     this.syncSignalSupport()
     clearAlliedActions(this)
     this.phase = 'fight'
@@ -411,6 +416,7 @@ export class BattleScene extends Scene {
     if (r.kind === 'poor') ui.banner(UI.text.bannerPoor, 'info')
     else if (r.kind === 'full') ui.banner(UI.text.bannerBenchFull, 'info')
     else if ((r.kind === 'bench' || r.kind === 'merge') && r.card) {
+      playSfx(BATTLE_AUDIO.buy)
       this.supply -= r.cost
       this.log({ e: 'card_buy', card: r.card, rank: 1 })
     }
@@ -482,6 +488,7 @@ export class BattleScene extends Scene {
   // 그 열의 살아 있는 적 전부에게 피해. 처치 수는 기존 정리 단계가 센다
   private strike(col: number, line: GameObjects.Rectangle, damage: number = SUPPORT.damage) {
     line.destroy()
+    playSfx(BATTLE_AUDIO.explosion)
     let kills = 0
     for (const e of this.enemies) {
       if (e.col !== col || e.gone || e.hp <= 0) continue
@@ -659,6 +666,7 @@ export class BattleScene extends Scene {
 
   private finish(win: boolean) {
     if (this.result) return
+    playBgm(null)
     clearAlliedActions(this)
     this.cancelSelection()
     this.result = win ? 'win' : 'lose'

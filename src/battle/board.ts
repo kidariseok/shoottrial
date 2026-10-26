@@ -1,5 +1,6 @@
 import { Scene, GameObjects, type Input, type Time } from 'phaser'
-import { ART, CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
+import { ART, BATTLE_AUDIO, CARDS, CARD_KEYS, GRID, LAYOUT, RANKS, SPRITE_SCALE, UI, type CardKey } from '../data'
+import { playSfx } from '../audio'
 import { debug, type DeckItem } from '../debug'
 import { addSprite, applyRankArt, hasArt, setupMotion, promoteMotion } from './art'
 import { promoteFx } from './fx'
@@ -207,6 +208,7 @@ export function createBoard(scene: Scene, opts: { dy: number; onSell: (refund: n
     scene.tweens.add({ targets: popup, y: target.y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => popup.destroy() })
     promoteMotion(view, rank)
     promoteFx(scene, target.x, target.y)
+    playSfx(BATTLE_AUDIO.merge)
     opts.onMerge?.(card, rank)
     if (spec || !opts.onSpecialty) {
       done?.()
