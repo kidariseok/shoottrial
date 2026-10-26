@@ -32,6 +32,17 @@ export const LAYOUT = {
 export const CARD_KEYS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem', 'medic', 'mortar', 'antitank', 'signal'] as const
 export type CardKey = (typeof CARD_KEYS)[number]
 
+// 기존 음원 재사용. 공격 준비가 아니라 행동이 성립한 순간 한 번 요청한다.
+export const BATTLE_AUDIO = {
+  bgm: { 1: 'bgm_defcon1', 2: 'bgm_defcon2' },
+  attack: {
+    rifle: 'sfx_rifle', sniper: 'sfx_sniper', blower: 'sfx_wind', cook: 'sfx_heal',
+    miner: 'sfx_rifle', chem: 'sfx_rifle', medic: 'sfx_heal', mortar: 'sfx_boom',
+    antitank: 'sfx_boom', signal: null,
+  },
+  hit: 'sfx_hit', explosion: 'sfx_boom', merge: 'sfx_merge', buy: 'sfx_buy',
+} as const
+
 // GDD §5.2. range 단위는 "칸"이다. color는 아트 전 임시색(ART §2: 붉은색 계열 금지)
 export const CARDS: Record<
   CardKey,

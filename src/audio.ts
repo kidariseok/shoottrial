@@ -51,6 +51,9 @@ let needsPointerResume = false
 let audioInitialized = false
 let bgmKey: BgmKey | null = null
 let bgmEl: HTMLAudioElement | null = null
+const fadingBgm = new Set<HTMLAudioElement>()
+const fadeTimers = new Map<HTMLAudioElement, ReturnType<typeof setInterval>>()
+const sfxStops = new Set<() => void>()
 
 let ctx: AudioContext | null = null
 let loopOsc: OscillatorNode | null = null
@@ -104,7 +107,21 @@ function getContext(): AudioContext | null {
   return ctx
 }
 
+function cancelFade(el: HTMLAudioElement): void {
+  clearInterval(fadeTimers.get(el))
+  fadeTimers.delete(el)
+}
+
+function stopFadingBgm(): void {
+  for (const el of fadingBgm) {
+    cancelFade(el)
+    el.pause()
+  }
+  fadingBgm.clear()
+}
+
 function fadeTo(el: HTMLAudioElement, to: number, then?: () => void): void {
+  cancelFade(el)
   const steps = Math.max(1, Math.round(BGM_FADE_MS / BGM_FADE_STEP_MS))
   const delta = (to - el.volume) / steps
   let n = 0
@@ -112,24 +129,31 @@ function fadeTo(el: HTMLAudioElement, to: number, then?: () => void): void {
     n += 1
     el.volume = n >= steps ? to : Math.min(1, Math.max(0, el.volume + delta))
     if (n >= steps) {
-      clearInterval(timer)
+      cancelFade(el)
       then?.()
     }
   }, BGM_FADE_STEP_MS)
+  fadeTimers.set(el, timer)
 }
 
 // 현재 배경음 요소를 음소거 상태에 맞춰 일시정지·재개한다
 function syncBgm(): void {
-  if (!bgmEl) return
   if (isBgmMuted()) {
-    bgmEl.pause()
+    stopFadingBgm()
+    if (bgmEl) {
+      cancelFade(bgmEl)
+      bgmEl.pause()
+      bgmEl.volume = BGM_VOLUME
+    }
     return
   }
-  const p = bgmEl.play()
+  const el = bgmEl
+  if (!el || !el.paused) return
+  const p = el.play()
   if (p && typeof p.catch === 'function') {
     // 자동재생이 막히면 다음 터치에서 다시 시도한다
     p.catch(() => {
-      needsPointerResume = true
+      if (el === bgmEl) needsPointerResume = true
     })
   }
 }
@@ -137,11 +161,22 @@ function syncBgm(): void {
 export function playBgm(key: BgmKey | null): void {
   if (key === bgmKey) return
   bgmKey = key
+  needsPointerResume = false
+  stopFadingBgm()
 
   const old = bgmEl
   bgmEl = null
   if (old) {
-    fadeTo(old, 0, () => old.pause())
+    if (isBgmMuted()) {
+      cancelFade(old)
+      old.pause()
+    } else {
+      fadingBgm.add(old)
+      fadeTo(old, 0, () => {
+        old.pause()
+        fadingBgm.delete(old)
+      })
+    }
   }
   if (key === null || typeof Audio === 'undefined') return
 
@@ -159,6 +194,9 @@ export function playBgm(key: BgmKey | null): void {
 }
 
 function syncLoopNode(): void {
+  if (isSfxMuted()) {
+    for (const stop of sfxStops) stop()
+  }
   syncBgm()
   const muted = isBgmMuted()
   if (!loopOn || muted) {
@@ -276,19 +314,31 @@ export function playSfx(key: SfxKey = 'sfx_click'): boolean {
   if (activeSfx >= MAX_CONCURRENT_SFX) return false
 
   activeSfx += 1
+  let released = false
+  let el: HTMLAudioElement | null = null
   const release = () => {
-    activeSfx = Math.max(0, activeSfx - 1)
+    if (released) return
+    released = true
+    activeSfx -= 1
+    sfxStops.delete(release)
+    if (el) {
+      el.removeEventListener('ended', release)
+      el.removeEventListener('error', release)
+      el.pause()
+    }
   }
+  sfxStops.add(release)
 
   if (typeof Audio !== 'undefined') {
     try {
-      const el = new Audio(`/assets/${key}.m4a`)
+      el = new Audio(`/assets/${key}.m4a`)
       el.volume = SFX_VOLUME
       el.addEventListener('ended', release, { once: true })
       el.addEventListener('error', release, { once: true })
       const p = el.play()
       if (p && typeof p.catch === 'function') {
         p.catch(() => {
+          if (released) return
           if (key === 'sfx_click') playClickSynthFallback()
           release()
         })
@@ -322,6 +372,13 @@ function playClickSynthFallback(): void {
     osc.connect(gain)
     gain.connect(audioCtx.destination)
     osc.start()
+    const stop = () => {
+      gain.gain.setValueAtTime(0, audioCtx.currentTime)
+      osc.stop()
+      sfxStops.delete(stop)
+    }
+    sfxStops.add(stop)
+    osc.onended = () => sfxStops.delete(stop)
     osc.stop(audioCtx.currentTime + 0.05)
   } catch {
     // 오디오 컨텍스트 생성 불가 무시

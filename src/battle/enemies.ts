@@ -1,5 +1,6 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, ART, SPECIALTIES, BATTLE, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
+import { ABILITY, ART, SPECIALTIES, BATTLE, BATTLE_AUDIO, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
+import { playSfx } from '../audio'
 import { dotTick, motionPhase, artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
 import { debug } from '../debug'
 import { addSprite, setupMotion, moveMotion, leanMotion, hasArt, hitSprite, playAct, anticipateMotion } from './art'
@@ -83,6 +84,7 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
 // 제거 판정은 호출한 쪽이 hp <= 0으로 거른다
 // 취약 중이면 피해가 커진다(damageTaken). 숫자도 늘어난 값을 보여 준다
 export function hurtEnemy(scene: Scene, e: Enemy, base: number): void {
+  if (base > 0 && e.hp > 0 && !e.gone) playSfx(BATTLE_AUDIO.hit)
   const dmg = damageTaken(base, e.vuln)
   e.hp -= dmg
   if (!hitSprite(e.view)) hitFlash(scene, e.view.x, e.view.y, bodySize(e.type), bodySize(e.type))
@@ -153,6 +155,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       anticipateMotion(e.view, ENEMIES[e.type].interval - e.ready, ENEMIES[e.type].interval)
       if (e.ready >= ENEMIES[e.type].interval) {
         e.ready -= ENEMIES[e.type].interval
+        if (e.type === 'rpg') playSfx(BATTLE_AUDIO.explosion)
         damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)
         if (e.type === 'rpg') explosion(ctx.scene, foe.view.x, foe.view.y) // RPG 폭발
         if (e.type !== 'boss') playAct(e.view, artKey('enemy', e.type, 'act'), ENEMIES[e.type].interval) // 때리는 순간 1회. 보스는 공격 그림이 없어 건너뛴다(없는 키로 artKey가 던지는 것을 막는다)
@@ -178,6 +181,7 @@ export function tickMines(ctx: { scene: Scene; board: Board; enemies: Enemy[]; c
   for (const m of ctx.board.mines()) {
     const live = ctx.enemies.filter((e) => e.col === m.col && e.hp > 0 && !e.gone)
     if (!live.some((e) => mineTriggered(e.y, m.row))) continue
+    playSfx(BATTLE_AUDIO.explosion)
     for (const e of live) {
       if (!inBlast(e.y, m.row)) continue
       const combo = pushMult(e.pushedAt, ctx.clock)

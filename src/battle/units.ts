@@ -1,5 +1,6 @@
 import { BlendModes, type Scene, type GameObjects } from 'phaser'
-import { ABILITY, COMBAT, CARDS, CARD_KEYS, FX, SPECIALTIES, LAYOUT, UI, type CardKey } from '../data'
+import { ABILITY, BATTLE_AUDIO, COMBAT, CARDS, CARD_KEYS, FX, SPECIALTIES, LAYOUT, UI, type CardKey } from '../data'
+import { playSfx } from '../audio'
 import { medicTreatment, medicReviveHp, medicUses, medicProtection, medicDamageMult, mortarRadius, mortarDelay, mortarShotOffsets, mortarTarget, mortarHits, antitankDamage, antitankStun, signalIntervalMult, attackRange, rifleDamage, sniperWidth, blowerTaunt, blowerVuln, cookHealing, allyDamageTaken, allyY, artKey, blowerCone, blowerRange, chemDamageMult, cookReach, dist, gasHits, interval, knockback, onRay, pickTarget, sniperDamage, stats, synergyTier, withinReach, type Chem } from '../rules'
 import type { Board, Unit } from './board'
 import { anticipateMotion, downMotion, hitSprite, playAct, restoreMotion } from './art'
@@ -101,6 +102,7 @@ export function damageAlly(scene: Scene, ally: Ally, base: number, quiet = false
   const dmg = allyDamageTaken(base, ally.unit.card, ally.unit.spec, medicDamageMult(medics, ally.col, ally.row), c.protection > 0 ? c.protectionMult : 1)
   c.hp -= dmg
   if (!quiet) {
+    if (dmg > 0) playSfx(BATTLE_AUDIO.hit)
     if (!hitSprite(ally.view)) hitFlash(scene, ally.view.x, ally.view.y, LAYOUT.cell - UI.card.inset * 2, LAYOUT.cell - UI.card.inset * 2)
     dmgText(scene, ally.view.x, ally.view.y, dmg)
   }
@@ -205,6 +207,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
     c.protectionMult = channel.protectionMult
     c.revived = true
     source.combat.reviveUsed += 1
+    playSfx(BATTLE_AUDIO.attack.medic)
     restoreMotion(target.view)
     target.view.setAlpha(1)
     drawBar(target)
@@ -233,6 +236,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
     }
     shell.left -= dt
     if (shell.left > COMBAT.tieEps) return true
+    playSfx(BATTLE_AUDIO.attack.mortar)
     for (const e of mortarHits(shell, enemies, shell.radius)) {
       hurtEnemy(scene, e, shell.atk)
       if (shell.vuln > 0) e.vuln = Math.max(e.vuln, shell.vuln)
@@ -286,6 +290,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
       case 'antitank': {
         const first = pickTarget(a, enemies, CARDS.antitank.range)
         if (!first) break
+        playSfx(BATTLE_AUDIO.attack.antitank)
         const behind = rank >= ABILITY.sergeant ? enemies.filter((e) => e !== first && e.hp > 0 && !e.gone && onRay(a, first, e, COMBAT.pierceWidth)).sort((p, q) => dist(a, p) - dist(a, q)) : []
         const atk = stats(card, rank, spec).atk * chemDamageMult(chems, a.col, a.row)
         for (const e of [first, ...behind]) {
@@ -305,6 +310,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
       case 'chem': {
         const target = pickTarget(a, enemies, attackRange(card, spec))
         if (!target) break
+        playSfx(BATTLE_AUDIO.attack[a.unit.card])
         const atk = stats(card, rank, spec).atk * chemDamageMult(chems, a.col, a.row)
         const shots = card === 'rifle' && rank >= ABILITY.corporal ? ABILITY.burstCount : 1
         muzzle(scene, mx, my)
@@ -323,6 +329,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         // 가장 가까운 적을 향해 쏘고, 그 사선(폭 pierceWidth) 위 뒤쪽 적을 가까운 순으로 관통한다
         const first = pickTarget(a, enemies, CARDS.sniper.range)
         if (!first) break
+        playSfx(BATTLE_AUDIO.attack.sniper)
         const behind = enemies
           .filter((e) => e !== first && e.hp > 0 && !e.gone && onRay(a, first, e, sniperWidth(spec)))
           .sort((p, q) => dist(a, p) - dist(a, q))
@@ -347,6 +354,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
         // 부채꼴: 안의 적 전부 피해 + 취약. 아직 안 밀린 적만 민다(적마다 1회)
         const targets = blowerCone(a, enemies, blowerRange(counts.blower))
         if (targets.length === 0) break
+        playSfx(BATTLE_AUDIO.attack.blower)
         const atk = stats('blower', rank, spec).atk
         for (const e of targets) {
           if (!e.knocked) {
@@ -383,6 +391,7 @@ export function tickAllies(ctx: { scene: Scene; board: Board; enemies: Enemy[]; 
           acted = true
         }
         if (acted) {
+          playSfx(BATTLE_AUDIO.attack.cook)
           act()
           c.cd = iv
         }
