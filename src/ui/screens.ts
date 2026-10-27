@@ -604,7 +604,7 @@ export function banner(text: string, kind: 'flag' | 'defcon' | 'info'): void {
 }
 
 export function result(
-  r: { win: boolean; wave: number; kills: number; unlocked?: string },
+  r: { win: boolean; wave: number; kills: number; unlocked?: string; gaveUp?: boolean },
   onAgain: () => void,
   onLobby: () => void
 ): void {
@@ -617,13 +617,13 @@ export function result(
 
   const header = document.createElement('div')
   header.className = `modal-header ${r.win ? 'win' : 'lose'}`
-  header.textContent = r.win ? '작전 성공 — 위병소 사수' : '작전 실패 — 위병소 돌파됨'
+  header.textContent = r.gaveUp ? '작전 중단 — 자발적 포기' : r.win ? '작전 성공 — 위병소 사수' : '작전 실패 — 위병소 돌파됨'
 
   const body = document.createElement('div')
   body.className = 'modal-body'
 
   const stats: [string, string][] = [
-    ['결과', r.win ? '승리' : '패배'],
+    ['결과', r.gaveUp ? '포기' : r.win ? '승리' : '패배'],
     ['도달 웨이브', `${r.wave} / 10`],
     ['처치 수', `${r.kills}`],
     ['새 해금 카드', r.unlocked ? getCardName(r.unlocked) : '—'],

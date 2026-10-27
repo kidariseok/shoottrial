@@ -35,7 +35,7 @@ const scenes = isGallery
   ? [GalleryScene, BattleScene]
   : isLobby
     ? [IdleScene, WalkScene, BattleScene, GalleryScene]
-    : [BattleScene, GalleryScene]
+    : [BattleScene, WalkScene, GalleryScene]
 
 const config: Types.Core.GameConfig = {
   type: AUTO,
