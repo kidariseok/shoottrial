@@ -685,7 +685,7 @@ export class BattleScene extends Scene {
     this.syncHud()
     ui.bindBattle(null)
     ui.result(
-      { win, wave: this.wave, kills: this.kills, unlocked: this.newUnlock ?? undefined },
+      { win, wave: this.wave, kills: this.kills, unlocked: this.newUnlock ?? undefined, gaveUp: this.gaveUp },
       () => this.scene.restart(),
       () => {
         this.scene.stop()
