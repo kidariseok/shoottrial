@@ -56,7 +56,7 @@
 - [x] 명시한 조건에서10웨이브 흐름 검사 결과 또는 막힌 조건/재현 보고
 - [x] 실패·포기 경로와 예약/음악 정리 확인
 - [x] 사용자용 실행 안내·기록표 작성, 미확인 사항 명시
-- [ ] 보고서/사진/HANDOFF 저장 및 PR 제공
+- [x] 보고서/사진/HANDOFF 저장 및 PR 제공
 
 디버그 URL: `http://localhost:5199/?scene=walk&safe=1` (실제 동선)
 10종 체험: `http://localhost:5199/?scene=walk&wave=1&unlock=all&supply=99&seed=7&safe=1&deck=rifle:2,blower:1,cook:1,medic:1,signal:1,mortar:1,antitank:1&rank=3&spec=A`
@@ -105,3 +105,5 @@
 
 - T-115 점검/안내 완료. 상세 증거는 docs/reviews/T-115-integration.md, 사람 플레이 안내는 docs/PLAYTEST.md. 제품 파일 수정은 없다.
 - 버그 발견 시 재현 보고를 먼저 만들고 필요한 제품 수정 티켓을 구체화한다. 게이트/밸런스 통과는 실제 사용자 결과가 필요하다.
+
+- [x] 최종 verify358테스트/83에셋/타입·빌드 및 diff검사 통과. 자동저장 커밋·현재 브랜치 push 완료. PR: https://github.com/kidariseok/shoottrial/pull/43 (사용자 병합 대기).
