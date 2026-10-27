@@ -79,6 +79,12 @@
 - [x] 시안 탭 연결 오류2회로 stuck 절차 적용. 게임 코드/public/assets/에셋 계약 미변경, verify 미실행.
 - 다음: Chrome 연결 복구→첫 컷 다운로드·inbox 저장→나머지3컷/생활관/모션4시트 제작→Figma 이미지 채우기→검토·사용자 승인.
 - [x] 2026-10-28 재개: 첫 컷941×1672 원본을 art/inbox/a106/brief-1.png에 즉시 저장. ChatGPT High 유지, 컷2 생성 요청. 이벤트 대기 대신 Download 클릭→Downloads 파일확인 방식 사용.
+- [x] 브리핑2·3 원본brief-2.png/brief-3.png 저장·실제 이미지 열어 검토. 생활관barracks.png도 저장·검토: 기존 참조의 타일/침상/중앙통로/상부사무공간/하단출입구를 야간으로 재가공, 가구 위치는 승인 후 구역 좌표 재조정 필요. Figma54:9/16/23/37에 원본 삽입.
+- [x] 모션 참조는 ChatGPT ‘Add from Library’에서 기존 cur_sniper_idle/cur_cook_idle 재첨부 성공. 이 경로는 로컬파일 권한 변경·macOS 파일창 없이 된다. NPC 각8방향 시트 생성 요청. 별도 신병 대화에서 cur_rifle 참조 검색 중.
+- 생성 대화 추가: 생활관 https://chatgpt.com/c/6ae12889-32bc-83ee-afbc-02af6d9cc75f , 이상병 https://chatgpt.com/c/6ae1297b-1888-83ee-b84d-d0dc7acf9dcd . 각 High 확인.
+- [x] 브리핑4컷 전부原本 저장·Figma에 삽입, 실제 이미지 열어 검토. 첫날밤→경보/급한장비→정문무전→방어선합류의 장면전환. 생활관은 원본참조와 재가공을 나란히 비교하도록 보드 구성.
+- [x] 첫 모션 원본 lee-turn.png/park-turn.png/rook-walk.png 저장, v1별도복사보존. NPC 방향중복 및 걷기 통과자세 부족을 눈으로 확인하여 각각1회 보정 요청. 아직 생산용 시트/실제재생으로 검증하지 않았다.
+- 생성 대화 추가: 박취사 https://chatgpt.com/c/6ae129cb-9434-83ee-92e0-61a3c0d813d3 , 신병걷기 https://chatgpt.com/c/6ae12a13-1ffc-83ee-b152-d0910a1a8245 . 신병회전은 기존브리핑대화에서 첨부원본 기준으로 생성 중.
 
 ## 결과 보고
 
