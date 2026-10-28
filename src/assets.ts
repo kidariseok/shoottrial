@@ -78,6 +78,8 @@ const LOBBY_ART_CONTRACTS: AssetContract[] = [
   { key: 'walk_rook_idle', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_rook_idle' },
   { key: 'walk_lee_idle', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_lee_idle' },
   { key: 'walk_park_idle', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_park_idle' },
+  { key: 'walk_lee_sit', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_lee_sit' },
+  { key: 'walk_park_sit', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_park_sit' },
 ]
 
 // 처리 도구의 getMaxFrames와 같은 상한. 단일 정적 그림은 기존 최소치를 유지한다.

@@ -44,32 +44,50 @@ type Actor = { box: GameObjects.Container; sprite: GameObjects.Sprite | null; id
 const L = {
   start: { x: 0.5, y: 0.85 },
   speed: 230, // px/초, 생활관의 좁은 통로에 맞춘 보행 속도
-  radius: 18,
+  radius: 12, // 몸 그림이 아닌 발 주변만 충돌시켜 침상 사이 좁은 통로를 지난다.
   strideFps: 8,
   turnMs: 65,
   talkMs: 5000,
   bounds: { x: 0.075, y: 0.255, w: 0.85, h: 0.675 } as Rect,
   colliders: [
-    { x: 0.035, y: 0.23, w: 0.36, h: 0.60 }, // 왼쪽 침상·관물대·통로 쪽 바구니
-    { x: 0.625, y: 0.23, w: 0.34, h: 0.61 }, // 오른쪽 침상·PX 선반
+    { x: 0.035, y: 0.23, w: 0.08, h: 0.60 }, // 왼쪽 벽의 관물대
+    { x: 0.875, y: 0.23, w: 0.09, h: 0.61 }, // 오른쪽 벽의 관물대
+    { x: 0.125, y: 0.272, w: 0.205, h: 0.100 }, // 왼쪽 첫 침상
+    { x: 0.125, y: 0.411, w: 0.205, h: 0.102 },
+    { x: 0.125, y: 0.551, w: 0.205, h: 0.104 },
+    { x: 0.125, y: 0.724, w: 0.205, h: 0.102 },
+    { x: 0.670, y: 0.272, w: 0.205, h: 0.100 }, // 오른쪽 첫 침상
+    { x: 0.670, y: 0.411, w: 0.205, h: 0.102 },
+    { x: 0.670, y: 0.551, w: 0.205, h: 0.104 },
+    { x: 0.670, y: 0.724, w: 0.205, h: 0.102 },
+    { x: 0.337, y: 0.325, w: 0.055, h: 0.050 }, // 침상 옆 바구니는 개별로 막는다.
+    { x: 0.337, y: 0.565, w: 0.050, h: 0.054 },
+    { x: 0.610, y: 0.435, w: 0.055, h: 0.055 },
+    { x: 0.610, y: 0.575, w: 0.055, h: 0.060 },
+    { x: 0.850, y: 0.675, w: 0.105, h: 0.165 }, // PX 선반
     { x: 0.035, y: 0.855, w: 0.27, h: 0.105 }, // 출입구 왼쪽 보급 상자
     { x: 0.83, y: 0.84, w: 0.14, h: 0.12 }, // 출입구 오른쪽 청소 도구
   ] as Rect[],
   spots: [
     { id: 'board', x: 0.44, y: 0.255, r: 95, marker: { x: 0.24, y: 0.14 }, title: '게시판', desc: '최고 기록·브리핑', kind: 'panel', panel: 'board' },
     { id: 'admin', x: 0.59, y: 0.255, r: 95, marker: { x: 0.57, y: 0.19 }, title: '행정반', desc: '설정·크레딧', kind: 'panel', panel: 'admin' },
-    { id: 'codex', x: 0.415, y: 0.36, r: 80, marker: { x: 0.15, y: 0.36 }, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'codex', x: 0.15, y: 0.390, r: 62, marker: { x: 0.15, y: 0.390 }, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'codex-right', x: 0.84, y: 0.390, r: 62, marker: { x: 0.84, y: 0.390 }, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'codex-left-mid', x: 0.15, y: 0.532, r: 62, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'codex-right-mid', x: 0.84, y: 0.532, r: 62, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'codex-left-low', x: 0.15, y: 0.687, r: 62, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'codex-right-low', x: 0.84, y: 0.687, r: 62, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
     { id: 'px', x: 0.61, y: 0.81, r: 80, marker: { x: 0.87, y: 0.77 }, title: 'PX', desc: '광고 보고 병과 해금', kind: 'panel', panel: 'px' },
     { id: 'door', x: 0.5, y: 0.94, r: 90, title: '출입구', desc: '위병소 방면 · 전투 투입', kind: 'deploy' },
     {
       id: 'lee',
-      x: 0.44,
-      y: 0.48,
+      x: 206 / W,
+      y: 590 / MAP_H,
       r: 90,
       title: '이상병',
       desc: '',
       kind: 'npc',
-      art: 'walk_lee_idle',
+      art: 'walk_lee_sit',
       lines: [
         '저격은 관통이다. 한 줄로 세워 놓고 쏴라.',
         '사거리 안이면 어느 방향이든 쏜다. 대각선도 된다.',
@@ -78,13 +96,13 @@ const L = {
     },
     {
       id: 'park',
-      x: 0.58,
-      y: 0.70,
+      x: 514 / W,
+      y: 756 / MAP_H,
       r: 90,
       title: '박취사',
       desc: '',
       kind: 'npc',
-      art: 'walk_park_idle',
+      art: 'walk_park_sit',
       lines: [
         '밥 먹고 해야지. 취사병이 옆에 있으면 다들 버틴다.',
         '제설병 뒤에 취사병을 세워라. 맞는 사람이 있어야 치료도 있지.',
@@ -160,8 +178,7 @@ export class WalkScene extends Scene {
     this.colliders = L.colliders.map(rect)
     this.bounds = rect(L.bounds)
     this.zones = L.spots.map((s) => ({ id: s.id, x: px(s.x), y: py(s.y), r: s.r, spot: s }))
-    // 동료는 발 주변만 막는다. 중앙 통로는 남겨 두고 몸을 겹쳐 지나가지 않게 한다.
-    for (const z of this.zones) if (z.spot.kind === 'npc') this.colliders.push({ x: z.x - 20, y: z.y - 16, w: 40, h: 32 })
+    // 동료는 침상 가장자리에 둔다. 침상만 충돌하며 통로에 NPC 충돌을 추가하지 않는다.
     this.pos = { x: px(L.start.x), y: py(L.start.y) }
     this.current = null
     this.lineIdx = {}
@@ -208,7 +225,8 @@ export class WalkScene extends Scene {
     this.pos = moveStep(this.pos, dir, L.speed, Math.min(delta, 50), this.colliders, this.bounds, L.radius)
     const moving = Math.hypot(this.pos.x - before.x, this.pos.y - before.y) > 0.1
     this.player.setPosition(this.pos.x, this.pos.y).setDepth(this.pos.y)
-    const partner = this.talking ? this.zones.find((z) => z.id === this.talking) : null
+    const nearNpc = open ? null : nearestZone(this.pos, this.zones.filter(z => z.spot.kind === 'npc'))
+    const partner = this.talking ? this.zones.find(z => z.id === this.talking) : !moving ? nearNpc : null
     this.rookie.target = partner
       ? facingFor({ x: partner.x - this.pos.x, y: partner.y - this.pos.y }, this.rookie.facing)
       : facingFor(dir, this.rookie.target)
@@ -221,7 +239,7 @@ export class WalkScene extends Scene {
     }
     for (const [id, npc] of this.npcs) {
       const z = this.zones.find((zone) => zone.id === id)!
-      npc.target = this.talking === id
+      npc.target = !open && (this.talking === id || nearNpc?.id === id)
         ? facingFor({ x: this.pos.x - z.x, y: this.pos.y - z.y }, npc.facing)
         : npc.home
       this.turnActor(npc, time)
@@ -279,7 +297,8 @@ export class WalkScene extends Scene {
 
   private actor(artKey: string, fallback: string, label: string, home: number): Actor {
     const box = this.add.container(0, 0)
-    box.add(this.add.ellipse(0, 0, 52, 14, 0x000000, 0.30))
+    const seated = artKey.endsWith('_sit') && hasArt(artKey)
+    box.add(this.add.ellipse(0, seated ? -3 : 0, seated ? 40 : 52, seated ? 10 : 14, 0x000000, seated ? 0.22 : 0.30))
     const key = hasArt(artKey) ? artKey : fallback
     let sprite: GameObjects.Sprite | null = null
     if (hasArt(key)) {
@@ -302,7 +321,7 @@ export class WalkScene extends Scene {
   private makeNpc(z: Hot): void {
     const a = this.actor(z.spot.art ?? '', z.id === 'lee' ? 'ally_sniper_idle' : 'ally_cook_idle', z.spot.title.slice(0, 1), z.id === 'lee' ? 6 : 2)
     a.box.setPosition(z.x, z.y).setDepth(z.y).setName(z.id)
-    a.box.add(this.add.text(0, -103, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#d9d2be', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5))
+    a.box.add(this.add.text(0, -78, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#d9d2be', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5))
     this.npcs.set(z.id, a)
   }
 
