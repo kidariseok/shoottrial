@@ -69,8 +69,8 @@ describe('에셋 계약 표 (docs/ART.md §4)', () => {
     }
   })
 
-  it('총 키 개수가 101개이고 모든 규격(w, h, frames)이 유효하다', () => {
-    expect(ASSET_CONTRACTS.length).toBe(101)
+  it('총 키 개수가 112개이고 모든 규격(w, h, frames)이 유효하다', () => {
+    expect(ASSET_CONTRACTS.length).toBe(112)
     for (const item of ASSET_CONTRACTS) {
       expect(item.w).toBeGreaterThan(0)
       expect(item.h).toBeGreaterThan(0)

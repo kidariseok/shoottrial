@@ -81,5 +81,17 @@
   "ally_antitank_promote",
   "ally_signal_hit",
   "ally_signal_down",
-  "ally_signal_promote"
+  "ally_signal_promote",
+  "brief_1",
+  "brief_2",
+  "brief_3",
+  "brief_4",
+  "bg_barracks",
+  "walk_rook_walk_s",
+  "walk_rook_walk_w",
+  "walk_rook_walk_e",
+  "walk_rook_walk_n",
+  "walk_rook_idle",
+  "walk_lee_idle",
+  "walk_park_idle"
 ]

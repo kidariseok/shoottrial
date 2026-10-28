@@ -20,26 +20,30 @@ export const BRIEFING_CUTS = [
   {
     key: 'brief_1',
     sfx: 'sfx_siren',
-    tag: '컷 1 / 4 · 자대 배치 첫날 밤',
+    tag: '01 / 04 · 자대 배치 첫날 밤',
+    title: '낯선 생활관, 갑작스러운 경보',
     text: '6주 기초군사훈련을 마친 신병 {이름}. 자대 배치 첫날 밤, 생활관 스피커가 울린다.\n"실제 상황, 실제 상황. 데프콘 2 발령. 데프콘 2 발령."',
   },
   {
     key: 'brief_2',
     sfx: 'sfx_siren',
-    tag: '컷 2 / 4 · 화스트 페이스',
-    text: '화스트 페이스. 군장을 싸기도 전에 포탄이 떨어지고, 보급품이 연병장에 흩어진다.',
+    tag: '02 / 04 · 화스트 페이스',
+    title: '창밖이 번쩍였다',
+    text: '군장을 싸기도 전에 포성이 생활관을 흔든다.\n동료들이 장비를 챙기고 방어 위치로 향한다.',
   },
   {
     key: 'brief_3',
     sfx: 'sfx_radio',
-    tag: '컷 3 / 4 · 위병소 긴급 무전',
-    text: '무전이 지지직거린다. "…적, 위병소 정문으로 진입 중. 즉각 대응 바람."',
+    tag: '03 / 04 · 위병소 긴급 무전',
+    title: '정문이 뚫리고 있다',
+    text: '“···북방연합군, 정문으로 진입 중.\n즉각 대응 바람.” 무전이 끊겼다.',
   },
   {
     key: 'brief_4',
     sfx: 'sfx_radio',
-    tag: '컷 4 / 4 · 단독 방어 투입',
-    text: '손에 든 건 K2 소총 한 자루.',
+    tag: '04 / 04 · 첫 전투 투입',
+    title: '이제, 네가 막아야 한다',
+    text: '손에 든 건 K2 한 자루.\n동료를 배치하고 위병소를 사수하라.',
   },
 ] as const
 
@@ -47,6 +51,7 @@ let currentSave: Save = defaultSave()
 let onDeployCallback: (() => void) | null = null
 let overlayEl: HTMLElement | null = null
 let availableAssets: Set<string> | null = null
+let briefingRequest = 0
 
 function getUiRoot(): HTMLElement | null {
   if (typeof document === 'undefined') return null
@@ -96,6 +101,7 @@ export function bindDeploy(onDeploy: () => void): void {
 }
 
 export function hideLobbyOverlay(): void {
+  briefingRequest++
   if (!overlayEl) return
   overlayEl.classList.add('hidden')
   overlayEl.innerHTML = ''
@@ -174,7 +180,10 @@ export async function showBriefing(cutIndex = 0): Promise<void> {
     return
   }
 
+  panelOpen = true
+  const request = ++briefingRequest
   const assets = await ensureAvailableAssets()
+  if (request !== briefingRequest) return
   const cut = BRIEFING_CUTS[cutIndex]!
   playBriefingSfxIfPresent(cut.sfx, assets)
 
@@ -184,9 +193,16 @@ export async function showBriefing(cutIndex = 0): Promise<void> {
   const stage = document.createElement('div')
   stage.className = `briefing-stage cut-${cutIndex + 1}`
 
-  if (assets.has(cut.key)) {
-    stage.style.backgroundImage = `url('/assets/${cut.key}.png')`
-  }
+  const art = document.createElement('div')
+  art.className = 'briefing-art'
+  const image = document.createElement('img')
+  image.alt = cut.title
+  image.className = 'briefing-image'
+  image.addEventListener('error', () => { image.remove(); art.classList.add('missing-art') })
+  if (assets.has(cut.key)) image.src = `/assets/${cut.key}.png`
+  else art.classList.add('missing-art')
+  if (assets.has(cut.key)) art.appendChild(image)
+  stage.appendChild(art)
 
   const topBar = document.createElement('div')
   topBar.className = 'briefing-top-bar'
@@ -201,6 +217,9 @@ export async function showBriefing(cutIndex = 0): Promise<void> {
   skipBtn.textContent = '건너뛰기'
   skipBtn.addEventListener('click', (e) => {
     e.stopPropagation()
+    if (advanced) return
+    advanced = true
+    briefingRequest++
     void showLobby()
   })
 
@@ -209,29 +228,41 @@ export async function showBriefing(cutIndex = 0): Promise<void> {
   const contentCard = document.createElement('div')
   contentCard.className = 'briefing-card'
 
+  const titleEl = document.createElement('h1')
+  titleEl.className = 'briefing-title'
+  titleEl.textContent = cut.title
+
   const textEl = document.createElement('p')
   textEl.className = 'briefing-text'
   textEl.textContent = formatBriefingText(cut.text, currentSave.name)
 
-  const hintEl = document.createElement('div')
+  const hintEl = document.createElement('button')
+  hintEl.type = 'button'
   hintEl.className = 'briefing-tap-hint'
   hintEl.textContent =
     cutIndex + 1 < BRIEFING_CUTS.length
-      ? `화면을 탭하여 다음 (${cutIndex + 1}/${BRIEFING_CUTS.length})`
-      : `화면을 탭하여 생활관으로 이동 (${BRIEFING_CUTS.length}/${BRIEFING_CUTS.length})`
+      ? '다음 장면 →'
+      : '생활관으로 이동 →'
 
-  contentCard.append(textEl, hintEl)
+  contentCard.append(titleEl, textEl, hintEl)
   stage.append(topBar, contentCard)
 
-  stage.addEventListener('click', () => {
+  let advanced = false
+  const advance = (): void => {
+    if (advanced) return
+    advanced = true
     if (cutIndex + 1 < BRIEFING_CUTS.length) {
       void showBriefing(cutIndex + 1)
     } else {
       void showLobby()
     }
-  })
+  }
+  hintEl.addEventListener('click', (event) => { event.stopPropagation(); advance() })
+  art.addEventListener('click', advance)
 
   wrap.appendChild(stage)
+  // 컷이 바뀌면 버튼도 새로 생긴다. 키보드로도 연속해서 넘길 수 있다.
+  hintEl.focus({ preventScroll: true })
 }
 
 // 걷는 생활관(T-109): showLobby는 저장을 읽고 걷는 씬을 시작한다. 메뉴는 구역 앞에서 여는 패널이다

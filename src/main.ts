@@ -7,7 +7,7 @@ import { GalleryScene } from './gallery'
 import { exitApp, init as initPlatform, isNative, onBack, safeRect } from './platform'
 import { load as loadSave } from './save'
 import { startUiDemo } from './ui/demo'
-import { bindDeploy, bindWalk, showLobby, startEntryFlow } from './ui/lobby'
+import { bindDeploy, bindWalk, showLobby, showBriefing, startEntryFlow } from './ui/lobby'
 import { handleBack } from './ui/screens'
 import { WalkScene } from './ui/walk'
 
@@ -162,7 +162,9 @@ async function boot(): Promise<void> {
   if (isWalk) {
     await showLobby()
   } else if (isLobby) {
-    await startEntryFlow(saved)
+    const brief = new URLSearchParams(location.search).get('brief')
+    if (brief && /^[1-4]$/.test(brief)) await showBriefing(Number(brief) - 1)
+    else await startEntryFlow(saved)
   } else if (isUiDemo) {
     startUiDemo()
   } else if (isDevice) {
