@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // 승인용 미리보기만 만든다. 게임 에셋 연결은 Figma 시안 승인 후 별도 단계다.
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { PNG } from 'pngjs'
-import { findBoundingBox, scalePngBox, alignFrameToCanvas, mergeFramesToSheet } from './assets.mjs'
+import { findBoundingBox, scalePngBox, alignFrameToCanvas, mergeFramesToSheet, coverResizeBackground } from './assets.mjs'
 
 const dir = 'art/inbox/a118'
 for (const person of ['lee', 'park']) {
@@ -36,4 +36,24 @@ for (const person of ['lee', 'park']) {
   writeFileSync(`${dir}/${person}-crossleg-preview-grid.png`, PNG.sync.write(grid))
   writeFileSync(`${dir}/${person}-crossleg-preview-rest.png`, PNG.sync.write(aligned[person === 'lee' ? 6 : 2]))
   console.log(`${person}: 아빠다리 8방향, 128px 캔버스, 발끝116, 최대높이74`)
+}
+
+// 생성 도구가 다른 침상을 조금 바꿨더라도, 필요한 두 매트리스 영역만 원래 배경에 반영한다.
+if (existsSync(`${dir}/barracks-bedding-v1.png`) && existsSync(`${dir}/right-third-bedding-v2.png`)) {
+  const original = PNG.sync.read(readFileSync('public/assets/bg_barracks.png'))
+  const map = PNG.sync.read(readFileSync('public/assets/bg_barracks.png'))
+  const left = coverResizeBackground(PNG.sync.read(readFileSync(`${dir}/barracks-bedding-v1.png`)), { w: 720, h: 1280 }).sheetPng
+  const right = scalePngBox(PNG.sync.read(readFileSync(`${dir}/right-third-bedding-v2.png`)), 188, 160)
+  const areas = [{ x: 93, y: 519, w: 143, h: 105 }, { x: 485, y: 690, w: 143, h: 117 }]
+  PNG.bitblt(left, map, 93, 519, 143, 105, 93, 519)
+  PNG.bitblt(right, map, 485 - 472, 690 - 674, 143, 117, 485, 690)
+  let outsideChanges = 0
+  for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) {
+    if (areas.some(a => x >= a.x && x < a.x + a.w && y >= a.y && y < a.y + a.h)) continue
+    const i = (y * map.width + x) * 4
+    if (!map.data.subarray(i, i + 4).equals(original.data.subarray(i, i + 4))) outsideChanges++
+  }
+  if (outsideChanges) throw new Error('지정한 침상 밖 배경이 바뀌었습니다.')
+  writeFileSync(`${dir}/barracks-bedding-preview.png`, PNG.sync.write(map))
+  console.log('매트리스2곳 미리보기 완료, 그 밖 변경0픽셀')
 }
