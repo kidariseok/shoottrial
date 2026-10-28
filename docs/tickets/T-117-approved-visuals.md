@@ -114,3 +114,4 @@ A-106에서 승인한 브리핑4컷·생활관 배경·신병 걷기/회전·동
 
 - 승인 시안 원본 art/inbox/a106/brief-1~4.png·barracks.png·rook-walk.png·rook-turn.png·lee-turn.png·park-turn.png. v1은 비교용 보존. 원본 커밋 금지.
 - 최종 상태: 구현·검증 완료. A-106 승인문서/사진을 구현브랜치로 통합했고 HANDOFF 충돌은 양쪽 승인·구현 이력을 보존해 해결했다. Orca3창 released·reclaimable0. 다음은 사용자 PR 병합과 일반 플레이다.
+- PR: https://github.com/kidariseok/shoottrial/pull/46 . A-106 기록까지 포함해 #45를 대체한다. 검증 브라우저 컨텍스트와 개발 서버를 종료했다. main 병합은 사용자 담당이다.
