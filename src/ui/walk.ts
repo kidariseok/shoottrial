@@ -3,6 +3,7 @@
 import { BlendModes, Scene, type GameObjects, type Input, type Types } from 'phaser'
 import { playSfx } from '../audio'
 import { hasArt, loadArt, setupArt } from '../battle/art'
+import { facingFor, turnToward, walkDirection } from './walk-motion'
 import { deploy, getLobbySave, isPanelOpen, openPanel, type PanelKind } from './lobby'
 import {
   getRankName,
@@ -32,36 +33,43 @@ type Spot = {
   kind: 'panel' | 'deploy' | 'npc'
   panel?: PanelKind
   art?: string
+  marker?: Vec
   lines?: string[]
 }
 type Hot = Zone & { spot: Spot }
+type Actor = { box: GameObjects.Container; sprite: GameObjects.Sprite | null; idle: string; facing: number; target: number; turnAt: number; home: number }
 
-// ponytail: 좌표는 이 표 하나에 비율(0~1)로 둔다. 배경 그림(A-103 bg_barracks)이 오면 ?zones=1로 선을 보면서 여기만 다시 맞춘다.
+// ponytail: 승인한 생활관 그림의 가구/통로 좌표. 한 화면 좌표 표이며 배경이 바뀌면 ?zones=1로 다시 맞춘다.
 // 지도는 한 화면(720×1280)이고 스크롤하지 않는다. 화면이 더 길면 위아래를 어두운 색으로 채운다.
 const L = {
-  start: { x: 0.5, y: 0.82 },
-  speed: 300, // px/초
-  radius: 22, // 발 밑 충돌 반경
-  bounds: { x: 0.07, y: 0.17, w: 0.86, h: 0.77 } as Rect, // 중심이 다닐 수 있는 범위
+  start: { x: 0.5, y: 0.85 },
+  speed: 230, // px/초, 생활관의 좁은 통로에 맞춘 보행 속도
+  radius: 18,
+  strideFps: 8,
+  turnMs: 65,
+  talkMs: 5000,
+  bounds: { x: 0.075, y: 0.255, w: 0.85, h: 0.675 } as Rect,
   colliders: [
-    { x: 0.17, y: 0.23, w: 0.18, h: 0.4 }, // 왼쪽 2단 침상 줄
-    { x: 0.65, y: 0.23, w: 0.18, h: 0.4 }, // 오른쪽 2단 침상 줄
+    { x: 0.035, y: 0.23, w: 0.36, h: 0.60 }, // 왼쪽 침상·관물대·통로 쪽 바구니
+    { x: 0.625, y: 0.23, w: 0.34, h: 0.61 }, // 오른쪽 침상·PX 선반
+    { x: 0.035, y: 0.855, w: 0.27, h: 0.105 }, // 출입구 왼쪽 보급 상자
+    { x: 0.83, y: 0.84, w: 0.14, h: 0.12 }, // 출입구 오른쪽 청소 도구
   ] as Rect[],
   spots: [
-    { id: 'board', x: 0.25, y: 0.14, r: 120, title: '게시판', desc: '최고 기록·브리핑', kind: 'panel', panel: 'board' },
-    { id: 'admin', x: 0.75, y: 0.14, r: 120, title: '행정반', desc: '설정·크레딧', kind: 'panel', panel: 'admin' },
-    { id: 'codex', x: 0.05, y: 0.42, r: 120, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
-    { id: 'px', x: 0.95, y: 0.6, r: 120, title: 'PX', desc: '광고 보고 병과 해금', kind: 'panel', panel: 'px' },
-    { id: 'door', x: 0.5, y: 0.96, r: 130, title: '출입구', desc: '위병소 방면 · 전투 투입', kind: 'deploy' },
+    { id: 'board', x: 0.44, y: 0.255, r: 95, marker: { x: 0.24, y: 0.14 }, title: '게시판', desc: '최고 기록·브리핑', kind: 'panel', panel: 'board' },
+    { id: 'admin', x: 0.59, y: 0.255, r: 95, marker: { x: 0.57, y: 0.19 }, title: '행정반', desc: '설정·크레딧', kind: 'panel', panel: 'admin' },
+    { id: 'codex', x: 0.415, y: 0.36, r: 80, marker: { x: 0.15, y: 0.36 }, title: '관물대', desc: '병과 도감', kind: 'panel', panel: 'codex' },
+    { id: 'px', x: 0.61, y: 0.81, r: 80, marker: { x: 0.87, y: 0.77 }, title: 'PX', desc: '광고 보고 병과 해금', kind: 'panel', panel: 'px' },
+    { id: 'door', x: 0.5, y: 0.94, r: 90, title: '출입구', desc: '위병소 방면 · 전투 투입', kind: 'deploy' },
     {
       id: 'lee',
-      x: 0.43,
-      y: 0.42,
-      r: 100,
+      x: 0.46,
+      y: 0.48,
+      r: 90,
       title: '이상병',
       desc: '',
       kind: 'npc',
-      art: 'ally_sniper_idle',
+      art: 'walk_lee_idle',
       lines: [
         '저격은 관통이다. 한 줄로 세워 놓고 쏴라.',
         '사거리 안이면 어느 방향이든 쏜다. 대각선도 된다.',
@@ -70,13 +78,13 @@ const L = {
     },
     {
       id: 'park',
-      x: 0.58,
-      y: 0.7,
-      r: 100,
+      x: 0.565,
+      y: 0.70,
+      r: 90,
       title: '박취사',
       desc: '',
       kind: 'npc',
-      art: 'ally_cook_idle',
+      art: 'walk_park_idle',
       lines: [
         '밥 먹고 해야지. 취사병이 옆에 있으면 다들 버틴다.',
         '제설병 뒤에 취사병을 세워라. 맞는 사람이 있어야 치료도 있지.',
@@ -101,7 +109,11 @@ export class WalkScene extends Scene {
   private offY = 0
   private pos: Vec = { x: 0, y: 0 }
   private player!: GameObjects.Container
-  private sprite: GameObjects.Sprite | null = null
+  private rookie!: Actor
+  private npcs = new Map<string, Actor>()
+  private stride = 's'
+  private talking: string | null = null
+  private talkUntil = 0
   private colliders: Rect[] = []
   private bounds: Rect = { x: 0, y: 0, w: 0, h: 0 }
   private zones: Hot[] = []
@@ -134,6 +146,13 @@ export class WalkScene extends Scene {
 
   create(): void {
     setupArt(this)
+    for (const dir of ['n', 'e', 's', 'w']) {
+      const key = `walk_rook_walk_${dir}`
+      if (hasArt(key) && !this.anims.exists(`lobby_${dir}`)) this.anims.create({ key: `lobby_${dir}`, frames: Array.from({ length: 6 }, (_, frame) => ({ key, frame })), frameRate: L.strideFps, repeat: -1 })
+    }
+    this.npcs = new Map()
+    this.talking = null
+    this.stride = 's'
     this.offY = Math.max(0, (this.scale.height - MAP_H) / 2)
     const px = (nx: number): number => nx * W
     const py = (ny: number): number => ny * MAP_H + this.offY
@@ -174,26 +193,53 @@ export class WalkScene extends Scene {
     }
     this.input.on('pointerup', release)
     this.input.on('pointerupoutside', release)
+    this.game.events.on('blur', release)
+    this.events.once('shutdown', () => this.game.events.off('blur', release))
     if (this.alarmOn) playSfx('sfx_siren')
   }
 
   update(time: number, delta: number): void {
     const open = isPanelOpen()
     const dir = open ? { x: 0, y: 0 } : this.readDir()
-    const moving = dir.x !== 0 || dir.y !== 0
-    this.pos = moveStep(this.pos, dir, L.speed, delta, this.colliders, this.bounds, L.radius)
+    if (this.talking && (open || dir.x !== 0 || dir.y !== 0 || time >= this.talkUntil)) this.talking = null
+    const before = this.pos
+    this.pos = moveStep(this.pos, dir, L.speed, Math.min(delta, 50), this.colliders, this.bounds, L.radius)
+    const moving = Math.hypot(this.pos.x - before.x, this.pos.y - before.y) > 0.1
     this.player.setPosition(this.pos.x, this.pos.y).setDepth(this.pos.y)
-    const s = this.sprite
-    if (s && moving) {
-      if (dir.x !== 0) s.setFlipX(dir.x < 0)
-      if (!s.anims.isPlaying) s.play(s.texture.key)
-    } else if (s?.anims.isPlaying) {
-      s.stop()
-      s.setFrame(0)
+    const partner = this.talking ? this.zones.find((z) => z.id === this.talking) : null
+    this.rookie.target = partner
+      ? facingFor({ x: partner.x - this.pos.x, y: partner.y - this.pos.y }, this.rookie.facing)
+      : facingFor(dir, this.rookie.target)
+    this.turnActor(this.rookie, time, moving)
+    const sprite = this.rookie.sprite
+    if (sprite && moving && this.rookie.facing === this.rookie.target) {
+      this.stride = walkDirection(dir, this.stride)
+      const anim = `lobby_${this.stride}`
+      if (this.anims.exists(anim)) sprite.play(anim, true)
+    }
+    for (const [id, npc] of this.npcs) {
+      const z = this.zones.find((zone) => zone.id === id)!
+      npc.target = this.talking === id
+        ? facingFor({ x: this.pos.x - z.x, y: this.pos.y - z.y }, npc.facing)
+        : npc.home
+      this.turnActor(npc, time)
     }
     this.drawStick()
     this.updateNearest()
     if (this.alarmOn) this.updateAlarm(time, open)
+  }
+
+  private turnActor(actor: Actor, time: number, moving = false): void {
+    if (actor.facing !== actor.target && time >= actor.turnAt) {
+      actor.facing = turnToward(actor.facing, actor.target)
+      actor.turnAt = time + L.turnMs
+    }
+    actor.box.setData('facing', actor.facing)
+    const s = actor.sprite
+    if (!s) return
+    // 이동 중에는 아래 update에서 보행을 다시 재생한다. 대화/정지 때는 같은 방향의 정지 자세로 돌아온다.
+    if (moving && actor.facing === actor.target && s.anims.isPlaying) return
+    s.stop().setFlipX(false).setTexture(actor.idle, hasArt(actor.idle) && actor.idle.startsWith('walk_') ? actor.facing : 0)
   }
 
   private readDir(): Vec {
@@ -215,51 +261,47 @@ export class WalkScene extends Scene {
     this.add.rectangle(0, 0, W, this.scale.height, 0x0b0d12).setOrigin(0, 0).setDepth(-20)
     if (hasArt('bg_barracks')) {
       this.add.image(0, this.offY, 'bg_barracks').setOrigin(0, 0).setDepth(-10)
-      return
+    } else {
+      // 그림 누락 시에도 같은 충돌·상호작용 위치를 보여 준다.
+      this.add.rectangle(0, this.offY, W, MAP_H, 0x2a2f26).setOrigin(0, 0).setDepth(-10)
+      for (const c of this.colliders) this.add.rectangle(c.x, c.y, c.w, c.h, 0x4b5320).setOrigin(0, 0).setDepth(-9).setStrokeStyle(3, 0x6f7a36)
     }
-    // 그림이 오기 전 임시 바닥: 바닥색 + 침상·벽·구역 표지를 도형으로
-    this.add.rectangle(0, this.offY, W, MAP_H, 0x2a2f26).setOrigin(0, 0).setDepth(-10)
-    this.add.rectangle(0, this.offY, W, 0.16 * MAP_H, 0x1d221b).setOrigin(0, 0).setDepth(-9)
-    for (const c of this.colliders) this.add.rectangle(c.x, c.y, c.w, c.h, 0x4b5320).setOrigin(0, 0).setDepth(-9).setStrokeStyle(3, 0x6f7a36)
     for (const z of this.zones) {
       if (z.spot.kind === 'npc') continue
-      this.add.circle(z.x, z.y, 34, 0x3a4048, 0.9).setDepth(-8).setStrokeStyle(3, 0xc9a24a)
-      this.add.text(z.x, z.y, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#e8c35a' }).setOrigin(0.5).setDepth(-7)
+      const marker = z.spot.marker
+      const x = marker ? marker.x * W : z.x
+      const y = marker ? marker.y * MAP_H + this.offY : z.y
+      this.add.text(x, y, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#f5dda0', backgroundColor: '#12191eee', padding: { x: 10, y: 5 } }).setOrigin(0.5).setDepth(20)
     }
   }
 
-  // 그림이 있으면 2프레임 스프라이트, 없으면 머리글자 동그라미
-  private actor(artKey: string, color: number, label: string): { box: GameObjects.Container; sprite: GameObjects.Sprite | null } {
+  private actor(artKey: string, fallback: string, label: string, home: number): Actor {
     const box = this.add.container(0, 0)
-    box.add(this.add.ellipse(0, 0, 60, 18, 0x000000, 0.35))
-    if (hasArt(artKey)) {
-      const s = this.add.sprite(0, 6, artKey, 0).setOrigin(0.5, 1).setScale(0.8)
-      box.add(s)
-      return { box, sprite: s }
+    box.add(this.add.ellipse(0, 0, 52, 14, 0x000000, 0.30))
+    const key = hasArt(artKey) ? artKey : fallback
+    let sprite: GameObjects.Sprite | null = null
+    if (hasArt(key)) {
+      sprite = this.add.sprite(0, 0, key, key === artKey ? home : 0).setOrigin(0.5, 116 / 128).setScale(0.85)
+      box.add(sprite)
+    } else {
+      box.add(this.add.circle(0, -30, 24, 0x4b5320).setStrokeStyle(3, 0xe8c35a))
+      box.add(this.add.text(0, -30, label, { fontFamily: FONT, fontSize: '22px', color: '#ffffff' }).setOrigin(0.5))
     }
-    box.add(this.add.circle(0, -30, 24, color).setStrokeStyle(3, 0xe8c35a))
-    box.add(this.add.text(0, -30, label, { fontFamily: FONT, fontSize: '22px', color: '#ffffff' }).setOrigin(0.5))
-    return { box, sprite: null }
+    return { box, sprite, idle: key, facing: home, target: home, home, turnAt: 0 }
   }
 
   private makePlayer(): void {
-    const a = this.actor('ally_rifle_idle', 0x4b5320, '신')
-    this.player = a.box
-    this.sprite = a.sprite
-    this.player.add(
-      this.add
-        .text(0, -118, sanitizeRookieName(getLobbySave().name), { fontFamily: FONT, fontSize: '22px', color: '#ffffff', stroke: '#000000', strokeThickness: 4 })
-        .setOrigin(0.5)
-    )
+    this.rookie = this.actor('walk_rook_idle', 'ally_rifle_idle', '신', 4)
+    this.player = this.rookie.box
+    this.player.setName('rookie')
+    this.player.add(this.add.text(0, -103, sanitizeRookieName(getLobbySave().name), { fontFamily: FONT, fontSize: '21px', color: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5))
   }
 
   private makeNpc(z: Hot): void {
-    const a = this.actor(z.spot.art ?? '', 0x606b29, z.spot.title.slice(0, 1))
-    a.box.setPosition(z.x, z.y).setDepth(z.y)
-    a.sprite?.play(z.spot.art ?? '')
-    a.box.add(
-      this.add.text(0, -118, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#b9b3a3', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5)
-    )
+    const a = this.actor(z.spot.art ?? '', z.id === 'lee' ? 'ally_sniper_idle' : 'ally_cook_idle', z.spot.title.slice(0, 1), z.id === 'lee' ? 6 : 2)
+    a.box.setPosition(z.x, z.y).setDepth(z.y).setName(z.id)
+    a.box.add(this.add.text(0, -103, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#d9d2be', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5))
+    this.npcs.set(z.id, a)
   }
 
   private makeHud(): void {
@@ -280,10 +322,10 @@ export class WalkScene extends Scene {
 
   private makeBubble(): void {
     this.bubble = this.add.container(0, 0).setDepth(950).setVisible(false)
-    const bg = this.add.rectangle(0, 0, 360, 96, 0x141a20, 0.94).setStrokeStyle(3, 0xe8c35a)
-    this.bubbleTitle = this.add.text(0, -22, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#e8c35a' }).setOrigin(0.5)
+    const bg = this.add.rectangle(0, 0, 400, 132, 0x141a20, 0.94).setStrokeStyle(3, 0xe8c35a)
+    this.bubbleTitle = this.add.text(0, -38, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#e8c35a' }).setOrigin(0.5)
     this.bubbleDesc = this.add
-      .text(0, 14, '', { fontFamily: FONT, fontSize: '19px', color: '#ece6d3', align: 'center', wordWrap: { width: 330 } })
+      .text(0, 14, '', { fontFamily: FONT, fontSize: '19px', color: '#ece6d3', align: 'center', wordWrap: { width: 365 } })
       .setOrigin(0.5)
     this.bubble.add([bg, this.bubbleTitle, this.bubbleDesc])
     bg.setInteractive({ useHandCursor: true }).on('pointerup', () => this.activate())
@@ -330,7 +372,7 @@ export class WalkScene extends Scene {
     this.bubbleTitle.setText(s.title)
     this.bubbleDesc.setText(s.kind === 'npc' ? this.line(s) : s.desc)
     const below = near.y < this.offY + 300
-    this.bubble.setPosition(Math.min(W - 190, Math.max(190, near.x)), below ? near.y + 90 : near.y - 230).setVisible(true)
+    this.bubble.setPosition(Math.min(W - 210, Math.max(210, near.x)), below ? near.y + 90 : near.y - 230).setVisible(true)
     this.actLabel.setText(s.kind === 'deploy' ? '투입' : s.kind === 'npc' ? '대화' : '열기')
     this.actBtn.setVisible(true)
   }
@@ -346,6 +388,11 @@ export class WalkScene extends Scene {
     if (s.kind === 'panel' && s.panel) openPanel(s.panel)
     else if (s.kind === 'deploy') deploy()
     else if (s.kind === 'npc') {
+      this.talking = s.id
+      this.talkUntil = this.time.now + L.talkMs
+      this.stickDir = { x: 0, y: 0 }
+      this.stickOrigin = null
+      playSfx('sfx_click')
       this.lineIdx[s.id] = nextLine(this.lineIdx[s.id] ?? 0, s.lines ?? [])
       this.bubbleDesc.setText(this.line(s))
     }

@@ -66,6 +66,20 @@ const FX_AND_BOARD_CONTRACTS: AssetContract[] = [
   { key: 'tile_hover', w: 128, h: 128, frames: 1, color: '#3e4e5e', label: 'tile_hover' },
 ]
 
+const LOBBY_ART_CONTRACTS: AssetContract[] = [
+  { key: 'brief_1', w: 720, h: 1280, frames: 1, color: '#222222', label: 'brief_1' },
+  { key: 'brief_2', w: 720, h: 1280, frames: 1, color: '#222222', label: 'brief_2' },
+  { key: 'brief_3', w: 720, h: 1280, frames: 1, color: '#222222', label: 'brief_3' },
+  { key: 'brief_4', w: 720, h: 1280, frames: 1, color: '#222222', label: 'brief_4' },
+  { key: 'walk_rook_walk_n', w: 128, h: 128, frames: 6, color: '#4b5320', label: 'walk_rook_walk_n' },
+  { key: 'walk_rook_walk_e', w: 128, h: 128, frames: 6, color: '#4b5320', label: 'walk_rook_walk_e' },
+  { key: 'walk_rook_walk_s', w: 128, h: 128, frames: 6, color: '#4b5320', label: 'walk_rook_walk_s' },
+  { key: 'walk_rook_walk_w', w: 128, h: 128, frames: 6, color: '#4b5320', label: 'walk_rook_walk_w' },
+  { key: 'walk_rook_idle', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_rook_idle' },
+  { key: 'walk_lee_idle', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_lee_idle' },
+  { key: 'walk_park_idle', w: 128, h: 128, frames: 8, color: '#4b5320', label: 'walk_park_idle' },
+]
+
 // 처리 도구의 getMaxFrames와 같은 상한. 단일 정적 그림은 기존 최소치를 유지한다.
 export function maxAssetFrames(key: string, minimum: number): number {
   if (/^ally_.*_(idle|attack)$/.test(key)) return 6
@@ -80,6 +94,7 @@ export const ASSET_CONTRACTS: AssetContract[] = [
   ...makeAllyContracts(),
   ...ENEMY_CONTRACTS,
   ...FX_AND_BOARD_CONTRACTS,
+  ...LOBBY_ART_CONTRACTS,
 ].map((c) => ({ ...c, maxFrames: maxAssetFrames(c.key, c.frames) }))
 
 export const invalidTextures = new Set<string>()

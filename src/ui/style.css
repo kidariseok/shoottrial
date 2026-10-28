@@ -1081,77 +1081,87 @@ html, body {
 
 .briefing-stage {
   position: relative;
-  width: 100%;
-  height: 100%;
-  padding: var(--lobby-pad);
+  width: min(100%, 560px);
+  min-height: 100%;
+  margin: auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  cursor: pointer;
-  background-color: #0c0e13;
-  background-size: cover;
-  background-position: center;
-  animation: briefing-alert-pulse 1.4s ease-in-out infinite alternate;
+  background: #0b0e12;
+  isolation: isolate;
 }
 
-@keyframes briefing-alert-pulse {
-  0% {
-    box-shadow: inset 0 0 28px rgba(211, 47, 47, 0.25);
-  }
-  100% {
-    box-shadow: inset 0 0 64px rgba(255, 59, 48, 0.65);
-  }
+.briefing-art {
+  position: absolute;
+  inset: 0 0 30%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 70% 25%, #542c2a, #18232c 55%, #0b0e12);
+}
+
+.briefing-image { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.briefing-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, #06090f88, transparent 22%, transparent 75%, #0b0e12);
 }
 
 .briefing-top-bar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 16px;
 }
 
 .briefing-step-tag {
-  background: rgba(20, 24, 16, 0.88);
-  border: 1.5px solid var(--alert-red);
-  color: #ffdfdb;
-  font-size: 12px;
+  color: #f0e4c6;
+  font-size: 11px;
   font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 4px;
+  padding: 6px 0;
+  text-shadow: 0 1px 4px #000;
 }
 
 .briefing-skip-btn {
   min-height: 40px;
-  padding: 6px 12px;
-  font-size: 13px;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: #11171edb;
 }
 
 .briefing-card {
+  position: relative;
   margin-top: auto;
-  margin-bottom: 24px;
-  background: rgba(24, 29, 18, 0.92);
-  border: 2px solid var(--alert-red);
-  border-radius: var(--panel-radius);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), var(--inner-bevel);
-  padding: 18px 16px;
+  padding: 28px 24px 24px;
+  min-height: 31%;
+  background: #0b0e12;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  border-top: 2px solid #ad5d41;
 }
 
-.briefing-text {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.6;
-  color: var(--text-cream);
-  white-space: pre-line;
-}
-
+.briefing-title { margin: 0; font-size: clamp(22px, 5.7vw, 30px); line-height: 1.35; color: #f1ebdc; }
+.briefing-text { margin: 0; font-size: 15px; line-height: 1.65; color: #d8d3c4; white-space: pre-line; }
 .briefing-tap-hint {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent-supply);
-  text-align: right;
+  align-self: flex-end;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #6b6448;
+  border-radius: 3px;
+  background: #272b21;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: #f0df9c;
+  cursor: pointer;
+}
+.briefing-tap-hint:focus-visible, .briefing-skip-btn:focus-visible { outline: 3px solid #f0df9c; outline-offset: 3px; }
+@media (max-height: 640px) {
+  .briefing-card { padding: 16px 20px; gap: 8px; }
+  .briefing-title { font-size: 21px; }
+  .briefing-text { font-size: 13px; }
 }
 
 /* 9-3. 생활관 (로비) */
