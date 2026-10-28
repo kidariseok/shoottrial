@@ -81,13 +81,13 @@ const L = {
     { id: 'door', x: 0.5, y: 0.94, r: 90, title: '출입구', desc: '위병소 방면 · 전투 투입', kind: 'deploy' },
     {
       id: 'lee',
-      x: 0.24,
-      y: 0.515,
+      x: 206 / W,
+      y: 590 / MAP_H,
       r: 90,
       title: '이상병',
       desc: '',
       kind: 'npc',
-      art: 'walk_lee_idle',
+      art: 'walk_lee_sit',
       lines: [
         '저격은 관통이다. 한 줄로 세워 놓고 쏴라.',
         '사거리 안이면 어느 방향이든 쏜다. 대각선도 된다.',
@@ -96,13 +96,13 @@ const L = {
     },
     {
       id: 'park',
-      x: 0.76,
-      y: 0.660,
+      x: 514 / W,
+      y: 756 / MAP_H,
       r: 90,
       title: '박취사',
       desc: '',
       kind: 'npc',
-      art: 'walk_park_idle',
+      art: 'walk_park_sit',
       lines: [
         '밥 먹고 해야지. 취사병이 옆에 있으면 다들 버틴다.',
         '제설병 뒤에 취사병을 세워라. 맞는 사람이 있어야 치료도 있지.',
@@ -225,7 +225,8 @@ export class WalkScene extends Scene {
     this.pos = moveStep(this.pos, dir, L.speed, Math.min(delta, 50), this.colliders, this.bounds, L.radius)
     const moving = Math.hypot(this.pos.x - before.x, this.pos.y - before.y) > 0.1
     this.player.setPosition(this.pos.x, this.pos.y).setDepth(this.pos.y)
-    const partner = this.talking ? this.zones.find((z) => z.id === this.talking) : null
+    const nearNpc = open ? null : nearestZone(this.pos, this.zones.filter(z => z.spot.kind === 'npc'))
+    const partner = this.talking ? this.zones.find(z => z.id === this.talking) : !moving ? nearNpc : null
     this.rookie.target = partner
       ? facingFor({ x: partner.x - this.pos.x, y: partner.y - this.pos.y }, this.rookie.facing)
       : facingFor(dir, this.rookie.target)
@@ -238,7 +239,7 @@ export class WalkScene extends Scene {
     }
     for (const [id, npc] of this.npcs) {
       const z = this.zones.find((zone) => zone.id === id)!
-      npc.target = this.talking === id
+      npc.target = !open && (this.talking === id || nearNpc?.id === id)
         ? facingFor({ x: this.pos.x - z.x, y: this.pos.y - z.y }, npc.facing)
         : npc.home
       this.turnActor(npc, time)
@@ -296,7 +297,8 @@ export class WalkScene extends Scene {
 
   private actor(artKey: string, fallback: string, label: string, home: number): Actor {
     const box = this.add.container(0, 0)
-    box.add(this.add.ellipse(0, 0, 52, 14, 0x000000, 0.30))
+    const seated = artKey.endsWith('_sit') && hasArt(artKey)
+    box.add(this.add.ellipse(0, seated ? -3 : 0, seated ? 40 : 52, seated ? 10 : 14, 0x000000, seated ? 0.22 : 0.30))
     const key = hasArt(artKey) ? artKey : fallback
     let sprite: GameObjects.Sprite | null = null
     if (hasArt(key)) {
@@ -319,7 +321,7 @@ export class WalkScene extends Scene {
   private makeNpc(z: Hot): void {
     const a = this.actor(z.spot.art ?? '', z.id === 'lee' ? 'ally_sniper_idle' : 'ally_cook_idle', z.spot.title.slice(0, 1), z.id === 'lee' ? 6 : 2)
     a.box.setPosition(z.x, z.y).setDepth(z.y).setName(z.id)
-    a.box.add(this.add.text(0, -103, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#d9d2be', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5))
+    a.box.add(this.add.text(0, -78, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#d9d2be', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5))
     this.npcs.set(z.id, a)
   }
 

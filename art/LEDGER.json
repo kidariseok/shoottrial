@@ -1092,15 +1092,13 @@
     {
       "id": "bg_barracks",
       "file": "public/assets/bg_barracks.png",
-      "source": "art/inbox/a106/barracks.png",
-      "tool": "user-approved A-106",
-      "prompt": "docs/tickets/T-117-approved-visuals.md",
+      "source": "art/inbox/a118",
+      "tool": "openai-imagegen",
+      "prompt": "docs/tickets/T-118-barracks-aisles.md",
       "license": "proprietary",
       "edited": true,
-      "checked": "2026-10-28",
-      "scale": 0.76555,
-      "mapping": "중앙 cover",
-      "colorLevels": 32
+      "checked": "2026-10-29",
+      "mapping": "기존 배경의 매트리스2곳만 교체: left(93,519,143,105),right(485,690,143,117)"
     },
     {
       "id": "walk_rook_walk_s",
@@ -1185,6 +1183,28 @@
       "checked": "2026-10-28",
       "scale": 0.273504,
       "mapping": "출력 s,sw,w,nw,n,ne,e,se; 원본 왼쪽→오른쪽 위 행 1~4, 아래 행 1~4; e는 원본 w 좌우 반전"
+    },
+    {
+      "id": "walk_lee_sit",
+      "file": "public/assets/walk_lee_sit.png",
+      "source": "art/inbox/a118/lee-crossleg-v3.png",
+      "tool": "openai-imagegen",
+      "prompt": "docs/tickets/T-118-barracks-aisles.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-29",
+      "mapping": "s,sw,w,nw,n,ne,e,se; 아빠다리8방향; 발끝116; 높이74"
+    },
+    {
+      "id": "walk_park_sit",
+      "file": "public/assets/walk_park_sit.png",
+      "source": "art/inbox/a118/park-crossleg-v2.png",
+      "tool": "openai-imagegen",
+      "prompt": "docs/tickets/T-118-barracks-aisles.md",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-29",
+      "mapping": "s,sw,w,nw,n,ne,e,se; 아빠다리8방향; 발끝116; 높이74"
     }
   ]
 }
