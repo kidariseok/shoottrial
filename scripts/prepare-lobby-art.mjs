@@ -11,9 +11,25 @@ const index = JSON.parse(readFileSync(`${output}/index.json`, 'utf8'))
 const ledger = JSON.parse(readFileSync('art/LEDGER.json', 'utf8'))
 const read = (name) => PNG.sync.read(readFileSync(`${source}/${name}.png`))
 function save(key, png, file, mapping, scale) {
-  writeFileSync(`${output}/${key}.png`, PNG.sync.write(png, { colorType: 6 }))
+  let bytes = PNG.sync.write(png, { colorType: 6 })
+  let colorLevels = null
+  if (bytes.length > 512 * 1024) {
+    const original = Buffer.from(png.data)
+    // 불투명 배경만 색 단계를 줄여 ART의 장당 512KB 예산을 지킨다. 형상/크기와 원본은 보존한다.
+    for (const levels of [64, 32, 24, 16]) {
+      const step = 255 / (levels - 1)
+      for (let i = 0; i < png.data.length; i += 4) for (let channel = 0; channel < 3; channel++) {
+        png.data[i + channel] = Math.round(Math.round(original[i + channel] / step) * step)
+      }
+      bytes = PNG.sync.write(png, { colorType: 6 })
+      colorLevels = levels
+      if (bytes.length <= 512 * 1024) break
+    }
+    if (bytes.length > 512 * 1024) throw new Error(`${key}: 512KB 예산 초과`)
+  }
+  writeFileSync(`${output}/${key}.png`, bytes)
   if (!index.includes(key)) index.push(key)
-  const entry = { id: key, file: `${output}/${key}.png`, source: `${source}/${file}.png`, tool: 'user-approved A-106', prompt: 'docs/tickets/T-117-approved-visuals.md', license: 'proprietary', edited: true, checked: '2026-10-28', scale: Number(scale.toFixed(6)), mapping }
+  const entry = { id: key, file: `${output}/${key}.png`, source: `${source}/${file}.png`, tool: 'user-approved A-106', prompt: 'docs/tickets/T-117-approved-visuals.md', license: 'proprietary', edited: true, checked: '2026-10-28', scale: Number(scale.toFixed(6)), mapping, ...(colorLevels ? { colorLevels } : {}) }
   const i = ledger.entries.findIndex((e) => e.id === key)
   if (i < 0) ledger.entries.push(entry); else ledger.entries[i] = entry
 }

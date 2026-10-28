@@ -63,7 +63,7 @@ const L = {
     { id: 'door', x: 0.5, y: 0.94, r: 90, title: '출입구', desc: '위병소 방면 · 전투 투입', kind: 'deploy' },
     {
       id: 'lee',
-      x: 0.46,
+      x: 0.44,
       y: 0.48,
       r: 90,
       title: '이상병',
@@ -78,7 +78,7 @@ const L = {
     },
     {
       id: 'park',
-      x: 0.565,
+      x: 0.58,
       y: 0.70,
       r: 90,
       title: '박취사',
@@ -160,6 +160,8 @@ export class WalkScene extends Scene {
     this.colliders = L.colliders.map(rect)
     this.bounds = rect(L.bounds)
     this.zones = L.spots.map((s) => ({ id: s.id, x: px(s.x), y: py(s.y), r: s.r, spot: s }))
+    // 동료는 발 주변만 막는다. 중앙 통로는 남겨 두고 몸을 겹쳐 지나가지 않게 한다.
+    for (const z of this.zones) if (z.spot.kind === 'npc') this.colliders.push({ x: z.x - 20, y: z.y - 16, w: 40, h: 32 })
     this.pos = { x: px(L.start.x), y: py(L.start.y) }
     this.current = null
     this.lineIdx = {}

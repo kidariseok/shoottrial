@@ -15,6 +15,7 @@ describe('승인 생활관 그림', () => {
     const ledger = JSON.parse(readFileSync('art/LEDGER.json', 'utf8')).entries as Array<{ id: string; file: string; mapping: string }>
     for (const key of keys) {
       const contract = ASSET_CONTRACTS.find((item) => item.key === key)!
+      expect(readFileSync(`public/assets/${key}.png`).byteLength).toBeLessThanOrEqual(512 * 1024)
       const image = png(key)
       expect(index.filter((id) => id === key)).toHaveLength(1)
       const entry = ledger.filter((item) => item.id === key)
@@ -28,6 +29,7 @@ describe('승인 생활관 그림', () => {
 
   it('각 방향 프레임은 투명 배경과 y=116 발 기준선을 가진다', () => {
     for (const key of sprites) {
+      expect(readFileSync(`public/assets/${key}.png`).byteLength).toBeLessThanOrEqual(512 * 1024)
       const image = png(key)
       for (let frame = 0; frame < image.width / 128; frame++) {
         let minY = 128, maxY = -1, transparent = 0, magenta = 0

@@ -180,6 +180,7 @@ export async function showBriefing(cutIndex = 0): Promise<void> {
     return
   }
 
+  panelOpen = true
   const request = ++briefingRequest
   const assets = await ensureAvailableAssets()
   if (request !== briefingRequest) return

@@ -1047,7 +1047,8 @@
       "edited": true,
       "checked": "2026-10-28",
       "scale": 0.76555,
-      "mapping": "중앙 cover"
+      "mapping": "중앙 cover",
+      "colorLevels": 32
     },
     {
       "id": "brief_2",
@@ -1059,7 +1060,8 @@
       "edited": true,
       "checked": "2026-10-28",
       "scale": 0.76555,
-      "mapping": "중앙 cover"
+      "mapping": "중앙 cover",
+      "colorLevels": 64
     },
     {
       "id": "brief_3",
@@ -1071,7 +1073,8 @@
       "edited": true,
       "checked": "2026-10-28",
       "scale": 0.76555,
-      "mapping": "중앙 cover"
+      "mapping": "중앙 cover",
+      "colorLevels": 32
     },
     {
       "id": "brief_4",
@@ -1083,7 +1086,8 @@
       "edited": true,
       "checked": "2026-10-28",
       "scale": 0.76555,
-      "mapping": "중앙 cover"
+      "mapping": "중앙 cover",
+      "colorLevels": 24
     },
     {
       "id": "bg_barracks",
@@ -1095,7 +1099,8 @@
       "edited": true,
       "checked": "2026-10-28",
       "scale": 0.76555,
-      "mapping": "중앙 cover"
+      "mapping": "중앙 cover",
+      "colorLevels": 32
     },
     {
       "id": "walk_rook_walk_s",
