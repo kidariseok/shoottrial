@@ -78,7 +78,7 @@
 
 ## 결과 보고
 
-- PR: https://github.com/kidariseok/shoottrial/pull/51 . Vercel Preview Ready(443a222)와 실제 시작 화면 확인: https://newbie-defense-git-kidariseok-t121-enemy-review-jspersonal1.vercel.app/ . 운영 반영은 사용자 #48→#51 병합 후다.
+- PR: https://github.com/kidariseok/shoottrial/pull/51 . Vercel Preview Ready(443a222)와 실제 시작 화면 확인: https://newbie-defense-git-kidariseok-t121-enemy-review-jspersonal1.vercel.app/ . 최종 확인 시 선행 #48 MERGED(2026-10-30T12:56:01Z). 이제 #51 사용자 병합 후 운영 반영이다.
 - 파일: data/stages/rules/enemies, 고정표2개/새 계산 검사, GDD 관련3절, HANDOFF/티켓/사진4장. 아군 기본 수치·공유 UI 계약·의존성 변경 없음.
 - 규칙: 보병3.5/RPG4.5/장갑차3칸 사거리, 첫 조준과 후속 간격 구분·대상 변경 시 재조준·밀림 취소. 새3종 돌격2.75·방패2·지정사수5.25칸. RPG 반경1.1 아군 범위 피해. 방패 직접피해×0.55·장갑 판정·독/화상 우회. 피해는 웨이브당 기본값10%씩 증가. 보병 일부를 교체해 전체 적 수 유지.
 - 식별: 기존 보병 모션 재사용, 틴트/병과 이름표/방패. 새 원본 이미지 미제작, 에셋97개 유지.
