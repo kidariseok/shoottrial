@@ -1,5 +1,6 @@
 node_modules
 dist/
+.vercel/
 *.ait
 .harness/
 .DS_Store

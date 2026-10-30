@@ -1,6 +1,7 @@
 import { fetchAvailableAssets } from '../assets'
 import { playBgm, playSfx, setSettings, type SfxKey } from '../audio'
 import { defaultSave, load, save, type Save } from '../save'
+import { isNative } from '../platform'
 import { cardInfo, cardInfoDetail } from './screens'
 import {
   ALL_CARDS,
@@ -427,7 +428,8 @@ function pxBody(): HTMLElement {
       locked.length > 0 ? `아직 못 쓰는 병과: ${locked.map(getCardName).join(', ')}` : '모든 병과를 쓸 수 있다. 수고했다.'
     )
   )
-  const btn = el('button', 'mil-btn action-go lobby-px-btn', '광고 보고 해금 (준비 중)') as HTMLButtonElement
+  if (!isNative()) box.appendChild(el('p', 'lobby-panel-note', '웹 체험판은 일반 플레이에서 웨이브 5에 도달하면 다음 병과를 해금합니다.'))
+  const btn = el('button', 'mil-btn action-go lobby-px-btn', isNative() ? '광고 보고 해금 (준비 중)' : '플레이로 병과 해금') as HTMLButtonElement
   btn.type = 'button'
   btn.disabled = true
   box.appendChild(btn)

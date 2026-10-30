@@ -214,9 +214,8 @@ export async function initAds(): Promise<void> {
 
 export async function showRewarded(): Promise<AdResult> {
   if (!Capacitor.isNativePlatform()) {
-    console.log('[ads:web-stub] 1초 뒤 보상')
-    await new Promise((r) => setTimeout(r, 1000))
-    return 'rewarded'
+    // 웹 체험 보상은 ads.ts의 명시적 확인으로만 처리한다. 광고 API 자체는 보상하지 않는다.
+    return 'failed'
   }
   let rewarded = false
   const handles: { remove: () => Promise<void> }[] = []
