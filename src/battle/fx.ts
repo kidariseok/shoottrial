@@ -1,6 +1,7 @@
 import { BlendModes, type Scene, type GameObjects, type Types } from 'phaser'
 import { ART, FX, NEW_CARD_FX, LAYOUT, UI } from '../data'
 import { playFx } from './art'
+import { scaledCount, textAllowed } from './budget'
 
 // 도형·트윈·파티클만 쓰는 공통 연출. 피·시체 표현은 쓰지 않는다
 
@@ -11,7 +12,19 @@ type Emitters = Record<Kind, GameObjects.Particles.ParticleEmitter>
 const KINDS = Object.keys(FX.kinds) as Kind[]
 const emitters = new WeakMap<Scene, Emitters>()
 // ponytail: ?fx=low 는 개수 절반만 줄인다(저사양 대비), 설정 화면 연결은 게이트 때 debug.ts로
-const low = new URLSearchParams(location.search).get('fx') === FX.lowValue
+let low = new URLSearchParams(location.search).get('fx') === FX.lowValue
+// 저사양 모드: ?fx=low 이거나, 전투 중 프레임 속도가 오래 낮으면 BattleScene이 켠다(세션 동안 유지). 켜지면 파티클 절반, 데미지 숫자 생략
+export const setLowFx = (on: boolean): void => {
+  low = on
+}
+export const isLowFx = (): boolean => low
+// 설정 화면의 "데미지 숫자" 토글(save.settings.dmgNumbers). BattleScene이 저장을 읽은 뒤 넣는다
+const opts = { dmgNumbers: true }
+export const setFxOptions = (o: { dmgNumbers: boolean }): void => {
+  opts.dmgNumbers = o.dmgNumbers
+}
+// 떠 있는 숫자·글자 수. 트윈이 끝나기 전에 씬이 멈추면 어긋나므로 resetStop에서 0으로 되돌린다
+let liveTexts = 0
 
 // 파티클 텍스처 4개를 코드로 한 번 만든다(흰 원·작은 사각·부드러운 원·십자)
 function makeTextures(scene: Scene): void {
@@ -82,6 +95,7 @@ export const hitStop = (): void => {
 }
 export const resetStop = (): void => {
   stop.left = 0
+  liveTexts = 0
 }
 // 정지 중이면 true(남은 시간을 real초만큼 줄인다). 호출한 쪽이 dt를 0으로 쓴다
 export function stopping(real: number): boolean {
@@ -98,12 +112,38 @@ export function promoteFx(scene: Scene, x: number, y: number): void {
 }
 
 // 지뢰 연계 팝업: 노란 글자가 위로 떠오르며 사라진다
+// 떠오르는 글자 하나(상한 안에서만). 글자 하나가 캔버스 텍스처 하나라서 만들 때 비싸다.
+// 같은 글자(같은 숫자·색)는 끝난 것을 숨겨 두었다가 다시 쓴다(setText를 부르지 않으니 캔버스를 다시 그리지 않는다)
+// ponytail: 글자·색 조합마다 숨겨 두는 수는 FX.textPoolPerKey개까지, 비트맵 글꼴로 바꾸면 이 풀이 필요 없다
+const textPool = new WeakMap<Scene, Map<string, GameObjects.Text[]>>()
+function floatText(scene: Scene, x: number, y: number, str: string, color: string, depth: number, rise: number, ms: number): void {
+  if (!textAllowed(liveTexts, FX.maxTexts, true)) return
+  liveTexts++
+  const key = `${color}|${str}`
+  let pools = textPool.get(scene)
+  if (!pools) textPool.set(scene, (pools = new Map()))
+  let free = pools.get(key)
+  if (!free) pools.set(key, (free = []))
+  let t = free.pop()
+  while (t && !t.scene) t = free.pop() // 씬이 다시 시작되며 파괴된 것은 버린다
+  if (!t) t = scene.add.text(x, y, str, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color }).setOrigin(0.5)
+  t.setPosition(x, y).setAlpha(1).setVisible(true).setDepth(depth)
+  const back = free
+  scene.tweens.add({
+    targets: t,
+    y: y - rise,
+    alpha: 0,
+    duration: ms,
+    onComplete: () => {
+      liveTexts = Math.max(0, liveTexts - 1)
+      if (back.length < FX.textPoolPerKey) back.push(t.setVisible(false))
+      else t.destroy()
+    },
+  })
+}
+
 export function comboText(scene: Scene, x: number, y: number): void {
-  const t = scene.add
-    .text(x, y, UI.text.combo, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.popupColor })
-    .setOrigin(0.5)
-    .setDepth(UI.fx.dragDepth)
-  scene.tweens.add({ targets: t, y: y - UI.fx.popupRise, alpha: 0, duration: UI.fx.popupMs, onComplete: () => t.destroy() })
+  floatText(scene, x, y, UI.text.combo, UI.text.popupColor, UI.fx.dragDepth, UI.fx.popupRise, UI.fx.popupMs)
 }
 
 // 피격 흰 번쩍임: 알파가 내려가며 사라진다
@@ -114,11 +154,8 @@ export function hitFlash(scene: Scene, x: number, y: number, w: number, h: numbe
 
 // 데미지 숫자: 위로 떠오르며 사라진다
 export function dmgText(scene: Scene, x: number, y: number, amount: number): void {
-  const t = scene.add
-    .text(x, y, String(Math.round(amount)), { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.color })
-    .setOrigin(0.5)
-    .setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: t, y: y - UI.fx.dmgRise, alpha: 0, duration: UI.fx.dmgMs, onComplete: () => t.destroy() })
+  if (!opts.dmgNumbers || low) return
+  floatText(scene, x, y, String(Math.round(amount)), UI.text.color, UI.fx.fxDepth, UI.fx.dmgRise, UI.fx.dmgMs)
 }
 
 // 적 쓰러짐: 가라앉으며 페이드 후 destroy
@@ -193,11 +230,7 @@ export function windWave(scene: Scene, x: number, y0: number, y1: number, burnin
 export function healText(scene: Scene, x: number, y: number, amount: number): void {
   playFx(scene, 'fx_heal', x, y) // 숫자는 그대로 둔다
   burst(scene, 'plus', x, y)
-  const t = scene.add
-    .text(x, y, `+${Math.round(amount)}`, { fontFamily: UI.text.fontFamily, fontSize: `${UI.text.fontPx}px`, color: UI.text.healColor })
-    .setOrigin(0.5)
-    .setDepth(UI.fx.fxDepth)
-  scene.tweens.add({ targets: t, y: y - UI.fx.healRise, alpha: 0, duration: UI.fx.healMs, onComplete: () => t.destroy() })
+  floatText(scene, x, y, `+${Math.round(amount)}`, UI.text.healColor, UI.fx.fxDepth, UI.fx.healRise, UI.fx.healMs)
 }
 
 // 부활 번쩍임: 흰색·연두 사각형이 커지며 사라진다
@@ -207,13 +240,12 @@ export function reviveFlash(scene: Scene, x: number, y: number, w: number, h: nu
 }
 
 // 폭발(지뢰·화력 지원·RPG): 중심 번쩍임 + 충격파 고리 + 불꽃·파편·연기. 그림 이펙트가 있으면 그 위에 얹는다. 피 표현 없음
-export function explosion(scene: Scene, x: number, y: number): void {
-  playFx(scene, 'fx_explosion', x, y)
+// scale: 파티클 배율(한꺼번에 여러 곳이 터질 때 줄인다). art: 그림 폭발을 얹을지(여럿이 터질 땐 일부만)
+export function explosion(scene: Scene, x: number, y: number, scale = 1, art = true): void {
+  if (art) playFx(scene, 'fx_explosion', x, y)
   glowFlash(scene, x, y, FX.ring.flash)
   ring(scene, x, y, FX.ring.blast)
-  burst(scene, 'fire', x, y)
-  burst(scene, 'debris', x, y)
-  burst(scene, 'smoke', x, y)
+  for (const k of ['fire', 'debris', 'smoke'] as const) burst(scene, k, x, y, scale < 1 ? scaledCount(FX.kinds[k].n, scale, false, 1) : undefined)
 }
 
 // 열 세로 띠(화력 지원 강조·예고선). 지우려면 호출한 쪽이 destroy한다. x = 열 중심, 폭·색·알파는 호출한 쪽이 정한다

@@ -1,5 +1,5 @@
 import { Scene, type GameObjects, type Input } from 'phaser'
-import { BATTLE, BATTLE_AUDIO, CARD_KEYS, CARDS, CHARACTERS, ECONOMY, ENEMIES, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
+import { BATTLE, BATTLE_AUDIO, CARD_KEYS, CARDS, CHARACTERS, ECONOMY, ENEMIES, FX, GRID, LAYOUT, LOG, REWARD, ROOKIE, RUN, SUPPORT, UI, UNLOCK, type CardKey } from '../data'
 import { playBgm, playSfx } from '../audio'
 import { createRng, debug } from '../debug'
 import { motionPhase, artKey, afterRun, colAt, defconOf, gasPlan, income, mineTokenPlan, cookSupplyBonus, unitInfoRows, mergeUnlocked, nextRun, nextUnlock, spawnPlan, synergies, signalIntervalMult, supportGrant, supportDamage, type SupportSource, type FlowPhase, type GasDrop, type LogEvent, type RunResult, type SpawnEvent } from '../rules'
@@ -11,7 +11,8 @@ import { armGas, clearGas, createGas, tickGas, type Gas } from './gas'
 import { createBoard, deployIndex, type Board, type Unit } from './board'
 import { drawLog } from './log'
 import { hurtEnemy, removeEnemy, spawnEnemy, tickEnemies, tickMines, type Enemy } from './enemies'
-import { colBand, explosion, fall, hitStop, laneFlash, resetStop, shake, stopping } from './fx'
+import { lowFpsStreak } from './budget'
+import { colBand, explosion, fall, hitStop, isLowFx, laneFlash, resetStop, setFxOptions, setLowFx, shake, stopping } from './fx'
 import { loadRuns, readKey, removeKey, saveRun } from './persist'
 import { buyCard, createShop, refill, toOffers, useAdReroll, useAdSupply, type Shop } from './shop'
 import { clearAlliedActions, collectAllies, endWave, startWave, tickAllies } from './units'
@@ -75,6 +76,7 @@ export class BattleScene extends Scene {
   public runEvents: LogEvent[] = []
   public logOnly = false // ?scene=log: 판 없이 기록 표만
   public wallSec = 0 // 일시정지·모달을 뺀 실제 경과 초(배속 무관)
+  private lowFpsSec = 0 // 프레임 속도가 autoLowFps 아래로 이어진 시간(초)
   public vulnKills = 0 // 이번 웨이브에 취약 상태로 죽은 적 수(웨이브 끝에 vuln_kill로 기록)
 
   constructor() {
@@ -123,6 +125,7 @@ export class BattleScene extends Scene {
     this.shopKey = ''
     this.runEvents = []
     this.wallSec = 0
+    this.lowFpsSec = 0
     this.vulnKills = 0
     resetStop()
     this.hudKey = ''
@@ -207,6 +210,7 @@ export class BattleScene extends Scene {
   // 저장을 읽은 뒤 판 만들기(보드·신병·덱·첫 상점)
   private begin(sv: Save, dy: number) {
     this.sv = sv
+    setFxOptions({ dmgNumbers: sv.settings.dmgNumbers }) // 설정의 "데미지 숫자"가 전투 연출에 닿는다(이전에는 저장만 되고 쓰이지 않았다)
     const legacy = readKey(LOG.unlockedKey) // 예전 d2_unlocked: 처음 한 번 save로 옮기고 지운다
     const merged = mergeUnlocked(sv.unlocked, legacy)
     sv.unlocked = merged
@@ -495,7 +499,8 @@ export class BattleScene extends Scene {
       hurtEnemy(this, e, damage)
       if (e.hp <= 0) kills += 1
     }
-    for (let r = 0; r < GRID.lineY; r++) explosion(this, this.board.toScreen(col, r + 0.5).x, this.board.toScreen(col, r + 0.5).y)
+    // 한 열 전체가 한꺼번에 터지는 순간이 가장 무겁다: 파티클을 줄이고 그림 폭발은 한 칸 걸러 얹는다
+    for (let r = 0; r < GRID.lineY; r++) explosion(this, this.board.toScreen(col, r + 0.5).x, this.board.toScreen(col, r + 0.5).y, FX.supportRowScale, r % 2 === 0)
     shake(this, 'heavy')
     hitStop()
     this.log({ e: 'fire_support', wave: this.wave, col, kills })
@@ -521,7 +526,8 @@ export class BattleScene extends Scene {
     const real = Math.min(delta / 1000, BATTLE.maxDt)
     const dt = stopping(real) ? 0 : real * this.speed // 히트스톱 중에는 전투 시간이 흐르지 않는다
     // 새 카드(도형 포함)를 기존 보드 함수 변경 없이 찾아 몸 모션만 연결한다.
-    for (const child of [...this.children.list]) {
+    // 유닛·적은 컨테이너뿐이다. 글자·도형·파티클 수백 개를 매 프레임 복사해 훑지 않는다
+    for (const child of this.children.list.filter((c) => c.type === 'Container')) {
       const view = child as GameObjects.Container
       const slot = view.data?.get('slot') as { unit?: { card: CardKey; rank: number } } | undefined
       if (slot?.unit && !view.getData('motionReady')) {
@@ -536,6 +542,9 @@ export class BattleScene extends Scene {
     }
     if (this.result) return // 마지막 처치의 쓰러짐·페이드는 결과 화면에서도 끝낸다
     this.wallSec += real
+    // 프레임 속도가 오래 낮으면 연출을 절반으로 낮춘다(휴대폰 대비). 시작 직후의 로딩 끊김은 세지 않는다
+    this.lowFpsSec = this.wallSec > FX.autoLowGraceSec ? lowFpsStreak(this.lowFpsSec, this.game.loop.actualFps, real, FX.autoLowFps) : 0
+    if (this.lowFpsSec >= FX.autoLowSec && !isLowFx()) setLowFx(true)
     switch (this.phase) {
       case 'prep':
         this.prepLeft -= dt
