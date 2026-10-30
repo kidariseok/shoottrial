@@ -1,11 +1,11 @@
 import type { Scene, GameObjects } from 'phaser'
-import { ABILITY, ART, SPECIALTIES, BATTLE, BATTLE_AUDIO, BOSS, COMBAT, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
+import { ABILITY, ART, SPECIALTIES, BATTLE, BATTLE_AUDIO, BOSS, DOG, ENEMIES, FX, GRID, LAYOUT, UI, type EnemyType } from '../data'
 import { playSfx } from '../audio'
-import { dotTick, motionPhase, artKey, damageTaken, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
+import { enemyAttackStep, enemyAttackDamage, enemyAttackTargets, enemyDirectDamage, dotTick, motionPhase, artKey, engageTarget, inBlast, mineDamage, mineTriggered, pickDogLane, pushMult, waveHp, type LogEvent, type SpawnEvent } from '../rules'
 import { debug } from '../debug'
 import { addSprite, setupMotion, moveMotion, leanMotion, hasArt, hitSprite, playAct, anticipateMotion } from './art'
 import type { Board } from './board'
-import { comboText, dmgText, explosion, hitFlash, hitStop, laneFlash, shake } from './fx'
+import { comboText, dmgText, explosion, hitFlash, hitStop, laneFlash, shake, tracer, muzzle, snipeLine } from './fx'
 import { damageAlly, type Ally } from './units'
 
 // 적 한 마리의 전투 상태. y는 칸 단위 중심 위치(0 = 적 진입 구역 맨 위)
@@ -15,7 +15,9 @@ export type Enemy = {
   y: number
   hp: number
   maxHp: number
-  ready: number // 공격 준비 누적 초. 막혀서 멈춘 동안만 쌓이고, 걷거나 밀리면 0
+  wave: number
+  target: Ally['unit'] | null
+  ready: number // 교전 중 공격 준비 누적 초. 첫 조준은 interval-firstShot에서 시작, 이동/밀림 시 초기화
   stun: number // 남은 기절 초
   poison: number // 남은 중독 초(화상과 독립)
   burn: number // 남은 화상 초
@@ -59,12 +61,23 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
       s.setTint(ART.dogPlusTint)
       view.setData('tint', ART.dogPlusTint) // 피격 틴트가 끝나면 이 색으로 돌아간다
     }
+    if (ENEMIES[ev.type].tint !== undefined) {
+      s.setTint(ENEMIES[ev.type].tint!)
+      view.setData('tint', ENEMIES[ev.type].tint)
+    }
   } else {
     const body = scene.add.rectangle(0, 0, size, size, ENEMIES[ev.type].color)
     if (ev.type === 'dogPlus') body.setStrokeStyle(UI.enemyStroke, UI.colors.dogPlusStroke) // 강화 군견: 흰 테두리
     view.add(body)
   }
   view.setData('base', key)
+  if (ENEMIES[ev.type].tint !== undefined) {
+    const role = UI.enemyRole
+    view.add(scene.add.text(0, -size / 2 - role.gap, ENEMIES[ev.type].name, {
+      fontFamily: UI.text.fontFamily, fontSize: `${role.fontPx}px`, color: role.color, backgroundColor: role.background,
+    }).setOrigin(0.5))
+    if (ev.type === 'shield') view.add(scene.add.rectangle(0, size * role.shieldY, size * role.shieldWidth, size * role.shieldHeight, ENEMIES.shield.color, role.alpha).setStrokeStyle(UI.enemyStroke, ART.dogPlusTint))
+  }
   const serial = (scene.data.get('motionSerial') as number | undefined) ?? 0
   scene.data.set('motionSerial', serial + 1)
   setupMotion(view, key, motionPhase(debug.seed, serial), 1)
@@ -78,14 +91,14 @@ export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: num
   view.setData('vulnMark', mark)
   view.add(bar)
   scene.tweens.add({ targets: view, alpha: 1, duration: UI.fx.spawnFadeMs })
-  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, ready: 0, stun: 0, burn: 0, poison: 0, vuln: 0, pushedAt: -Infinity, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
+  return { type: ev.type, col: ev.col, y: 0, hp, maxHp: hp, wave, target: null, ready: 0, stun: 0, burn: 0, poison: 0, vuln: 0, pushedAt: -Infinity, knockLeft: 0, knocked: false, dogMoved: false, shocked: false, gone: false, view, bar }
 }
 
 // 제거 판정은 호출한 쪽이 hp <= 0으로 거른다
 // 취약 중이면 피해가 커진다(damageTaken). 숫자도 늘어난 값을 보여 준다
 export function hurtEnemy(scene: Scene, e: Enemy, base: number): void {
   if (base > 0 && e.hp > 0 && !e.gone) playSfx(BATTLE_AUDIO.hit)
-  const dmg = damageTaken(base, e.vuln)
+  const dmg = enemyDirectDamage(e.type, base, e.vuln)
   e.hp -= dmg
   if (!hitSprite(e.view)) hitFlash(scene, e.view.x, e.view.y, bodySize(e.type), bodySize(e.type))
   dmgText(scene, e.view.x, e.view.y, dmg)
@@ -127,6 +140,7 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       e.y = Math.max(0, e.y - step)
       e.knockLeft -= step
       e.ready = 0
+      e.target = null
       place()
       continue
     }
@@ -146,22 +160,30 @@ export function tickEnemies(ctx: Ctx, dt: number): Enemy[] {
       leanMotion(e.view, e.col - oldCol)
       ctx.scene.tweens.add({ targets: e.view, x: ctx.board.toScreen(e.col, e.y).x, duration: DOG.laneMs })
     }
-    // 6. 교전 판정: 근접 거리(RPG병은 사거리) 안 아군 중 도발 우선, 가까운 순. 없으면 계속 걷는다
-    const foe = engageTarget(e, ctx.allies, e.type === 'rpg' ? ENEMIES.rpg.range : COMBAT.meleeReach)
+    // 6. 교전 판정: 병과별 사거리 안 아군 중 도발 우선, 가까운 순. 없으면 계속 걷는다
+    const foe = engageTarget(e, ctx.allies, ENEMIES[e.type].range)
     if (foe) {
       // 7. 교전 중이면 충격파(보스) 후 공격 준비
       if (e.type === 'boss') shockwave(ctx, e)
-      e.ready += dt
+      const attack = enemyAttackStep(e.type, e.ready, dt, e.target !== foe.unit)
+      e.target = foe.unit
+      e.ready = attack.ready
       anticipateMotion(e.view, ENEMIES[e.type].interval - e.ready, ENEMIES[e.type].interval)
-      if (e.ready >= ENEMIES[e.type].interval) {
-        e.ready -= ENEMIES[e.type].interval
-        if (e.type === 'rpg') playSfx(BATTLE_AUDIO.explosion)
-        damageAlly(ctx.scene, foe, ENEMIES[e.type].dmg)
+      if (attack.fire) {
+        const sound = BATTLE_AUDIO.enemy[e.type]
+        if (sound) playSfx(sound)
+        for (const ally of enemyAttackTargets(e.type, foe, ctx.allies)) damageAlly(ctx.scene, ally, enemyAttackDamage(e.type, e.wave))
+        if (e.type !== 'dog' && e.type !== 'dogPlus') {
+          muzzle(ctx.scene, e.view.x, e.view.y)
+          if (e.type === 'marksman') snipeLine(ctx.scene, e.view.x, e.view.y, foe.view.x, foe.view.y)
+          else tracer(ctx.scene, e.view.x, e.view.y, foe.view.x, foe.view.y, 0)
+        }
         if (e.type === 'rpg') explosion(ctx.scene, foe.view.x, foe.view.y) // RPG 폭발
         if (e.type !== 'boss') playAct(e.view, artKey('enemy', e.type, 'act'), ENEMIES[e.type].interval) // 때리는 순간 1회. 보스는 공격 그림이 없어 건너뛴다(없는 키로 artKey가 던지는 것을 막는다)
       }
     } else {
       e.ready = 0
+      e.target = null
       moveMotion(e.view, ENEMIES[e.type].speed, true)
       e.y += ENEMIES[e.type].speed * dt
     }

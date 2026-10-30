@@ -7,13 +7,13 @@ import { createRng } from '../src/debug'
 describe('GDD 수치 고정', () => {
   it('§5.6 적 표', () => {
     const gdd = {
-      infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0 },
-      dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0 },
-      rpg: { name: 'RPG병', hp: 100, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3 },
-      boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0 },
-      dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0 },
+      infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 3.5 },
+      dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 1.5 },
+      rpg: { name: 'RPG병', hp: 180, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 4.5 },
+      boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 3 },
+      dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 1.5 },
     }
-    expect([...ENEMY_KEYS]).toEqual(['infantry', 'dog', 'rpg', 'boss', 'dogPlus'])
+    expect([...ENEMY_KEYS]).toEqual(['infantry', 'dog', 'rpg', 'boss', 'dogPlus', 'assault', 'shield', 'marksman'])
     for (const [k, v] of Object.entries(gdd)) {
       const e = ENEMIES[k as keyof typeof ENEMIES]
       expect({
@@ -39,7 +39,7 @@ describe('GDD 수치 고정', () => {
     }
   })
   it('적 크기(칸 대비 비율)', () => {
-    expect(ENEMY_KEYS.map((k) => ENEMIES[k].size)).toEqual([0.55, 0.45, 0.55, 0.9, 0.45])
+    expect(ENEMY_KEYS.map((k) => ENEMIES[k].size)).toEqual([0.55, 0.45, 0.55, 0.9, 0.45, 0.55, 0.65, 0.55])
   })
   it('보스 충격파·군견 열 변경', () => {
     expect(BOSS).toEqual({ shockStun: 1.5, shockY: 4 })
@@ -106,7 +106,8 @@ describe('GDD 수치 고정', () => {
     expect(STAGE1).toEqual({ spawnGap: 0.8, convoySize: 5, convoyGap: 0.5 })
   })
   it('§5.7 웨이브 표 10행', () => {
-    const w = (infantry: number, dog: number, rpg: number, boss = 0, convoys = 0, flag = false, dogPlus = 0, gas = 0) => ({
+    const w = (infantry: number, dog: number, rpg: number, boss = 0, convoys = 0, flag = false, dogPlus = 0, gas = 0, assault = 0, shield = 0, marksman = 0) => ({
+      assault, shield, marksman,
       infantry,
       dog,
       dogPlus,
@@ -120,13 +121,13 @@ describe('GDD 수치 고정', () => {
       w(6, 0, 0),
       w(8, 2, 0),
       w(8, 0, 2),
-      w(10, 4, 0),
-      w(13, 4, 3, 1, 0, true),
-      w(16, 8, 4, 0, 1),
-      w(18, 8, 5, 0, 0, false, 0, 1),
-      w(21, 10, 6),
-      w(23, 4, 8, 0, 2, false, 4, 1),
-      w(26, 5, 8, 2, 0, true, 5, 2),
+      w(7, 4, 0, 0, 0, false, 0, 0, 3),
+      w(10, 4, 3, 1, 0, true, 0, 0, 3),
+      w(9, 8, 4, 0, 1, false, 0, 0, 4, 3),
+      w(8, 8, 5, 0, 0, false, 0, 1, 5, 3, 2),
+      w(8, 10, 6, 0, 0, false, 0, 0, 6, 4, 3),
+      w(7, 4, 8, 0, 2, false, 4, 1, 7, 5, 4),
+      w(7, 5, 8, 2, 0, true, 5, 2, 8, 6, 5),
     ])
   })
 })
@@ -165,10 +166,10 @@ describe('spawnPlan', () => {
   it('웨이브 구성 개수(종대 보병 포함)', () => {
     const want: Record<number, [number, number, number, number]> = {
       1: [6, 0, 0, 0],
-      5: [13, 4, 3, 1],
-      6: [21, 8, 4, 0],
-      9: [33, 4, 8, 0],
-      10: [26, 5, 8, 2],
+      5: [10, 4, 3, 1],
+      6: [14, 8, 4, 0],
+      9: [17, 4, 8, 0],
+      10: [7, 5, 8, 2],
     }
     for (const [w, [inf, dog, rpg, boss]] of Object.entries(want)) {
       const ev = spawnPlan(Number(w), createRng(7), false)
@@ -177,7 +178,7 @@ describe('spawnPlan', () => {
     for (let w = 1; w <= WAVES.length; w++) {
       const d = WAVES[w - 1]!
       const ev = spawnPlan(w, createRng(3), false)
-      expect(ev).toHaveLength(d.infantry + d.convoys * STAGE1.convoySize + d.dog + d.dogPlus + d.rpg + d.boss)
+      expect(ev).toHaveLength(d.infantry + d.assault + d.shield + d.marksman + d.convoys * STAGE1.convoySize + d.dog + d.dogPlus + d.rpg + d.boss)
     }
   })
   it('데프콘 1은 출현 간격 x0.7, 아니면 0.8', () => {
