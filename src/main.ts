@@ -10,6 +10,7 @@ import { startUiDemo } from './ui/demo'
 import { bindDeploy, bindWalk, showLobby, showBriefing, startEntryFlow } from './ui/lobby'
 import { handleBack } from './ui/screens'
 import { WalkScene } from './ui/walk'
+import { startWeb } from './web'
 
 export { calculateLogicalHeight, computeCanvasLayout }
 
@@ -137,6 +138,25 @@ async function boot(): Promise<void> {
   syncGameScale()
   const saved = await loadSave()
   initAudio(saved.settings)
+
+  const rotatedScenes = new Set<string>()
+  // 가로 안내가 가리는 동안에만 정지한다. 기존 일시정지/특기 선택 상태는 풀지 않는다.
+  await startWeb((blocked) => {
+    if (!game) return
+    if (blocked) {
+      for (const scene of game.scene.getScenes(true)) {
+        const key = scene.sys.settings.key
+        if (key === 'idle') continue
+        rotatedScenes.add(key)
+        game.scene.pause(key)
+      }
+    } else {
+      for (const key of rotatedScenes) {
+        if (game.scene.isPaused(key)) game.scene.resume(key)
+      }
+      rotatedScenes.clear()
+    }
+  })
 
   onBack(() => {
     handleBack(() => {

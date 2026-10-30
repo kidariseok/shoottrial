@@ -2,6 +2,7 @@
 import { watchAd } from '../ads'
 import { fetchAvailableAssets } from '../assets'
 import { playSfx } from '../audio'
+import { isNative } from '../platform'
 import { BATTLE, SPECIALTIES, type CardKey } from '../data'
 import {
   canFireSupport,
@@ -174,7 +175,7 @@ function ensureRefs(): UiRefs | null {
   const supplyAdBtn = document.createElement('button')
   supplyAdBtn.type = 'button'
   supplyAdBtn.className = 'mil-btn brass hud-supply-ad-btn'
-  supplyAdBtn.textContent = '📺 긴급보급 +5'
+  supplyAdBtn.textContent = isNative() ? '📺 긴급보급 +5' : '체험 보급 +5'
   supplyAdBtn.addEventListener('click', () => {
     if (!currentCtl || supplyAdBtn.disabled) return
     supplyAdBtn.disabled = true
@@ -220,7 +221,7 @@ function ensureRefs(): UiRefs | null {
   const freeRerollBtn = document.createElement('button')
   freeRerollBtn.type = 'button'
   freeRerollBtn.className = 'mil-btn brass shop-btn-free-reroll'
-  freeRerollBtn.textContent = '📺 무료'
+  freeRerollBtn.textContent = isNative() ? '📺 무료' : '체험 무료'
   freeRerollBtn.addEventListener('click', () => {
     if (!currentCtl || freeRerollBtn.disabled) return
     freeRerollBtn.disabled = true
@@ -690,7 +691,7 @@ export function askRevive(onYes: () => void, onNo: () => void): void {
 
   const note = document.createElement('div')
   note.className = 'modal-note'
-  note.textContent = '광고를 끝까지 보면 부활합니다'
+  note.textContent = isNative() ? '광고를 끝까지 보면 부활합니다' : '웹 체험판에서는 광고 없이 부활을 체험할 수 있습니다'
 
   body.append(desc, note)
 
@@ -700,7 +701,7 @@ export function askRevive(onYes: () => void, onNo: () => void): void {
   const yesBtn = document.createElement('button')
   yesBtn.type = 'button'
   yesBtn.className = 'mil-btn brass'
-  yesBtn.textContent = '📺 광고 보고 부활'
+  yesBtn.textContent = isNative() ? '📺 광고 보고 부활' : '체험 부활'
   yesBtn.addEventListener('click', () => {
     if (yesBtn.disabled) return
     yesBtn.disabled = true

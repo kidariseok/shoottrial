@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-30T12:22:30.193Z",
+        "reason": "Codex 확인: index.html에는 shadow 선언이 없고 이번 변경은 메타/매니페스트 링크뿐이다. 스타일시트의 기존 경보 효과는 이 HTML 검사 대상이 아니다."
+      }
+    ]
+  }
+}

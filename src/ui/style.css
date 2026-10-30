@@ -69,7 +69,35 @@ html, body {
   -webkit-touch-callout: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", "Malgun Gothic", sans-serif;
   color: var(--text-cream);
+  overscroll-behavior: none;
 }
+
+body { height: 100dvh; }
+
+.web-welcome, .web-rotate {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: #0b0d12;
+}
+.web-rotate { z-index: 12000; text-align: center; font-size: 18px; }
+.web-rotate.hidden { display: none; }
+.web-welcome-card { width: min(100%, 390px); max-height: 100%; overflow-y: auto; touch-action: pan-y; text-align: center; }
+.web-emblem { display: block; margin: 0 auto 12px; border-radius: 18px; }
+.web-eyebrow { color: var(--accent-brass); font-size: 12px; letter-spacing: 2px; }
+.web-welcome h1 { margin: 10px 0 18px; font-size: 34px; line-height: 1.15; }
+.web-welcome h1 span { font-size: 23px; color: var(--accent-brass); }
+.web-welcome p { line-height: 1.6; }
+.web-welcome .web-note { margin: 16px 0; font-size: 12px; color: var(--text-dim); }
+.web-welcome details { margin: 20px 0; text-align: left; font-size: 13px; line-height: 1.6; }
+.web-welcome summary { cursor: pointer; color: var(--accent-brass); }
+.web-welcome details p { margin-top: 8px; }
+.web-welcome button { display: block; width: 100%; min-height: 48px; margin-top: 10px; }
+.web-welcome button[hidden] { display: none; }
 
 #game {
   position: absolute;
