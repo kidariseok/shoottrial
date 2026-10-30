@@ -8,6 +8,7 @@
 - 확인한 프로젝트: `jspersonal1/newbie-defense`
 - 운영 주소: https://newbie-defense.vercel.app
 - 운영 원본: `main`. 기능 브랜치의 변경은 사용자 PR 병합 후 운영에 반영한다.
+- T-120 미리보기: https://newbie-defense-git-kidariseok-t120-mobile-web-jspersonal1.vercel.app/ (Ready 및 시작→성명 입력 확인). 이 주소는 기능 브랜치 검토용이다.
 - 브라우저에서 기존 main의 첫 운영 배포 성공 화면을 확인했다. T-120 최신 변경의 배포 여부는 티켓 결과 보고의 PR/미리보기 확인을 기준으로 한다.
 
 Vercel 설정은 루트 `vercel.json`에 있다. Framework는 Vite, Build Command는 `npm run verify`, Output Directory는 `dist`, Root Directory는 저장소 루트다. 패키지는 lockfile로 설치하고 환경변수는 추가하지 않는다. `verify`에서 테스트·에셋·타입 검사까지 실패하면 배포 빌드도 실패하게 한다.

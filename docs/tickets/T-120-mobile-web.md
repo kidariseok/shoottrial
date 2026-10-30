@@ -1,6 +1,6 @@
 # T-120 모바일 웹 체험판·Vercel 배포 준비
 
-상태: 진행 중
+상태: 완료
 담당: Codex
 
 ## 목표
@@ -58,11 +58,11 @@
 
 ## 완료 조건
 
-- [ ] 검증·production 모바일 브라우저 점검·사진
-- [ ] Vercel 빌드/출력/캐시 설정과 배포 안내
-- [ ] 모바일 진입·독립 실행용 메타/아이콘·가로 화면 처리
-- [ ] 웹 보상 명시·확인/취소 및 기존 중복 방지 유지
-- [ ] 저장 범위·온라인 필요·실물/실배포 미확인 구분
+- [x] 검증·production 모바일 브라우저 점검·사진
+- [x] Vercel 빌드/출력/캐시 설정과 배포 안내
+- [x] 모바일 진입·독립 실행용 메타/아이콘·가로 화면 처리
+- [x] 웹 보상 명시·확인/취소 및 기존 중복 방지 유지
+- [x] 저장 범위·온라인 필요·실물/실배포 미확인 구분
 
 디버그 URL: ?scene=walk&safe=1, ?scene=battle&seed=7&safe=1
 
@@ -76,7 +76,7 @@
 ## 질문
 
 - [x] 사용자 웹 우선 전환 및 필요한 작업 수행 지시로 승인. 새 의존성/외부 결제 없음.
-- [ ] Vercel 기존 프로젝트 유무 질문 중. 계정/연결 없는 상태에서 새 공개 URL을 추정하지 않는다.
+- [x] Vercel 프로젝트는 사용자 브라우저에서 newbie-defense/jspersonal1·GitHub shoottrial·main·운영주소를 확인했다. 사용자 별도 답변 없이 확인된 근거로 연결을 검증했다.
 
 ## 진행 기록
 
@@ -90,7 +90,14 @@
 
 ## 결과 보고
 
-- 진행 중
+- 변경: index/manifest/웹 런처아이콘3개, src/web.ts·main.ts·CSS 모바일 시작/전체화면·설치 안내/가로 처리, ads/platform/screens/lobby의 웹 체험 보상 명시, 테스트1개 추가, Vercel 설정·배포 안내·보류 T-119/HANDOFF, 좁은 디자인 훅 오탐 예외. 새 의존성/전투 규칙/공유 함수 시그니처 변경 없음.
+- 검증: npm run verify 통과. 23파일365테스트, 실제에셋97개, 타입검사/빌드 성공. 기존 번들500KB 경고 유지. git diff --check 통과.
+- 실제 production preview: 터치390×844 첫진입→이름 웹신병→브리핑4컷→생활관, 재실행 후 이름 웹검증/firstRun=false 유지·캔버스1개. 생활관→전투, 카드구매 보급6→5. 체험 보급 취소6유지/승인11을 실제 DOM 갱신으로 확인.390×700/320×568 가로넘침없음,844×390 안내/세로복귀, 해당 모바일검사 pageerror0. 매니페스트200.
+- Vercel: GitHub 기능 브랜치 push로 자동 Preview 배포 Ready 확인(커밋3a2b233). https://newbie-defense-git-kidariseok-t120-mobile-web-jspersonal1.vercel.app/ 에서 실제 시작 화면과 게임 시작→성명 입력 확인. 운영 https://newbie-defense.vercel.app 은 main93c0c18(#47) Ready 확인이며 최신 변경은 사용자 PR 병합 후 반영한다. 보호 설정·계정·결제 변경 없음.
+- 사진: docs/shots/T-120-welcome.png, T-120-walk.png, T-120-battle.png, T-120-reward.png, T-120-rotate.png, T-120-short-phone.png.
+- 사용자 확인: 미리보기 주소를 휴대폰 Chrome/Safari로 열어 게임 시작. 홈 화면 추가는 첫 화면의 접힌 안내 참고. 운영에 반영하려면 PR 병합 후 최신 배포 Ready 확인.
+- 미확인: 실제 안드로이드/iPhone Safari·실물노치·홈화면설치·실물음량/성능/일반10웨이브 난이도, 최신 변경의 운영 배포. 온라인 전용·로컬 저장(계정동기화없음)·전투중저장없음은 안내에 명시했다.
+- 다음: PR 사용자 병합 후 운영주소에서 실물 한 판 피드백. 앱 출시/USB 설치는 사용자 재개 전 보류.
 
 ## 인계 메모
 
