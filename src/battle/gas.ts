@@ -3,7 +3,7 @@ import { FX, GAS, LAYOUT, UI } from '../data'
 import { allyY, chemInterval, cleanseCells, emptyGas, gasCellsAfterDrop, gasHits, synergyTier, type Chem, type GasDrop, type LogEvent } from '../rules'
 import type { Board, Unit } from './board'
 import { hasArt } from './art'
-import { burst, shake } from './fx'
+import { burst, isLowFx, shake } from './fx'
 import { chemsOf, damageAlly, synergyCounts, type Ally } from './units'
 
 // 가스 상태. 클래스 없이 상태 객체 + 모듈 함수로 둔다(AGENTS 코드 원칙)
@@ -113,6 +113,7 @@ export function tickGas(
   g.puff -= dt
   if (g.puff > 0) return
   g.puff = FX.gas.puffSec
+  if (isLowFx()) return // 저사양: 연기를 생략한다(가스 칸 타일이 영역을 보여 준다)
   g.cells.forEach((rowCells, row) =>
     rowCells.forEach((v, col) => {
       if (v <= 0) return

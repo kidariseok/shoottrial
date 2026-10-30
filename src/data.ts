@@ -287,13 +287,16 @@ export const FX = {
   maxParticles: 400, // 동시 파티클 상한. 넘으면 새 연출은 남은 자리만큼만 낸다
   // 렉 방지 예산(2026-10-30 측정: 한 화면에 객체 약 380, 글자 40+, 텍스처 종류 70+, 가산 혼합 19). 숫자 글자는 하나하나가 캔버스 텍스처라 상한을 둔다
   maxTexts: 24, // 동시에 떠 있는 숫자·글자 상한(넘으면 새 숫자는 건너뛴다)
-  textPoolPerKey: 6, // 같은 숫자·색 글자를 숨겨 두고 다시 쓰는 개수(캔버스 텍스처를 다시 만들지 않는다)
+  textPoolPerKey: 3, // 같은 숫자·색 글자를 숨겨 두고 다시 쓰는 개수(캔버스 텍스처를 다시 만들지 않는다)
+  textPoolMax: 30, // 숨겨 둔 글자 전체 상한(글자마다 텍스처라 무한정 쌓지 않는다)
   supportRowScale: 0.4, // 화력 지원이 한 열 8칸에 터뜨리는 폭발 하나당 파티클 배율
   autoLowFps: 40, // 이 프레임 속도 아래가 autoLowSec 이어지면 연출을 절반으로 낮춘다(세션 동안 유지)
   autoLowSec: 2,
   autoLowGraceSec: 3, // 판 시작 직후 로딩 끊김은 세지 않는다
   lowScale: 0.5, // ?fx=low 일 때 개수 배율
   lowValue: 'low',
+  highValue: 'high', // ?fx=high 는 폰에서도 전체 연출(기본은 폰이면 저사양)
+  lowMaxParticles: 200, // 저사양일 때 동시 파티클 상한
   hitStopSec: 0.05, // 큰 사건 때 전투가 멈추는 실제 시간
   depthOver: 51, // 파티클 깊이(그림 이펙트 fxDepth 위)
   depthUnder: 49, // 연기·가스 깊이(fxDepth 아래, 적 위)
@@ -316,7 +319,7 @@ export const FX = {
   // 도발 고리: 제설병 발밑 금색 고리가 천천히 맥동한다(카드 중심 기준 좌표)
   taunt: { y: 52, w: 96, h: 24, lineW: 4, color: 0xffe066, alpha: 0.9, scale: 1.25, ms: 700 },
   // 가스 칸 연기: 가스가 있는 칸마다 puffSec 초에 한 번 피어오른다
-  gas: { puffSec: 0.4, n: 2 },
+  gas: { puffSec: 0.7, n: 1 }, // 2026-10-30 아이폰 렉: 가스 4칸이 겹쳐 가산 빛이 화면을 덮었다. 칸 표시는 타일이 하므로 연기는 드물게
   // 파티클 종류. tex는 위 텍스처 이름, depth는 over/under, blend는 가산 여부
   kinds: {
     spark: {
@@ -365,7 +368,7 @@ export const FX = {
     },
     gasSmoke: {
       tex: 'glow', n: 1, over: false,
-      cfg: { x: { min: -48, max: 48 }, y: { min: -32, max: 48 }, speed: { min: 30, max: 60 }, angle: { min: -115, max: -65 }, lifespan: { min: 1600, max: 2400 }, scale: { start: 0.7, end: 1.8 }, alpha: { start: 0.9, end: 0 }, tint: [0xe8ec60, 0x9fe05a, 0xc8d84a], blendMode: 'ADD' },
+      cfg: { x: { min: -48, max: 48 }, y: { min: -32, max: 48 }, speed: { min: 30, max: 60 }, angle: { min: -115, max: -65 }, lifespan: { min: 1000, max: 1600 }, scale: { start: 0.6, end: 1.2 }, alpha: { start: 0.5, end: 0 }, tint: [0xe8ec60, 0x9fe05a, 0xc8d84a], blendMode: 'ADD' },
     },
   },
 }
