@@ -53,7 +53,7 @@ describe('GDD 수치 고정 (4단계)', () => {
       interval: 0.5,
       baseDmg: 1,
       knock: 1.0,
-      range: 0,
+      range: 1.5,
       size: 0.45,
     })
     expect(e.color).not.toBe(ENEMIES.dog.color)
@@ -85,14 +85,14 @@ describe('nextUnlock (화학병)', () => {
 describe('spawnPlan (강화 군견)', () => {
   it('웨이브 9·10 구성', () => {
     const w9 = spawnPlan(9, createRng(7), false)
-    expect([count(w9, 'infantry'), count(w9, 'dog'), count(w9, 'dogPlus'), count(w9, 'rpg'), count(w9, 'boss')]).toEqual([33, 4, 4, 8, 0])
+    expect([count(w9, 'infantry'), count(w9, 'dog'), count(w9, 'dogPlus'), count(w9, 'rpg'), count(w9, 'boss')]).toEqual([17, 4, 4, 8, 0])
     const w10 = spawnPlan(10, createRng(7), false)
-    expect([count(w10, 'infantry'), count(w10, 'dog'), count(w10, 'dogPlus'), count(w10, 'rpg'), count(w10, 'boss')]).toEqual([26, 5, 5, 8, 2])
+    expect([count(w10, 'infantry'), count(w10, 'dog'), count(w10, 'dogPlus'), count(w10, 'rpg'), count(w10, 'boss')]).toEqual([7, 5, 5, 8, 2])
   })
   it('길이 = 보병 + 종대 + 군견 + 강화 군견 + RPG + 보스', () => {
     for (let w = 1; w <= WAVES.length; w++) {
       const d = WAVES[w - 1]!
-      expect(spawnPlan(w, createRng(5), false)).toHaveLength(d.infantry + d.convoys * STAGE1.convoySize + d.dog + d.dogPlus + d.rpg + d.boss)
+      expect(spawnPlan(w, createRng(5), false)).toHaveLength(d.infantry + d.assault + d.shield + d.marksman + d.convoys * STAGE1.convoySize + d.dog + d.dogPlus + d.rpg + d.boss)
     }
   })
   it('웨이브 1~8은 어떤 시드에서도 강화 군견이 없다', () => {

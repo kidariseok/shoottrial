@@ -8,6 +8,7 @@ import {
   COMBAT,
   ECONOMY,
   ENEMIES,
+  ENEMY_COMBAT,
   GAS,
   GRID,
   LAYOUT,
@@ -109,6 +110,9 @@ export function spawnPlan(wave: number, rand: () => number, defcon1: boolean): S
     ...Array<EnemyType>(def.dog).fill('dog'),
     ...Array<EnemyType>(def.dogPlus).fill('dogPlus'),
     ...Array<EnemyType>(def.rpg).fill('rpg'),
+    ...Array<EnemyType>(def.assault).fill('assault'),
+    ...Array<EnemyType>(def.shield).fill('shield'),
+    ...Array<EnemyType>(def.marksman).fill('marksman'),
   ]
   // (2) Fisher-Yates로 섞는다
   for (let i = singles.length - 1; i > 0; i--) {
@@ -229,6 +233,33 @@ export function engageTarget<T extends Friend>(enemy: Pos, allies: T[], reach: n
   return best
 }
 
+// 첫 교전에는 짧게 조준하고, 연속 공격은 정상 간격을 지킨다. 대상이 바뀌면 다시 조준한다.
+export function enemyAttackStep(type: EnemyType, ready: number, dt: number, acquiring: boolean): { ready: number; fire: boolean } {
+  const def = ENEMIES[type]
+  const next = (acquiring ? def.interval - def.firstShot : ready) + dt
+  const fire = next >= def.interval - COMBAT.tieEps
+  return { ready: fire ? Math.max(0, next - def.interval) : next, fire }
+}
+
+export function enemyAttackDamage(type: EnemyType, wave: number): number {
+  return ENEMIES[type].dmg * (1 + ENEMY_COMBAT.damageGrowth * Math.max(0, wave - 1))
+}
+
+export function armoredEnemy(type: EnemyType): boolean {
+  return type === 'boss' || type === 'dogPlus' || ENEMIES[type].armor < 1
+}
+
+// 방패는 직접 피격만 줄인다. 독/화상은 기존 지속 피해로 우회한다.
+export function enemyDirectDamage(type: EnemyType, base: number, vuln: number): number {
+  return damageTaken(base, vuln) * ENEMIES[type].armor
+}
+
+export function enemyAttackTargets<T extends Friend>(type: EnemyType, target: T, allies: T[]): T[] {
+  if (!target.alive) return []
+  const radius = ENEMIES[type].splash
+  return radius > 0 ? allies.filter((a) => a.alive && dist(target, a) <= radius + COMBAT.tieEps) : [target]
+}
+
 // GDD §5.2. 제설병 부채꼴: 자기 열과 양옆 열, 앞쪽(y가 작은) range칸 안의 산 적 전부
 export function blowerCone<T extends Foe>(ally: Pos, enemies: T[], range: number): T[] {
   return enemies.filter((e) => e.hp > 0 && !e.gone && Math.abs(e.col - ally.col) <= 1 && inRange(ally.y, e.y, range))
@@ -345,7 +376,7 @@ export function inBlast(enemyY: number, mineRow: number): boolean {
 
 // GDD §5.5. 폭발 피해. 대전차는 보스에게 bossMult배
 export function mineDamage(enemy: EnemyType, anti: boolean): number {
-  return MINES.damage * (anti && (enemy === 'boss' || enemy === 'dogPlus') ? MINES.bossMult : 1)
+  return MINES.damage * (anti && armoredEnemy(enemy) ? MINES.bossMult : 1)
 }
 
 // ---- 4단계: 화학전 ----
@@ -703,7 +734,7 @@ export function mortarHits<T extends Foe>(point: Pos, enemies: T[], radius: numb
   return enemies.filter((e) => e.hp > 0 && !e.gone && dist(point, e) <= radius + COMBAT.tieEps)
 }
 export function antitankDamage(atk: number, type: EnemyType, count = 1, spec?: Specialty, secondary = false): number {
-  const armored = type === 'boss' || type === 'dogPlus'
+  const armored = armoredEnemy(type)
   const armor = (spec === 'A' ? SPECIALTIES.antitank.A.armorMult : NEW_CARDS.antitank.armorMult) + (SYN_FX.antitankArmor[synergyTier('antitank', count)] ?? 0)
   return atk * (armored ? armor : 1) * (secondary ? NEW_CARDS.antitank.pierceMult : 1)
 }

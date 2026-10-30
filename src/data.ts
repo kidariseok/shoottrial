@@ -35,6 +35,7 @@ export type CardKey = (typeof CARD_KEYS)[number]
 // 기존 음원 재사용. 공격 준비가 아니라 행동이 성립한 순간 한 번 요청한다.
 export const BATTLE_AUDIO = {
   bgm: { 1: 'bgm_defcon1', 2: 'bgm_defcon2' },
+  enemy: { infantry: 'sfx_rifle', assault: 'sfx_rifle', shield: 'sfx_rifle', marksman: 'sfx_sniper', rpg: 'sfx_boom', boss: 'sfx_boom', dog: null, dogPlus: null },
   attack: {
     rifle: 'sfx_rifle', sniper: 'sfx_sniper', blower: 'sfx_wind', cook: 'sfx_heal',
     miner: 'sfx_rifle', chem: 'sfx_rifle', medic: 'sfx_heal', mortar: 'sfx_boom',
@@ -268,6 +269,7 @@ export const UI = {
   hold: { ms: 400, slop: 12 },
   // 적 체력바: 몸통 위쪽에 놓는다. 색은 UI.bar를 쓴다
   enemyBar: { h: 8, gap: 6 },
+  enemyRole: { fontPx: 15, gap: 22, color: "#ece6d3", background: "#111820", shieldWidth: 0.55, shieldHeight: 0.75, shieldY: 0.1, alpha: 0.9 },
   enemyStroke: 2, // 강화 군견 흰 테두리 px
   gas: { alpha: 0.45, warnAlpha: 0.55, blinkMs: 150, depth: 5 }, // 가스 칸 depth는 카드(0)와 적(enemyDepth) 사이, 예고는 fxDepth
   // 지뢰 토큰 더미: 적 진입 구역 아래쪽 왼쪽 열(논리 좌표, trayY는 칸 단위 y 중심). 준비 단계에는 적이 없어 비어 있다
@@ -372,8 +374,9 @@ export const FX = {
 
 // GDD §5.6. 웨이브 HP 스케일(rules.waveHp)은 보스에도 적용한다(OQ-3: W5 1776, W10 2496)
 // color는 아트 전 임시색(ART §2: 적은 회갈색 계열, 붉은색·주황은 적의 공격·경보에만), size는 칸 대비 비율
-// speed 칸/초, interval 초, baseDmg 위병소 피해, knock 밀어내기 배율, range 칸(0이면 막힌 뒤 근접)
-export const ENEMY_KEYS = ['infantry', 'dog', 'rpg', 'boss', 'dogPlus'] as const
+// T-121: speed 칸/초, interval/firstShot 초, range/splash 칸, armor 직접 피격 배율. 모든 적은 자기 사거리로 교전한다.
+export const ENEMY_COMBAT = { damageGrowth: 0.1 }
+export const ENEMY_KEYS = ['infantry', 'dog', 'rpg', 'boss', 'dogPlus', 'assault', 'shield', 'marksman'] as const
 export type EnemyType = (typeof ENEMY_KEYS)[number]
 export const ENEMIES: Record<
   EnemyType,
@@ -386,15 +389,22 @@ export const ENEMIES: Record<
     baseDmg: number
     knock: number
     range: number
+    firstShot: number
+    armor: number
+    splash: number
+    tint?: number
     color: number
     size: number
   }
 > = {
-  infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 0, color: 0x80786a, size: 0.55 },
-  dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 0, color: 0x6a5f50, size: 0.45 },
-  rpg: { name: 'RPG병', hp: 100, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 3, color: 0x5f6b73, size: 0.55 },
-  boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 0, color: 0x4a5560, size: 0.9 },
-  dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
+  infantry: { name: '보병', hp: 120, speed: 0.35, dmg: 10, interval: 1, baseDmg: 1, knock: 1, range: 3.5, firstShot: 0.35, armor: 1, splash: 0, color: 0x80786a, size: 0.55 },
+  dog: { name: '군견', hp: 80, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.5, range: 1.5, firstShot: 0.15, armor: 1, splash: 0, color: 0x6a5f50, size: 0.45 },
+  rpg: { name: 'RPG병', hp: 180, speed: 0.3, dmg: 35, interval: 3, baseDmg: 2, knock: 1, range: 4.5, firstShot: 0.9, armor: 1, splash: 1.1, color: 0x5f6b73, size: 0.55 },
+  boss: { name: '장갑차', hp: 2400, speed: 0.15, dmg: 40, interval: 1, baseDmg: 5, knock: 0.25, range: 3, firstShot: 0.8, armor: 1, splash: 0, color: 0x4a5560, size: 0.9 },
+  dogPlus: { name: '강화 군견', hp: 160, speed: 0.9, dmg: 6, interval: 0.5, baseDmg: 1, knock: 1.0, range: 1.5, firstShot: 0.15, armor: 1, splash: 0, color: 0x4a4238, size: 0.45 }, // §5.6 군견보다 단단하고 덜 밀린다
+  assault: { name: '돌격병', hp: 170, speed: 0.65, dmg: 14, interval: 0.7, baseDmg: 1, knock: 1, range: 2.75, firstShot: 0.3, armor: 1, splash: 0, tint: 0xa2c4a4, color: 0x617971, size: 0.55 },
+  shield: { name: '방패병', hp: 360, speed: 0.28, dmg: 16, interval: 1.1, baseDmg: 2, knock: 0.5, range: 2, firstShot: 0.5, armor: 0.55, splash: 0, tint: 0xb6c7d4, color: 0x526c80, size: 0.65 },
+  marksman: { name: '지정사수', hp: 160, speed: 0.28, dmg: 28, interval: 2.4, baseDmg: 2, knock: 1, range: 5.25, firstShot: 0.75, armor: 1, splash: 0, tint: 0xc6bedb, color: 0x776b89, size: 0.55 },
 }
 
 // 칸 단위 y. 적 진입 구역 맨 위가 0이다(LAYOUT.entryY 기준). 02-CONTEXT 좌표계
@@ -559,6 +569,9 @@ export const ART = {
     dog: { id: 'dog', move: 'run', act: 'bite' },
     dogPlus: { id: 'dog', move: 'run', act: 'bite' },
     rpg: { id: 'rpg', move: 'walk', act: 'fire' },
+    assault: { id: 'inf', move: 'walk', act: 'attack' },
+    shield: { id: 'inf', move: 'walk', act: 'attack' },
+    marksman: { id: 'inf', move: 'walk', act: 'attack' },
   },
 } as const
 
