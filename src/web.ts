@@ -25,7 +25,7 @@ export async function startWeb(onRotate: (blocked: boolean) => void): Promise<vo
     <section class="web-welcome-card">
       <img class="web-emblem" src="/web/icon-192.png" alt="" width="72" height="72">
       <p class="web-eyebrow">모바일 웹 체험판</p>
-      <h1 id="web-title">데프콘 2<br><span>화스트 페이스</span></h1>
+      <h1 id="web-title">신병 디펜스<br><span>데프콘 2 · 화스트 페이스</span></h1>
       <p>동료를 배치하고, 위병소를 지켜라.</p>
       <p class="web-note">세로 화면 · 소리는 첫 터치 후 재생됩니다.<br>진행 기록은 이 주소의 현재 브라우저에 저장됩니다.<br>광고 보상은 광고 없는 체험 보상으로 제공됩니다.</p>
       <details><summary>앱처럼 홈 화면에서 열기</summary><p>Android Chrome: 메뉴(⋮) → 홈 화면에 추가 또는 앱 설치.<br>iPhone Safari: 공유 → 홈 화면에 추가.<br>홈 화면 아이콘으로 열면 지원 브라우저에서 주소창 없이 실행됩니다. 인터넷 연결이 필요합니다.</p></details>

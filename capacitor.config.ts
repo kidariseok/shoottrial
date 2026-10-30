@@ -1,6 +1,6 @@
 const config = {
   appId: 'io.github.kidariseok.defcon2',
-  appName: '데프콘 2',
+  appName: '신병 디펜스',
   webDir: 'dist',
 }
 

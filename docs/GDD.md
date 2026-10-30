@@ -1,4 +1,4 @@
-# GDD: 《데프콘 2: 화스트 페이스》(가제) v1.0
+# GDD: 《신병 디펜스》 v1.0 (구 가제: 데프콘 2: 화스트 페이스)
 
 > 작성: 2026-10-20, Claude(기획). 근거: `docs/references/`(사용자 PDF). 이전 방향(토스 미니앱 슈터)은 `docs/_archive/qrf-GDD.md`.
 > **모든 수치는 실험 가설이다.** 코드에서는 `src/data.ts`·`src/stages.ts`에만 둔다. G1 플레이테스트 뒤 Claude가 이 문서를 갱신한다.

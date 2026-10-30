@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "데프콘 2: 화스트 페이스",
-  "short_name": "데프콘 2",
+  "name": "신병 디펜스",
+  "short_name": "신병 디펜스",
   "description": "동료를 배치하고 위병소를 지키는 세로형 카드 디펜스 웹 체험판",
   "lang": "ko",
   "start_url": "/",
