@@ -1,7 +1,7 @@
 import { BlendModes, type Scene, type GameObjects, type Types } from 'phaser'
 import { ART, FX, NEW_CARD_FX, LAYOUT, UI } from '../data'
 import { playFx } from './art'
-import { isMobileUa, scaledCount, textAllowed } from './budget'
+import { scaledCount, textAllowed } from './budget'
 
 // 도형·트윈·파티클만 쓰는 공통 연출. 피·시체 표현은 쓰지 않는다
 
@@ -12,9 +12,9 @@ type Emitters = Record<Kind, GameObjects.Particles.ParticleEmitter>
 const KINDS = Object.keys(FX.kinds) as Kind[]
 const emitters = new WeakMap<Scene, Emitters>()
 // ponytail: ?fx=low 는 개수 절반만 줄인다(저사양 대비), 설정 화면 연결은 게이트 때 debug.ts로
-// 기본: 폰이면 저사양으로 시작, ?fx=high면 폰에서도 전체, ?fx=low면 어디서나 저사양
+// 기본은 전체 연출(폰 기본 저사양은 2026-10-30 아이폰 전장 검은 화면 때문에 뺐다)
 const fxParam = new URLSearchParams(location.search).get('fx')
-let low = fxParam === FX.lowValue || (fxParam !== FX.highValue && isMobileUa(navigator.userAgent))
+let low = fxParam === FX.lowValue
 // 저사양 모드: ?fx=low 이거나, 전투 중 프레임 속도가 오래 낮으면 BattleScene이 켠다(세션 동안 유지). 켜지면 파티클 절반, 데미지 숫자 생략
 export const setLowFx = (on: boolean): void => {
   low = on
