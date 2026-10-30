@@ -32,15 +32,16 @@ export const LAYOUT = {
 export const CARD_KEYS = ['rifle', 'sniper', 'blower', 'cook', 'miner', 'chem', 'medic', 'mortar', 'antitank', 'signal'] as const
 export type CardKey = (typeof CARD_KEYS)[number]
 
-// 기존 음원 재사용. 공격 준비가 아니라 행동이 성립한 순간 한 번 요청한다.
+// 공격 준비가 아니라 행동이 성립한 순간 한 번 요청한다. 차량 등장은 생성할 때 한 번 재생한다.
 export const BATTLE_AUDIO = {
   bgm: { 1: 'bgm_defcon1', 2: 'bgm_defcon2' },
-  enemy: { infantry: 'sfx_rifle', assault: 'sfx_rifle', shield: 'sfx_rifle', marksman: 'sfx_sniper', rpg: 'sfx_boom', boss: 'sfx_boom', dog: null, dogPlus: null },
+  enemy: { infantry: 'sfx_rifle', assault: 'sfx_rifle', shield: 'sfx_rifle', marksman: 'sfx_sniper', rpg: 'sfx_boom', boss: 'sfx_cannon_shot', dog: null, dogPlus: null },
   attack: {
     rifle: 'sfx_rifle', sniper: 'sfx_sniper', blower: 'sfx_wind', cook: 'sfx_heal',
     miner: 'sfx_rifle', chem: 'sfx_rifle', medic: 'sfx_heal', mortar: 'sfx_boom',
-    antitank: 'sfx_boom', signal: null,
+    antitank: 'sfx_cannon_shot', signal: null,
   },
+  armoredArrival: 'sfx_armored_arrival',
   hit: 'sfx_hit', explosion: 'sfx_boom', merge: 'sfx_merge', buy: 'sfx_buy',
 } as const
 

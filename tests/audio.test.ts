@@ -66,8 +66,8 @@ afterEach(() => {
 })
 
 describe('audio 키 목록', () => {
-  it('효과음 11종, 배경음 3종', () => {
-    expect(audio.SFX_KEYS).toHaveLength(11)
+  it('효과음 13종, 배경음 3종', () => {
+    expect(audio.SFX_KEYS).toHaveLength(13)
     expect(audio.BGM_KEYS).toEqual(['bgm_lobby', 'bgm_defcon2', 'bgm_defcon1'])
   })
 })

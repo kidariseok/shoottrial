@@ -47,6 +47,7 @@ function drawBar(e: Enemy): void {
 
 // ponytail: 풀 없이 생성·파괴한다(적 최대 ~60), 프레임 저하가 보이면 Phaser Group maxSize로
 export function spawnEnemy(scene: Scene, board: Board, ev: SpawnEvent, wave: number): Enemy {
+  if (ev.type === 'boss') playSfx(BATTLE_AUDIO.armoredArrival)
   const hp = waveHp(ENEMIES[ev.type].hp, wave)
   const size = bodySize(ev.type)
   const pos = board.toScreen(ev.col, 0)

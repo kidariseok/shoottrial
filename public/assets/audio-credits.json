@@ -1,17 +1,21 @@
 {
   "sfx_rifle": {
-    "source": "https://kenney.nl/assets/impact-sounds",
-    "original": "impactMetal_medium_000.ogg",
-    "author": "Kenney (kenney.nl)",
-    "license": "CC0 1.0",
-    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+    "source": "original procedural synthesis for this project",
+    "original": "sfx_rifle_shot.wav",
+    "author": "프로젝트 오리지널 합성 음원(Codex 작성)",
+    "license": "Project-original procedural synthesis (no third-party audio samples)",
+    "description": "소총 단발; 외부 음원/샘플 사용 없음",
+    "recipe": "art/source/audio/T-122-effects.swift",
+    "generated": "2026-10-30"
   },
   "sfx_sniper": {
-    "source": "https://kenney.nl/assets/impact-sounds",
-    "original": "impactMetal_heavy_001.ogg",
-    "author": "Kenney (kenney.nl)",
-    "license": "CC0 1.0",
-    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+    "source": "original procedural synthesis for this project",
+    "original": "sfx_heavy_shot.wav",
+    "author": "프로젝트 오리지널 합성 음원(Codex 작성)",
+    "license": "Project-original procedural synthesis (no third-party audio samples)",
+    "description": "저격·대구경 단발; 외부 음원/샘플 사용 없음",
+    "recipe": "art/source/audio/T-122-effects.swift",
+    "generated": "2026-10-30"
   },
   "sfx_wind": {
     "source": "https://kenney.nl/assets/sci-fi-sounds",
@@ -96,5 +100,23 @@
     "author": "AntumDeluge (OpenGameArt)",
     "license": "CC0 1.0",
     "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  "sfx_cannon_shot": {
+    "source": "original procedural synthesis for this project",
+    "original": "sfx_cannon_shot.wav",
+    "author": "프로젝트 오리지널 합성 음원(Codex 작성)",
+    "license": "Project-original procedural synthesis (no third-party audio samples)",
+    "description": "대전차/보스 포음; 외부 음원/샘플 사용 없음",
+    "recipe": "art/source/audio/T-122-effects.swift",
+    "generated": "2026-10-30"
+  },
+  "sfx_armored_arrival": {
+    "source": "original procedural synthesis for this project",
+    "original": "sfx_armored_arrival.wav",
+    "author": "프로젝트 오리지널 합성 음원(Codex 작성)",
+    "license": "Project-original procedural synthesis (no third-party audio samples)",
+    "description": "장갑차 등장; 외부 음원/샘플 사용 없음",
+    "recipe": "art/source/audio/T-122-effects.swift",
+    "generated": "2026-10-30"
   }
 }

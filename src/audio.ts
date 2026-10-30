@@ -27,6 +27,8 @@ export const SFX_KEYS = [
   'sfx_hit',
   'sfx_click',
   'sfx_buy',
+  'sfx_cannon_shot',
+  'sfx_armored_arrival',
 ] as const
 export type SfxKey = (typeof SFX_KEYS)[number]
 
