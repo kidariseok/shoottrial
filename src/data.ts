@@ -230,7 +230,7 @@ export const UI = {
     bannerBenchFull: '대기석이 가득 찼습니다',
     bannerIntro: '적 침투 — 병력을 배치하라',
     bannerFlag: '대규모 적 접근!',
-    bannerDefcon: '데프콘 1 — 칵트 피스톨',
+    bannerDefcon: '데프콘 1 — 칵키드 피스톨',
     bannerUnlock: '새 보직 해금',
     bannerRevive: '위병소 부활 — 최후 저지선 복구',
     // ?scene=log 기록 화면(GDD §11). 열마다 쓰는 짧은 말은 별도 키로 둔다
