@@ -32,7 +32,7 @@
 
 ## 4. 작업 큐(순서)
 
-**현재 우선 작업: T-120 모바일 웹/Vercel 배포.** T-119 안드로이드 설치판 준비 결과는 해당 브랜치와 티켓에 보존하고 실기기 단계는 보류한다. 웹 안내는 docs/WEB-DEPLOY.md.
+**현재 우선 작업: T-120 모바일 웹/Vercel 배포.** 구현/검증·Vercel Preview Ready 완료, [PR #48](https://github.com/kidariseok/shoottrial/pull/48) 사용자 병합 대기. 미리보기 https://newbie-defense-git-kidariseok-t120-mobile-web-jspersonal1.vercel.app/ , 운영 https://newbie-defense.vercel.app 은 main 병합 후 갱신. T-119 안드로이드 설치판 준비 결과는 해당 브랜치와 티켓에 보존하고 실기기 단계는 보류한다. 웹 안내는 docs/WEB-DEPLOY.md.
 
 | 순서 | 일 | 상태·티켓 |
 |---|---|---|
@@ -98,6 +98,7 @@
 
 ## 9. 갱신 로그
 
+- 2026-10-30 (T-120 제출): PR #48 https://github.com/kidariseok/shoottrial/pull/48 생성·저장/push 완료. Vercel Preview 자동 배포 Ready·실제 시작→성명 입력 확인. 검증사진6장,365테스트/97에셋·타입/빌드 통과. 다음은 사용자 병합 후 운영주소 최신 시작화면 확인·실물 모바일 체험 피드백. 로컬 검증 서버/검사창 종료. Android 앱 작업은 보류 유지.
 - 2026-10-30 (T-120 전환): 사용자 웹 우선 배포 지시. 최신 main93c0c18ffb8d에서 kidariseok/t120-mobile-web 시작, T-119 APK 준비/미확인 기록을 보류 티켓으로 보존. 모바일 시작/전체화면/홈화면 안내·아이콘/매니페스트·가로안내/씬정지/복귀·웹 체험 보상 확인/취소·Vercel 설정 추가. verify365테스트·97에셋·타입/빌드 통과. production390×844 첫실행4컷·생활관/전투·저장재실행,390×700/320×568 화면·회전·보상6→11/취소유지 확인. Vercel newbie-defense/jspersonal1 생성·운영주소 newbie-defense.vercel.app 확인, 최신 변경 배포는 PR/후속 기록 참고. 실물폰/iOS/홈화면설치/최종 운영배포는 별도 확인.
 
 - 2026-10-29 (T-118 제출): PR #47 https://github.com/kidariseok/shoottrial/pull/47 생성, 사용자 병합 대기. 검사 전용 개발 서버/브라우저 창 종료. 다음 작업 전 실제 병합 여부를 확인한다.

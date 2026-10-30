@@ -90,6 +90,7 @@
 
 ## 결과 보고
 
+- PR: https://github.com/kidariseok/shoottrial/pull/48 (사용자 병합 대기). 로컬 미리보기 서버는 검사 후 종료한다.
 - 변경: index/manifest/웹 런처아이콘3개, src/web.ts·main.ts·CSS 모바일 시작/전체화면·설치 안내/가로 처리, ads/platform/screens/lobby의 웹 체험 보상 명시, 테스트1개 추가, Vercel 설정·배포 안내·보류 T-119/HANDOFF, 좁은 디자인 훅 오탐 예외. 새 의존성/전투 규칙/공유 함수 시그니처 변경 없음.
 - 검증: npm run verify 통과. 23파일365테스트, 실제에셋97개, 타입검사/빌드 성공. 기존 번들500KB 경고 유지. git diff --check 통과.
 - 실제 production preview: 터치390×844 첫진입→이름 웹신병→브리핑4컷→생활관, 재실행 후 이름 웹검증/firstRun=false 유지·캔버스1개. 생활관→전투, 카드구매 보급6→5. 체험 보급 취소6유지/승인11을 실제 DOM 갱신으로 확인.390×700/320×568 가로넘침없음,844×390 안내/세로복귀, 해당 모바일검사 pageerror0. 매니페스트200.
