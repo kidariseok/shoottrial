@@ -53,6 +53,7 @@ beforeEach(async () => {
   })
   vi.stubGlobal('document', { addEventListener: vi.fn() })
   audio = await import('../src/audio')
+  audio.setBgmEnabled(true)
   audio.initAudio({ bgm: true, sfx: true })
 })
 
