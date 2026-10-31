@@ -102,6 +102,7 @@
 
 ## 9. 갱신 로그
 
+- T-124 실제 미리보기 Ready 확인(12ad200), https://newbie-defense-git-kidariseok-t124-checkpoint-coin-jspersonal1.vercel.app/ 에서 게임 시작 후 코인8개 로드·잔액/가격 표시 확인. 로컬 검사 서버/페이지 종료, 사용자 PR #55 병합 후 운영 반영.
 - T-124 PR #55 https://github.com/kidariseok/shoottrial/pull/55 제출. 사용자 병합 후 운영 반영. 승인된 B 코인만 적용했고 다른 세션 음악/앱인토스/렌더링 작업은 포함하지 않았다. 검사 서버/로컬 페이지는 확인 후 종료한다.
 - 2026-10-31 (T-124): 사용자 코인 시안 B 선택/게임 적용 승인. origin/main71462f2 별도 워크트리에서 진행하여 원본 폴더의 음악/앱인토스 등 변경 보존. 승인 강철 위병소 원본을 기존 처리기로64×64 PNG(6987바이트)·계약115/실제98·장부/색인/메타 등록, raw PNG 미커밋. HUD24px/카드18px/리롤/지급에 코인+금액·접근성 의미·누락 대체. 관련 자원 문구만 정리, 경제 수치/공유 함수 변경 없음. verify25파일387테스트·98에셋·타입/빌드 통과(기존 경고 유지). production390×844 금액6→5→4→9·보유0부족 안내,320×568 화면 안 배치/누락대체8개·pageerror0. 사진4장 T-124*.png. 실물/스크린리더 체감은 미확인. 다음은 사용자 PR 병합 후 운영 적용 확인.
 - T-121 PR #51 https://github.com/kidariseok/shoottrial/pull/51 제출·Vercel Preview Ready(443a222) 확인. 실제 시작 화면: https://newbie-defense-git-kidariseok-t121-enemy-review-jspersonal1.vercel.app/ . 사용자 #48→#51 병합 후 운영에 반영한다. 검사 서버/로컬 페이지 종료, 별도 워크트리와 음악 작업 보존.
