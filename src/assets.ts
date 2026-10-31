@@ -47,6 +47,7 @@ const ENEMY_CONTRACTS: AssetContract[] = [
 ]
 
 const FX_AND_BOARD_CONTRACTS: AssetContract[] = [
+  { key: 'icon_coin', w: 64, h: 64, frames: 1, color: '#78838b', label: '위병소 코인' },
   { key: 'fx_muzzle', w: 32, h: 32, frames: 2, color: '#ffd700', label: 'fx_muzzle' },
   { key: 'fx_wind', w: 128, h: 256, frames: 4, color: '#87ceeb', label: 'fx_wind' },
   { key: 'fx_flame', w: 128, h: 256, frames: 4, color: '#ff4500', label: 'fx_flame' },

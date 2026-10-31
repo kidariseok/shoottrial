@@ -67,7 +67,7 @@ export const SPECIALTIES = {
   rifle: { A: { name: '사수', description: '사거리 +1.5칸, 공격 간격 ×1.15', range: 1.5, interval: 1.15 }, B: { name: '돌격', description: '사거리 −1칸, 간격 ×0.75, 1.5칸 안 피해 ×1.3', range: -1, interval: 0.75, reach: 1.5, damage: 1.3 } },
   sniper: { A: { name: '정밀', description: '첫 명중 대상 피해 ×1.5', damage: 1.5 }, B: { name: '관통', description: '사선 폭 0.8칸, 관통 감쇠 10%', width: 0.8, falloff: 0.1 } },
   blower: { A: { name: '방벽', description: 'HP ×1.2, 받는 피해 −25%, 도발 2.5칸', hp: 1.2, armor: 0.75, taunt: 2.5 }, B: { name: '돌풍', description: '밀기 ×1.5, 취약 3.5초, 간격 ×0.8', knock: 1.5, vuln: 3.5, interval: 0.8 } },
-  cook: { A: { name: '영양', description: '회복량 18', heal: 18 }, B: { name: '보급', description: '웨이브 클리어 보급 +1', supply: 1 } },
+  cook: { A: { name: '영양', description: '회복량 18', heal: 18 }, B: { name: '보급', description: '웨이브 클리어 코인 +1', supply: 1 } },
   miner: { A: { name: '다량 매설', description: '지뢰 토큰 +1', tokens: 1 }, B: { name: '부비트랩', description: '폭발 범위 안 적 1초 기절', stun: 1 } },
   chem: { A: { name: '제독', description: '제독·보호 범위 +1칸, 제독 주기 2초', reach: 1, interval: 2 }, B: { name: '화생방 사격', description: '직접 공격에 3초 중독, 초당 4 피해', poisonSec: 3, poisonDps: 4 } },
   medic: { A: { name: '응급처치', description: '소생 시간 −2초, 소생 HP 50%', treatmentReduction: 2, reviveRatio: 0.5 }, B: { name: '위생', description: '인접 아군 받는 피해 −10%', damageMult: 0.9 } },
@@ -227,7 +227,7 @@ export const UI = {
     labelColor: '#cfd8dc',
     lineLabelColor: '#2b2b2b', // 노란 방어선 띠 위 라벨(밝은 라벨색은 안 읽힌다)
     lineUsed: '저지선 소진',
-    bannerPoor: '보급이 부족합니다',
+    bannerPoor: '코인이 부족합니다',
     bannerBenchFull: '대기석이 가득 찼습니다',
     bannerIntro: '적 침투 — 병력을 배치하라',
     bannerFlag: '대규모 적 접근!',

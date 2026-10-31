@@ -1205,6 +1205,17 @@
       "edited": true,
       "checked": "2026-10-29",
       "mapping": "s,sw,w,nw,n,ne,e,se; 아빠다리8방향; 발끝116; 높이74"
+    },
+    {
+      "id": "icon_coin",
+      "file": "public/assets/icon_coin.png",
+      "source": "art/source/icon_coin",
+      "tool": "openai-imagegen",
+      "prompt": "docs/tickets/T-124-checkpoint-coin.md#승인-그림과-프롬프트",
+      "license": "proprietary",
+      "edited": true,
+      "checked": "2026-10-31",
+      "scale": 0.05178
     }
   ]
 }
