@@ -313,6 +313,21 @@ body { height: 100dvh; }
   font-weight: 800;
 }
 
+.currency-coin {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+.currency-coin img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.coin-fallback { color: #b8c2ca; font-size: 20px; line-height: 1; }
+.currency-balance .currency-coin { width: 24px; height: 24px; }
+.currency-balance .val { font-size: 14px; font-variant-numeric: tabular-nums; }
+.hud-supply-ad-btn, .shop-btn-reroll { display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
+
 .hud-stat-pill.hp-pill .val {
   color: #a8e063;
 }
@@ -523,6 +538,9 @@ body { height: 100dvh; }
 }
 
 .shop-card-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 9.5px;
   font-weight: 800;
   color: var(--accent-supply);
@@ -531,6 +549,8 @@ body { height: 100dvh; }
   padding: 1px 3px;
   line-height: 1;
 }
+.shop-card-cost .currency-coin { width: 18px; height: 18px; }
+.shop-card-cost .coin-fallback { font-size: 18px; }
 
 .shop-actions {
   display: grid;
@@ -1564,8 +1584,8 @@ body { height: 100dvh; }
   position: absolute;
   top: 2px;
   right: 2px;
-  background: var(--gold);
-  color: #1a1608;
+  background: var(--olive-bg-dark);
+  color: var(--text-cream);
 }
 
 .shop-btn-go {

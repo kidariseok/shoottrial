@@ -3,7 +3,7 @@ import { watchAd } from '../ads'
 import { fetchAvailableAssets } from '../assets'
 import { playSfx } from '../audio'
 import { isNative } from '../platform'
-import { BATTLE, SPECIALTIES, type CardKey } from '../data'
+import { BATTLE, ECONOMY, REWARD, SPECIALTIES, type CardKey } from '../data'
 import {
   canFireSupport,
   cloneHud,
@@ -17,6 +17,24 @@ import {
   sortSynergies,
 } from './helpers'
 import { closePanel, showLobby } from './lobby'
+
+// 승인된 B안. 금액의 의미는 부모의 접근성 이름으로 제공하고 그림 자체는 장식으로 둔다.
+function coinIcon(): HTMLSpanElement {
+  const wrap = document.createElement('span')
+  wrap.className = 'currency-coin'
+  wrap.setAttribute('aria-hidden', 'true')
+  const image = document.createElement('img')
+  image.src = '/assets/icon_coin.png'
+  image.alt = ''
+  image.width = image.height = 64
+  image.addEventListener('error', () => {
+    image.remove()
+    wrap.textContent = '●'
+    wrap.classList.add('coin-fallback')
+  }, { once: true })
+  wrap.appendChild(image)
+  return wrap
+}
 
 // T-110: 카드 그림이 실제로 있는 키(assets/index.json). 없으면 글자 상자로 폴백한다
 // ponytail: 첫 상점이 열리기 전에 목록이 안 왔으면 그 판 첫 상점만 그림 없이 열린다, 그 뒤 렌더부터 적용
@@ -149,13 +167,13 @@ function ensureRefs(): UiRefs | null {
   statsGroup.className = 'hud-left-group'
 
   const supplyPill = document.createElement('div')
-  supplyPill.className = 'hud-stat-pill'
-  const supplyLabel = document.createElement('span')
-  supplyLabel.textContent = '보급'
+  supplyPill.className = 'hud-stat-pill currency-balance'
+  supplyPill.setAttribute('role', 'img')
+  supplyPill.setAttribute('aria-label', '보유 코인 0개')
   const supplyVal = document.createElement('span')
   supplyVal.className = 'val'
   supplyVal.textContent = '0'
-  supplyPill.append(supplyLabel, supplyVal)
+  supplyPill.append(coinIcon(), supplyVal)
 
   const hpPill = document.createElement('div')
   hpPill.className = 'hud-stat-pill hp-pill'
@@ -175,7 +193,8 @@ function ensureRefs(): UiRefs | null {
   const supplyAdBtn = document.createElement('button')
   supplyAdBtn.type = 'button'
   supplyAdBtn.className = 'mil-btn brass hud-supply-ad-btn'
-  supplyAdBtn.textContent = isNative() ? '📺 긴급보급 +5' : '체험 보급 +5'
+  supplyAdBtn.append(isNative() ? '📺 ' : '체험 ', coinIcon(), `+${REWARD.adSupplyAmount}`)
+  supplyAdBtn.setAttribute('aria-label', `${isNative() ? '광고 보고' : '체험'} 코인 ${REWARD.adSupplyAmount}개 받기`)
   supplyAdBtn.addEventListener('click', () => {
     if (!currentCtl || supplyAdBtn.disabled) return
     supplyAdBtn.disabled = true
@@ -216,7 +235,8 @@ function ensureRefs(): UiRefs | null {
   const rerollBtn = document.createElement('button')
   rerollBtn.type = 'button'
   rerollBtn.className = 'mil-btn shop-btn-reroll'
-  rerollBtn.textContent = '리롤 (1)'
+  rerollBtn.append('리롤 ', coinIcon(), String(ECONOMY.rerollCost))
+  rerollBtn.setAttribute('aria-label', `상점 리롤, 코인 ${ECONOMY.rerollCost}개 사용`)
 
   const freeRerollBtn = document.createElement('button')
   freeRerollBtn.type = 'button'
@@ -394,6 +414,7 @@ export function hud(h: Hud): void {
   r.defconBadge.className = `hud-defcon-badge defcon-${h.defcon}`
 
   r.supplyVal.textContent = String(h.supply)
+  r.supplyVal.parentElement?.setAttribute('aria-label', `보유 코인 ${h.supply}개`)
   r.hpVal.textContent = String(h.baseHp)
   // 위병소 HP 막대: 시작 HP 대비 비율, 30% 이하면 붉게
   hpMax = Math.max(hpMax, h.baseHp)
@@ -479,7 +500,8 @@ export function shop(
 
       const costEl = document.createElement('div')
       costEl.className = 'shop-card-cost'
-      costEl.textContent = `보급 ${offer.cost}`
+      costEl.append(coinIcon(), String(offer.cost))
+      btn.setAttribute('aria-label', `${getCardName(offer.card)} 구매, 코인 ${offer.cost}개${insufficient ? ', 코인 부족' : ''}`)
 
       btn.append(initialEl, nameEl, costEl)
       btn.addEventListener('click', () => onBuy(i))

@@ -95,5 +95,6 @@
   "walk_lee_idle",
   "walk_park_idle",
   "walk_lee_sit",
-  "walk_park_sit"
+  "walk_park_sit",
+  "icon_coin"
 ]
