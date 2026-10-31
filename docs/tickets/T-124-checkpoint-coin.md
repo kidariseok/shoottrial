@@ -85,6 +85,7 @@
 
 ## 결과 보고
 
+- PR: https://github.com/kidariseok/shoottrial/pull/55 (사용자 병합 대기). 원본 PNG 미커밋 확인: 추적하는 source 파일은 meta.json만이다.
 - 변경: 승인 B 원본을 기존 처리기로 icon_coin64×64/6987바이트/투명1669픽셀로 가공. 계약115개·실제에셋98개, 색인·장부·출처 메타 일치. 원본 PNG는 ignored art/source/icon_coin/01.png에 보존, 미커밋.
 - UI: HUD24px·카드18px 코인과 금액, 리롤/체험 지급도 같은 아이콘. 보유량/가격/비용/지급은 접근성 이름으로 의미 제공. 이미지 누락 시 은회색 원형 대체. 부족 안내/체험 지급/취사병 설명과 대사에서 구매 자원을 코인으로 안내. 내부 supply 변수·보상/가격·경제 규칙·공유 함수 변경 없음.
 - 검증: npm run verify 통과(25파일387테스트·98에셋·타입/빌드). 기존 번들500KB 경고·Node localStorage 실험 경고 유지. git diff --check 통과.
