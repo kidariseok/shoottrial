@@ -1,6 +1,6 @@
 # T-126 FIGHTSHOOT UX 1차 — Edge-to-Edge 필러박스 제거 + 생활관 상하 마감 + 전투 하단 2단 카드바 확대
 
-상태: 진행 중
+상태: 완료(PR 제출 · QA/실기기 검증 대기)
 담당: Antigravity · Gemini 4 Neon (High) (역할 카드: docs/agents/antigravity.md)
 
 ## 목표
@@ -47,17 +47,17 @@ iPhone 15 Pro(393×852 pt)를 포함한 모바일 화면에서 `#game` 캔버스
 
 - `npm run verify`
 - `npx cap sync ios`
-- `xcodebuild` iOS 시뮬레이터 빌드
+- `xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination "id=8349CC07-74C9-4B6C-9491-11FE7811B469" -derivedDataPath /tmp/defcon2-ios-dd-t126 build`
 
 ## 완료 조건
 
-- [ ] 393×852(iPhone 15 Pro)에서 좌우 필러박스 0px 및 `#shop` 좌우 밀착 확인
-- [ ] 생활관 상·하단 검은 공백 마감 및 Safe Area 준수(기존 구역 좌표·히트박스 유지)
-- [ ] 전투 하단 `#shop` 2단 분리(393×852 기준 높이 120~136px, 카드 72~74×88~96px), 역할 배지·기능 요약·`i` 버튼 동작 및 `위병소 방어선`/`판매` 겹침 0px
-- [ ] `npm run verify` 통과 (EXIT 0)
-- [ ] `npx cap sync ios` 통과 및 `Package.swift` AdMob 0건 유지
-- [ ] `xcodebuild` 시뮬레이터 빌드 통과
-- [ ] `main` 대상 PR 생성(미병합)
+- [x] 393×852(iPhone 15 Pro)에서 좌우 필러박스 0px 및 `#shop` 좌우 밀착 확인
+- [x] 생활관 상·하단 검은 공백 마감 및 Safe Area 준수(기존 구역 좌표·히트박스 유지)
+- [x] 전투 하단 `#shop` 2단 분리(393×852 기준 높이 133.2px, 카드 73×88.2px), 역할 배지·기능 요약·`i` 버튼 동작 및 `위병소 방어선`/`판매` 겹침 0px
+- [x] `npm run verify` 통과 (28파일 405테스트 · 97에셋 · 빌드, EXIT 0)
+- [x] `npx cap sync ios` 통과 및 `Package.swift` AdMob 0건 유지
+- [x] `xcodebuild` 시뮬레이터 빌드 통과 (`** BUILD SUCCEEDED **`)
+- [x] `main` 대상 PR 생성(미병합)
 
 디버그 URL: `http://localhost:5173/?scene=battle&unlock=all&supply=12&safe=1`, `http://localhost:5173/?scene=walk&safe=1`
 
@@ -78,15 +78,24 @@ iPhone 15 Pro(393×852 pt)를 포함한 모바일 화면에서 `#game` 캔버스
 - 브랜치: `kidariseok/ux-edge-cardbay`
 - 세션 시작: Antigravity · Gemini 4 Neon (High), 2026-11-21
 - [x] 0단계: `origin/main`(`26ee971`) 동기화 확인 및 `T-126` 티켓 생성
+- [x] 1단계: `#game` Edge-to-Edge 전환(`style.css`, `device.ts`, `main.ts`) + 생활관(`walk.ts`) 상·하단 군용 천장/복도 마감 및 Safe Area HUD/CTA 보정
+- [x] 2단계: 전투 하단 `#shop` 2단 분리(`helpers.ts`, `screens.ts`, `style.css`), 10종 병과 역할 배지·기능 요약·`i` 버튼(`stopPropagation` → 상세 정보 모달) 및 준비 단계 카메라 `scrollY` 보정으로 방어선/판매 겹침 0px 구현
+- [x] 3단계: `tests/ux-edge-cardbay.test.ts` 추가, `npm run verify`(28파일 405테스트·97에셋·빌드 EXIT 0), `npx cap sync ios`(3플러그인·AdMob 0건), `xcodebuild` 시뮬레이터 빌드(`** BUILD SUCCEEDED **`) 및 Headless Chrome 393×852 / 375×667 실측·시각 검증 완료
+- [x] 4단계: 최종 커밋·푸시 및 `main` 대상 PR 생성(미병합)
 
 ## 결과 보고
 
-- 바뀐 파일:
+- 바뀐 파일: `docs/tickets/T-126-ux-edge-cardbay.md`, `src/device.ts`, `src/main.ts`, `src/ui/helpers.ts`, `src/ui/screens.ts`, `src/ui/style.css`, `src/ui/walk.ts`, `tests/ux-edge-cardbay.test.ts` (레인 A 및 읽기 전용 문서 무변경, 신규 npm 의존성 0건)
 - 검증 결과:
-- 스크린샷:
-- 사용자 확인 방법:
-- 확인하지 못한 점:
-- 다음 제안:
+  - `npm run verify`: EXIT 0 (`tsc --noEmit`, Vitest 28파일 405케이스 통과, `assets:check` 97개 통과, `vite build` 성공)
+  - `npx cap sync ios`: EXIT 0 (iOS 플러그인 3종 유지, `ios/App/CapApp-SPM/Package.swift` 내 AdMob 0건)
+  - `xcodebuild` (iPhone 18 Pro 시뮬레이터 `8349CC07-74C9-4B6C-9491-11FE7811B469`): `** BUILD SUCCEEDED **` (EXIT 0)
+  - 실측(393×852, `--sa-top: 59px`, `--sa-bottom: 34px`): 좌우 필러박스 `0px` (캔버스 렌더 폭 `393px`), `#shop` 크기 `393 × 133.2px` (`bottom: 34px`), 카드 1장 `73 × 88.2px`, `위병소 방어선`/`대기석`/`판매` 드롭존 겹침 `0px`
+  - 실측(375×667 SE, `--sa-top: 20px`, `--sa-bottom: 0px`): `#shop` 컴팩트 높이 `98px`, 카드 1장 `69.8 × 61px`, `위병소 방어선`/`대기석`/`판매` 겹침 `0px`
+- 스크린샷: Headless Chrome 393×852(`battle`, `battle info modal`, `walk`) 및 375×667(`battle`) 4종 시각 검증 완료 (후속 QA 워커에서 iOS 시뮬레이터 3종 스크린샷 검증 예정)
+- 사용자 확인 방법: `npm run dev` 실행 후 `/?scene=battle&unlock=all&supply=12&safe=1` 및 `/?scene=walk&safe=1`에서 393×852/375×667 뷰포트와 카드 `i` 버튼 동작 확인
+- 확인하지 못한 점: iPhone 15 Pro 실기기 재설치 후 터치 감도·시뮬레이터 3종 최종 스크린샷은 후속 QA 단계에서 수행 예정
+- 다음 제안: 2차 작업(랜딩/타이틀 화면 · 작전 교범 · 병과 도감 확장)을 별도 티켓으로 진행
 
 ## 인계 메모
 
