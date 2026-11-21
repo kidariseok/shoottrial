@@ -1,8 +1,8 @@
-import { isNative } from './platform'
+import { hasAds } from './platform'
 
 // ponytail: 온라인 웹 체험판. 오프라인 저장 캐시는 배포 후 갱신 정책을 정할 때 추가한다.
 export async function startWeb(onRotate: (blocked: boolean) => void): Promise<void> {
-  if (isNative()) return
+  if (hasAds()) return
   const rotate = document.createElement('div')
   rotate.className = 'web-rotate hidden'
   rotate.setAttribute('role', 'status')

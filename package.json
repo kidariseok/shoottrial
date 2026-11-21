@@ -9,9 +9,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "assets:check": "node scripts/assets-check.mjs",
-    "verify": "npm run typecheck && npm run test && npm run assets:check && npm run build"
+    "verify": "npm run typecheck && npm run test && npm run assets:check && npm run build",
+    "dev:toss": "vite --host --mode toss",
+    "build:toss": "vite build --mode toss --outDir dist-toss --emptyOutDir && ait build"
   },
   "dependencies": {
+    "@apps-in-toss/web-framework": "^3.9.0",
     "@capacitor-community/admob": "^8.2.1",
     "@capacitor/android": "8.5.3",
     "@capacitor/app": "8.1.2",

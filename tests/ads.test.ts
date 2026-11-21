@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const showRewarded = vi.fn()
 const mute = vi.fn()
 const unmute = vi.fn()
-const isNative = vi.fn(() => true)
-vi.mock('../src/platform', () => ({ showRewarded: () => showRewarded(), isNative: () => isNative() }))
+const hasAds = vi.fn(() => true)
+vi.mock('../src/platform', () => ({ showRewarded: () => showRewarded(), hasAds: () => hasAds() }))
 vi.mock('../src/audio', () => ({ mute: (r: string) => mute(r), unmute: (r: string) => unmute(r) }))
 
 import { watchAd } from '../src/ads'
@@ -14,7 +14,7 @@ describe('watchAd', () => {
     showRewarded.mockReset()
     mute.mockReset()
     unmute.mockReset()
-    isNative.mockReturnValue(true)
+    hasAds.mockReturnValue(true)
   })
 
   it('rewarded일 때만 true', async () => {
@@ -45,7 +45,7 @@ describe('watchAd', () => {
   })
 
   it('웹에서 확인할 화면이 없으면 보상하지 않고 광고 SDK도 호출하지 않는다', async () => {
-    isNative.mockReturnValue(false)
+    hasAds.mockReturnValue(false)
     expect(await watchAd('supply')).toBe(false)
     expect(showRewarded).not.toHaveBeenCalled()
     expect(mute).not.toHaveBeenCalled()

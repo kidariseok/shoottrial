@@ -34,6 +34,8 @@
 
 **T-121 적 위협 개선 완료·PR 제출 준비:** 보병/RPG/장갑차 사거리·첫 조준 개정, 돌격4·방패6·지정사수7웨이브 도입, 전체 적 수 유지·피해도 웨이브당 기본값10% 증가. 워크트리 /private/tmp/moonfish-t121, 브랜치 kidariseok/t121-enemy-review. T-120 #48을 포함한 선행 관계라 병합은 #48부터. 별도 음악 T-122는 원본 폴더에 보존하고 이 PR에 포함하지 않는다.
 
+**T-123 앱인토스 발행 준비(코드 완료, 브랜치 kidariseok/t123-apps-in-toss, 기준 origin/main 71462f2):** `npm run build:toss`로 .ait 생성·verify(389테스트) 통과. 남은 일은 사용자 몫(콘솔 가입, appName 결정, 등급분류, QR 실기기 테스트) — docs/TOSS-DEPLOY.md.
+
 **현재 우선 작업: T-120 모바일 웹/Vercel 배포.** 구현/검증·Vercel Preview Ready 완료, [PR #48](https://github.com/kidariseok/shoottrial/pull/48) 사용자 병합 대기. 미리보기 https://newbie-defense-git-kidariseok-t120-mobile-web-jspersonal1.vercel.app/ , 운영 https://newbie-defense.vercel.app 은 main 병합 후 갱신. T-119 안드로이드 설치판 준비 결과는 해당 브랜치와 티켓에 보존하고 실기기 단계는 보류한다. 웹 안내는 docs/WEB-DEPLOY.md.
 
 | 순서 | 일 | 상태·티켓 |

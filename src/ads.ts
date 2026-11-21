@@ -1,6 +1,6 @@
 // 보상형 광고 흐름(T-107): 음소거 → 표시 → 결과. 플러그인은 platform.ts만 건드린다.
 import { mute, unmute } from './audio'
-import { isNative, showRewarded } from './platform'
+import { hasAds, showRewarded } from './platform'
 
 export type AdSlot = 'revive' | 'reroll' | 'supply'
 
@@ -59,7 +59,7 @@ function showFailModal(): void {
 export async function watchAd(_slot: AdSlot): Promise<boolean> {
   if (playing) return false
   playing = true
-  if (!isNative()) {
+  if (!hasAds()) {
     try { return await confirmWebReward(_slot) }
     finally { playing = false }
   }
