@@ -43,10 +43,11 @@ export function computeCanvasLayout(
   canvasRect: { left: number; right: number; bottom: number; width: number },
   areaRect: { left: number; right: number; bottom: number; width: number; height: number }
 ): { scale: number; bottomGap: number; leftGap: number; rightGap: number } {
+  const clampGap = (v: number): number => (v <= 1e-9 ? 0 : v)
   const scale = canvasRect.width > 0 ? canvasRect.width / 720 : 1
-  const bottomGap = Math.max(0, areaRect.bottom - canvasRect.bottom)
-  const leftGap = Math.max(0, canvasRect.left - areaRect.left)
-  const rightGap = Math.max(0, areaRect.right - canvasRect.right)
+  const bottomGap = clampGap(areaRect.bottom - canvasRect.bottom)
+  const leftGap = clampGap(canvasRect.left - areaRect.left)
+  const rightGap = clampGap(areaRect.right - canvasRect.right)
   return { scale, bottomGap, leftGap, rightGap }
 }
 
