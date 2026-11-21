@@ -1406,6 +1406,18 @@ body { height: 100dvh; }
   opacity: 0.75;
 }
 
+.lobby-settings-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lobby-link-btn {
+  min-height: 36px;
+  font-size: 11.5px;
+  color: var(--accent-brass);
+}
+
 .lobby-credits {
   background: rgba(0, 0, 0, 0.32);
   border: 1px solid var(--outline-dark);

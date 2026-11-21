@@ -52,10 +52,15 @@ export function isToss(): boolean {
   return ait !== null
 }
 
+// 플랫폼 상태 조합별 보상형 광고 지원 여부(안드로이드·토스만 true, iOS 1단계 무광고·웹은 false)
+export function hasAdsForPlatform(native: boolean, platform: string, toss: boolean): boolean {
+  if (native && platform === 'ios') return false
+  return native || toss
+}
+
 // 실제 보상형 광고를 쓸 수 있는 환경(안드로이드 앱 또는 토스 미니앱). iOS(1단계 무광고)와 웹 체험판은 false.
 export function hasAds(): boolean {
-  if (isIos()) return false
-  return Capacitor.isNativePlatform() || ait !== null
+  return hasAdsForPlatform(Capacitor.isNativePlatform(), Capacitor.getPlatform(), ait !== null)
 }
 
 // ── 햅틱 피드백 (iOS/Android 네이티브, T-125) ──

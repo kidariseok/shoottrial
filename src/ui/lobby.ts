@@ -1,7 +1,7 @@
 import { fetchAvailableAssets } from '../assets'
 import { playBgm, playSfx, setSettings, type SfxKey } from '../audio'
 import { defaultSave, load, save, type Save } from '../save'
-import { hasAds } from '../platform'
+import { hapticImpact, hapticSelection, hasAds, isNative } from '../platform'
 import { cardInfo, cardInfoDetail } from './screens'
 import {
   ALL_CARDS,
@@ -16,6 +16,8 @@ import {
 } from './helpers'
 
 const LOCAL_UNLOCKED_KEY = 'd2_unlocked'
+export const PRIVACY_POLICY_URL = 'https://newbie-defense.vercel.app/privacy.html'
+export const SUPPORT_URL = 'https://newbie-defense.vercel.app/support.html'
 
 export const BRIEFING_CUTS = [
   {
@@ -281,6 +283,7 @@ export const isPanelOpen = (): boolean => panelOpen
 
 // 전투 투입: 걷는 화면 어디서나 같은 동작
 export function deploy(): void {
+  if (currentSave.settings.haptic) void hapticImpact('heavy')
   playBgm(null)
   closePanel()
   hideLobbyOverlay()
@@ -390,6 +393,9 @@ function adminBody(): HTMLElement {
           currentSave = { ...currentSave, settings: { ...currentSave.settings, [d.key]: !currentSave.settings[d.key] } }
           setSettings({ bgm: currentSave.settings.bgm, sfx: currentSave.settings.sfx })
           void save(currentSave)
+          if (d.key === 'haptic' && currentSave.settings.haptic) {
+            void hapticImpact('light')
+          }
         }
       )
     )
@@ -406,13 +412,25 @@ function adminBody(): HTMLElement {
       }
     )
   )
+  const links = el('div', 'lobby-settings-links')
+  const privacyBtn = el('button', 'mil-btn lobby-link-btn', '개인정보 처리방침') as HTMLButtonElement
+  privacyBtn.type = 'button'
+  privacyBtn.addEventListener('click', () => {
+    window.open(PRIVACY_POLICY_URL, '_blank', 'noopener,noreferrer')
+  })
+  const supportBtn = el('button', 'mil-btn lobby-link-btn', '고객 지원 · 문의') as HTMLButtonElement
+  supportBtn.type = 'button'
+  supportBtn.addEventListener('click', () => {
+    window.open(SUPPORT_URL, '_blank', 'noopener,noreferrer')
+  })
+  links.append(privacyBtn, supportBtn)
   const credits = el('footer', 'lobby-credits')
   credits.append(
     el('div', '', '이 게임은 허구이며 실제 인물·부대·사건과 관계없습니다.'),
     el('div', '', '일부 그래픽은 생성형 AI로 제작되었습니다.'),
     el('div', '', '오픈소스: Phaser (MIT) · Capacitor (MIT)')
   )
-  box.append(grid, credits)
+  box.append(grid, links, credits)
   return box
 }
 
@@ -428,11 +446,22 @@ function pxBody(): HTMLElement {
       locked.length > 0 ? `아직 못 쓰는 병과: ${locked.map(getCardName).join(', ')}` : '모든 병과를 쓸 수 있다. 수고했다.'
     )
   )
-  if (!hasAds()) box.appendChild(el('p', 'lobby-panel-note', '웹 체험판은 일반 플레이에서 웨이브 5에 도달하면 다음 병과를 해금합니다.'))
-  const btn = el('button', 'mil-btn action-go lobby-px-btn', hasAds() ? '광고 보고 해금 (준비 중)' : '플레이로 병과 해금') as HTMLButtonElement
-  btn.type = 'button'
-  btn.disabled = true
-  box.appendChild(btn)
+  if (!hasAds()) {
+    box.appendChild(
+      el(
+        'p',
+        'lobby-panel-note',
+        isNative()
+          ? '일반 플레이에서 웨이브 5에 도달하면 다음 병과를 해금합니다.'
+          : '웹 체험판은 일반 플레이에서 웨이브 5에 도달하면 다음 병과를 해금합니다.'
+      )
+    )
+  } else {
+    const btn = el('button', 'mil-btn action-go lobby-px-btn', '광고 보고 해금 (준비 중)') as HTMLButtonElement
+    btn.type = 'button'
+    btn.disabled = true
+    box.appendChild(btn)
+  }
   return box
 }
 
@@ -447,6 +476,7 @@ const PANELS: Record<PanelKind, { title: string; body: () => HTMLElement }> = {
 export function openPanel(kind: PanelKind): void {
   const wrap = ensureOverlay()
   if (!wrap) return
+  if (currentSave.settings.haptic) void hapticSelection()
   const def = PANELS[kind]
   wrap.innerHTML = ''
   wrap.className = 'ui-lobby-overlay mode-panel'

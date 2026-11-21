@@ -1,21 +1,26 @@
 // 보상형 광고 흐름(T-107): 음소거 → 표시 → 결과. 플러그인은 platform.ts만 건드린다.
 import { mute, unmute } from './audio'
-import { hasAds, showRewarded } from './platform'
+import { hasAds, isNative, showRewarded } from './platform'
 
 export type AdSlot = 'revive' | 'reroll' | 'supply'
 
 let playing = false
 
-function confirmWebReward(slot: AdSlot): Promise<boolean> {
+function confirmNoAdReward(slot: AdSlot): Promise<boolean> {
   const root = typeof document === 'undefined' ? null : document.getElementById('ui')
   if (!root) return Promise.resolve(false)
   const labels: Record<AdSlot, string> = { revive: '부활', reroll: '무료 리롤', supply: '긴급보급 +5' }
+  const isWeb = !isNative()
+  const modalTitle = isWeb ? '웹 체험 보상' : '작전 지원 보상'
+  const modalMsg = isWeb
+    ? `웹 체험판에서는 광고 없이 ${labels[slot]}을 제공합니다. 사용 횟수 제한은 유지됩니다.`
+    : `작전 지원으로 광고 없이 즉시 ${labels[slot]}을 제공합니다. 사용 횟수 제한은 유지됩니다.`
   const backdrop = document.createElement('div')
   backdrop.className = 'ui-modal-backdrop web-reward-backdrop'
   backdrop.setAttribute('role', 'dialog')
   backdrop.setAttribute('aria-modal', 'true')
-  backdrop.setAttribute('aria-label', '웹 체험 보상')
-  backdrop.innerHTML = `<div class="ui-modal-card"><div class="modal-header">웹 체험 보상</div><div class="modal-body"><p class="modal-note">웹 체험판에서는 광고 없이 ${labels[slot]}을 제공합니다. 사용 횟수 제한은 유지됩니다.</p></div><div class="modal-actions"><button type="button" class="mil-btn web-reward-cancel">취소</button><button type="button" class="mil-btn action-go web-reward-confirm">보상 받기</button></div></div>`
+  backdrop.setAttribute('aria-label', modalTitle)
+  backdrop.innerHTML = `<div class="ui-modal-card"><div class="modal-header">${modalTitle}</div><div class="modal-body"><p class="modal-note">${modalMsg}</p></div><div class="modal-actions"><button type="button" class="mil-btn web-reward-cancel">취소</button><button type="button" class="mil-btn action-go web-reward-confirm">보상 받기</button></div></div>`
   root.appendChild(backdrop)
   return new Promise((resolve) => {
     const finish = (earned: boolean): void => { backdrop.remove(); resolve(earned) }
@@ -60,7 +65,7 @@ export async function watchAd(_slot: AdSlot): Promise<boolean> {
   if (playing) return false
   playing = true
   if (!hasAds()) {
-    try { return await confirmWebReward(_slot) }
+    try { return await confirmNoAdReward(_slot) }
     finally { playing = false }
   }
   mute('ad')
