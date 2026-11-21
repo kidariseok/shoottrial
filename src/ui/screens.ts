@@ -2,7 +2,7 @@
 import { watchAd } from '../ads'
 import { fetchAvailableAssets } from '../assets'
 import { playSfx } from '../audio'
-import { hasAds } from '../platform'
+import { hapticImpact, hapticNotification, hasAds, isNative } from '../platform'
 import { BATTLE, SPECIALTIES, type CardKey } from '../data'
 import {
   canFireSupport,
@@ -16,7 +16,7 @@ import {
   isSameHud,
   sortSynergies,
 } from './helpers'
-import { closePanel, showLobby } from './lobby'
+import { closePanel, getLobbySave, showLobby } from './lobby'
 
 // T-110: 카드 그림이 실제로 있는 키(assets/index.json). 없으면 글자 상자로 폴백한다
 // ponytail: 첫 상점이 열리기 전에 목록이 안 왔으면 그 판 첫 상점만 그림 없이 열린다, 그 뒤 렌더부터 적용
@@ -43,8 +43,15 @@ export type Offer = { card: string; cost: number } | null
 let currentCtl: BattleCtl | null = null
 let lastHud: Hud | null = null
 let currentSpeed: 1 | 2 = 1
+let baseDangerTriggered = false
 let bannerTimer: ReturnType<typeof setTimeout> | null = null
 let defconFlashTimer: ReturnType<typeof setTimeout> | null = null
+
+function triggerHaptic(action: () => Promise<void>): void {
+  if (getLobbySave().settings.haptic) {
+    void action()
+  }
+}
 
 interface UiRefs {
   root: HTMLElement
@@ -175,13 +182,16 @@ function ensureRefs(): UiRefs | null {
   const supplyAdBtn = document.createElement('button')
   supplyAdBtn.type = 'button'
   supplyAdBtn.className = 'mil-btn brass hud-supply-ad-btn'
-  supplyAdBtn.textContent = hasAds() ? '📺 긴급보급 +5' : '체험 보급 +5'
+  supplyAdBtn.textContent = hasAds() ? '📺 긴급보급 +5' : isNative() ? '지원 보급 +5' : '체험 보급 +5'
   supplyAdBtn.addEventListener('click', () => {
     if (!currentCtl || supplyAdBtn.disabled) return
     supplyAdBtn.disabled = true
     void watchAd('supply').then((ok) => {
       supplyAdBtn.disabled = false
-      if (ok) currentCtl?.adSupply()
+      if (ok) {
+        triggerHaptic(() => hapticImpact('light'))
+        currentCtl?.adSupply()
+      }
     })
   })
 
@@ -194,6 +204,7 @@ function ensureRefs(): UiRefs | null {
   supportBtn.textContent = '화력 지원 ×0'
   supportBtn.addEventListener('click', () => {
     if (supportBtn.disabled) return
+    triggerHaptic(() => hapticImpact('medium'))
     currentCtl?.fireSupport?.()
   })
 
@@ -221,13 +232,16 @@ function ensureRefs(): UiRefs | null {
   const freeRerollBtn = document.createElement('button')
   freeRerollBtn.type = 'button'
   freeRerollBtn.className = 'mil-btn brass shop-btn-free-reroll'
-  freeRerollBtn.textContent = hasAds() ? '📺 무료' : '체험 무료'
+  freeRerollBtn.textContent = hasAds() ? '📺 무료' : isNative() ? '지원 무료' : '체험 무료'
   freeRerollBtn.addEventListener('click', () => {
     if (!currentCtl || freeRerollBtn.disabled) return
     freeRerollBtn.disabled = true
     void watchAd('reroll').then((ok) => {
       freeRerollBtn.disabled = false
-      if (ok) currentCtl?.adReroll()
+      if (ok) {
+        triggerHaptic(() => hapticImpact('light'))
+        currentCtl?.adReroll()
+      }
     })
   })
 
@@ -398,8 +412,15 @@ export function hud(h: Hud): void {
   // 위병소 HP 막대: 시작 HP 대비 비율, 30% 이하면 붉게
   hpMax = Math.max(hpMax, h.baseHp)
   const hpPillEl = r.hpVal.parentElement
+  const isDanger = h.baseHp / hpMax <= 0.3
   hpPillEl?.style.setProperty('--hp', `${Math.max(0, Math.min(100, (h.baseHp / hpMax) * 100))}%`)
-  hpPillEl?.classList.toggle('danger', h.baseHp / hpMax <= 0.3)
+  hpPillEl?.classList.toggle('danger', isDanger)
+  if (isDanger && !baseDangerTriggered) {
+    baseDangerTriggered = true
+    triggerHaptic(() => hapticNotification('warning'))
+  } else if (!isDanger) {
+    baseDangerTriggered = false
+  }
 
   if (h.phase === 'prep') {
     r.prepPill.textContent = `준비 ${Math.max(0, Math.ceil(h.prepLeft))}초`
@@ -450,8 +471,14 @@ export function shop(
   if (!r) return
 
   r.shopEl.classList.toggle('closed', !open)
-  r.rerollBtn.onclick = () => onReroll()
-  r.goBtn.onclick = () => onGo()
+  r.rerollBtn.onclick = () => {
+    triggerHaptic(() => hapticImpact('light'))
+    onReroll()
+  }
+  r.goBtn.onclick = () => {
+    triggerHaptic(() => hapticImpact('heavy'))
+    onGo()
+  }
 
   r.shopCards.innerHTML = ''
   for (let i = 0; i < 5; i++) {
@@ -482,7 +509,10 @@ export function shop(
       costEl.textContent = `보급 ${offer.cost}`
 
       btn.append(initialEl, nameEl, costEl)
-      btn.addEventListener('click', () => onBuy(i))
+      btn.addEventListener('click', () => {
+        triggerHaptic(() => hapticImpact('light'))
+        onBuy(i)
+      })
     }
 
     r.shopCards.appendChild(btn)
@@ -575,7 +605,12 @@ export function banner(text: string, kind: 'flag' | 'defcon' | 'info'): void {
   r.bannerEl.textContent = text
   r.bannerEl.className = `ui-banner kind-${kind}`
 
+  if (kind === 'flag') {
+    triggerHaptic(() => hapticNotification('warning'))
+  }
+
   if (kind === 'defcon') {
+    triggerHaptic(() => hapticNotification('error'))
     const playOptionalSfx = playSfx as (key: string) => boolean
     try {
       playOptionalSfx('sfx_radio')
@@ -611,6 +646,12 @@ export function result(
 ): void {
   const refsObj = ensureRefs()
   if (!refsObj) return
+
+  if (r.win) {
+    triggerHaptic(() => hapticNotification('success'))
+  } else if (!r.gaveUp) {
+    triggerHaptic(() => hapticNotification('error'))
+  }
 
   refsObj.resultBackdrop.innerHTML = ''
   const card = document.createElement('div')
@@ -691,7 +732,11 @@ export function askRevive(onYes: () => void, onNo: () => void): void {
 
   const note = document.createElement('div')
   note.className = 'modal-note'
-  note.textContent = hasAds() ? '광고를 끝까지 보면 부활합니다' : '웹 체험판에서는 광고 없이 부활을 체험할 수 있습니다'
+  note.textContent = hasAds()
+    ? '광고를 끝까지 보면 부활합니다'
+    : isNative()
+      ? '작전 지원으로 부활 기회가 1회 제공됩니다'
+      : '웹 체험판에서는 광고 없이 부활을 체험할 수 있습니다'
 
   body.append(desc, note)
 
@@ -701,7 +746,7 @@ export function askRevive(onYes: () => void, onNo: () => void): void {
   const yesBtn = document.createElement('button')
   yesBtn.type = 'button'
   yesBtn.className = 'mil-btn brass'
-  yesBtn.textContent = hasAds() ? '📺 광고 보고 부활' : '체험 부활'
+  yesBtn.textContent = hasAds() ? '📺 광고 보고 부활' : isNative() ? '작전 지원 부활' : '체험 부활'
   yesBtn.addEventListener('click', () => {
     if (yesBtn.disabled) return
     yesBtn.disabled = true
@@ -742,6 +787,7 @@ export type BattleCtl = {
 
 export function bindBattle(ctl: BattleCtl | null): void {
   if (ctl !== currentCtl || ctl === null) chooseSpecialty(null)
+  if (ctl === null) baseDangerTriggered = false
   currentCtl = ctl
   ensureRefs()
   syncCtlButtons()
@@ -751,6 +797,7 @@ export function lobby(): void {
   chooseSpecialty(null)
   currentCtl = null
   hpMax = BATTLE.baseHp
+  baseDangerTriggered = false
   lastHud = null
   if (bannerTimer !== null) {
     clearTimeout(bannerTimer)
@@ -854,6 +901,7 @@ export function chooseSpecialty(
   cardInfo(null)
   const choices = SPECIALTIES[request.card as CardKey]
   if (!choices) return
+  triggerHaptic(() => hapticImpact('medium'))
   specialtyPick = onPick
   const panel = document.createElement('div')
   panel.className = 'ui-modal-card specialty-card'
@@ -881,6 +929,7 @@ export function chooseSpecialty(
       if (!panel.isConnected || !specialtyPick || !r.pauseBackdrop.classList.contains('hidden')) return
       const pick = specialtyPick
       options.querySelectorAll('button').forEach((b) => { b.disabled = true })
+      triggerHaptic(() => hapticImpact('medium'))
       chooseSpecialty(null)
       pick(spec)
     })

@@ -4,7 +4,12 @@ const showRewarded = vi.fn()
 const mute = vi.fn()
 const unmute = vi.fn()
 const hasAds = vi.fn(() => true)
-vi.mock('../src/platform', () => ({ showRewarded: () => showRewarded(), hasAds: () => hasAds() }))
+const isNative = vi.fn(() => false)
+vi.mock('../src/platform', () => ({
+  showRewarded: () => showRewarded(),
+  hasAds: () => hasAds(),
+  isNative: () => isNative(),
+}))
 vi.mock('../src/audio', () => ({ mute: (r: string) => mute(r), unmute: (r: string) => unmute(r) }))
 
 import { watchAd } from '../src/ads'

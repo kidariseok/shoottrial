@@ -41,8 +41,8 @@ const BGM_FADE_STEP_MS = 30
 const LOOP_FREQ_HZ = 440
 const LOOP_GAIN = 0.12
 
-// 테스트 중 배경음 끔. 배포 직전에 true로 되돌린다(settings.bgm 토글과 별개)
-let bgmEnabled = false
+// 배경음 전역 활성화 여부(settings.bgm 토글과 별개)
+let bgmEnabled = true
 let userBgm = true
 let userSfx = true
 let flagHidden = false
