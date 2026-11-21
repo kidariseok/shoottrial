@@ -1,6 +1,6 @@
 # T-125 iOS 1단계 타깃 구축 · 심사 전 필수 항목 · 햅틱 구현 · 시뮬레이터 빌드
 
-상태: 진행 중
+상태: 완료(PR 검토 및 워커 4 시뮬레이터 QA 대기)
 담당: Antigravity · Gemini 4 Neon (High)
 
 ## 목표
@@ -62,13 +62,13 @@
 
 ## 완료 조건
 
-- [ ] `docs/research/ios-launch.md` 작성 및 플랫폼 API·AdMob 제외 방식 근거 기록
-- [ ] `ios/` 생성, iPhone 전용·세로 고정·`PrivacyInfo.xcprivacy` 번들 포함 확인
-- [ ] `ios/App/CapApp-SPM/Package.swift` 및 iOS `capacitor.config.json`에 `@capacitor-community/admob` 미포함 확인(Android 유지)
-- [ ] 심사 필수 항목·햅틱·무광고 분기·회귀 방지(`startWeb`) 구현 완료
-- [ ] `npm run verify` 통과 (종료 코드 0)
-- [ ] `xcodebuild` 시뮬레이터 빌드 성공 및 `.app` 번들 검증 통과
-- [ ] `main` 대상 PR 생성(병합 전 대기)
+- [x] `docs/research/ios-launch.md` 작성 및 플랫폼 API·AdMob 제외 방식 근거 기록
+- [x] `ios/` 생성, iPhone 전용·세로 고정·`PrivacyInfo.xcprivacy` 번들 포함 확인
+- [x] `ios/App/CapApp-SPM/Package.swift` 및 iOS `capacitor.config.json`에 `@capacitor-community/admob` 미포함 확인(Android 유지)
+- [x] 심사 필수 항목·햅틱·무광고 분기·회귀 방지(`startWeb`) 구현 완료
+- [x] `npm run verify` 통과 (종료 코드 0)
+- [x] `xcodebuild` 시뮬레이터 빌드 성공 및 `.app` 번들 검증 통과
+- [x] `main` 대상 PR 생성(병합 전 대기)
 
 ## 작업 계획
 
@@ -89,11 +89,18 @@
 - 브랜치: `kidariseok/ios-stage1-launch`
 - 세션 시작: Antigravity · Gemini 4 Neon (High), 2026-11-21
 - [x] 0단계: `origin/main` 동기화 확인 (`e3b33fd` 포함 확인)
-- [x] 1단계: 티켓(`T-125-ios-launch.md`), 근거 문서(`docs/research/ios-launch.md`) 초안 및 정적 정책 페이지 작성
+- [x] 1단계: 티켓(`T-125-ios-launch.md`), 근거 문서(`docs/research/ios-launch.md`) 및 정적 정책 페이지(`public/privacy.html`, `public/support.html`) 작성
+- [x] 2단계: `@capacitor/ios@8.5.3`, `@capacitor/haptics@8.0.2` 설치, `capacitor.config.ts`의 `ios.includePlugins`로 iOS AdMob 완전 제외 + Android AdMob 유지 검증, `npx cap add ios`(SPM), iPhone 전용(`TARGETED_DEVICE_FAMILY = "1"`), 세로 고정, `PrivacyInfo.xcprivacy` 등록
+- [x] 3단계: `src/platform.ts`, `src/web.ts`, `src/ads.ts`, `src/audio.ts`, `src/ui/lobby.ts`, `src/ui/screens.ts`, `src/ui/style.css`, `tests/ads.test.ts`, `tests/ios.test.ts` 구현
+- [x] 4단계: `npm run verify`(27파일 400테스트·97에셋·빌드 EXIT 0), `npx cap sync ios`(3플러그인·AdMob 미포함), `xcodebuild` 시뮬레이터 빌드 성공 및 `.app` 번들 `Info.plist`/`PrivacyInfo.xcprivacy` 검증 완료
+- [x] 5단계: 최종 커밋·푸시 및 `main` 대상 PR 생성(병합 전 대기)
 
 ## 결과 보고
 
-- 바뀐 파일: (작업 완료 후 기록)
-- 검증 결과: (작업 완료 후 기록)
-- 확인하지 못한 점: 실기기 테스트·App Store Connect 등록·실제 지원 이메일 교체·1024px 아이콘 제작(사장님 직접 작업)
-- 다음 제안: 워커 4의 시뮬레이터 3종(iPhone 17e / 18 Pro / 18 Pro Max) `?safe=1` 스크린샷 검증 및 코드 리뷰 진행
+- 바뀐 파일: `package.json`, `package-lock.json`, `capacitor.config.ts`, `src/platform.ts`, `src/ads.ts`, `src/web.ts`, `src/audio.ts`, `src/ui/lobby.ts`, `src/ui/screens.ts`, `src/ui/style.css`, `public/privacy.html`, `public/support.html`, `ios/`, `android/app/capacitor.build.gradle`, `android/capacitor.settings.gradle`, `tests/ads.test.ts`, `tests/ios.test.ts`, `docs/research/ios-launch.md`, `docs/tickets/T-125-ios-launch.md`
+- 검증 결과:
+  - `npm run verify`: EXIT 0 (`tsc --noEmit` 통과, Vitest 27파일 400테스트 통과, `assets:check` 97키 통과, `vite build` 통과)
+  - `npx cap sync ios`: EXIT 0 (`@capacitor/app@8.1.2`, `@capacitor/haptics@8.0.2`, `@capacitor/preferences@8.0.1` 3종만 동기화, AdMob 미포함)
+  - `xcodebuild` 시뮬레이터 빌드(iPhone 18 Pro `8349CC07-74C9-4B6C-9491-11FE7811B469`): `** BUILD SUCCEEDED **` (EXIT 0), `.app` 번들 내 `PrivacyInfo.xcprivacy` `plutil -lint` OK 및 `Info.plist` (`io.github.kidariseok.defcon2`, `데프콘 2: 화스트 페이스`, `UIInterfaceOrientationPortrait`, `UIDeviceFamily=[1]`, iPad 오리엔테이션 미존재) 검증 통과
+- 확인하지 못한 점: 실기기 테스트(검은 전장 재현 여부·실물 햅틱·무음 스위치), App Store Connect 등록, 실제 지원 이메일 교체, 1024×1024 알파 없는 앱 아이콘 제작(사장님 직접 작업)
+- 다음 제안: 워커 4의 시뮬레이터 3종(iPhone 17e / 18 Pro / 18 Pro Max) `?safe=1` 스크린샷 캡처 및 코드 리뷰 진행

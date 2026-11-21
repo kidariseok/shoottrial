@@ -38,7 +38,21 @@
 ### 2.2 `@capacitor-community/admob` iOS 제외 방식 (안드로이드 유지)
 
 - 배경: `package.json`에 안드로이드용 `@capacitor-community/admob`이 남아 있으므로, 기본 `npx cap sync ios`를 그대로 실행하면 `ios/App/CapApp-SPM/Package.swift`와 `ios/App/App/capacitor.config.json`에 Google Mobile Ads SDK가 포함될 위험이 있다. `GADApplicationIdentifier`가 없는 무광고 iOS 앱에 AdMob SDK가 링크되면 실행 직후 크래시가 발생하며 App Store 바이너리 검사에도 광고 SDK가 검출된다.
-- 실제 적용 방식 및 검증 결과: *(2단계에서 `@capacitor/cli` 실제 타입·동작 확인 및 `cap sync android`/`cap sync ios` 양쪽 검증 후 기록)*
+- 공식 Capacitor 8 근거 (`node_modules/@capacitor/cli/dist/declarations.d.ts:375-382`, `node_modules/@capacitor/cli/dist/plugin.js:12-21`):
+  - `CapacitorConfig.ios.includePlugins?: string[]`는 iOS `cap sync`에 포함할 플러그인 허용 목록이며, 전역 `includePlugins`보다 우선한다.
+  - `CapacitorConfig.android.includePlugins`를 지정하지 않으면 안드로이드는 `package.json` 의존성 전체를 그대로 탐색한다.
+- 적용 설정 (`capacitor.config.ts`):
+  ```ts
+  ios: {
+    includePlugins: ['@capacitor/app', '@capacitor/haptics', '@capacitor/preferences'],
+  }
+  ```
+- 양 플랫폼 검증 결과:
+  - `npx cap sync ios` → Found 3 Capacitor plugins: `@capacitor/app@8.1.2`, `@capacitor/haptics@8.0.2`, `@capacitor/preferences@8.0.1`
+    - `ios/App/CapApp-SPM/Package.swift`: `capacitor-swift-pm(8.5.3)`, `CapacitorApp`, `CapacitorHaptics`, `CapacitorPreferences`만 포함(AdMob 미포함)
+    - `ios/App/App/capacitor.config.json`: `packageClassList = ["AppPlugin", "HapticsPlugin", "PreferencesPlugin"]` (AdMob 미포함)
+  - `npx cap sync android` → Found 4 Capacitor plugins: `@capacitor-community/admob@8.2.1`, `@capacitor/app@8.1.2`, `@capacitor/haptics@8.0.2`, `@capacitor/preferences@8.0.1` (안드로이드 AdMob 유지 확인)
+- 추가 런타임 방어 (`src/platform.ts`): `isIos()`일 때 `hasAds() === false`, `initAds()` 즉시 반환, `showRewarded()` 즉시 `'failed'` 반환으로 AdMob 호출 경로를 이중 차단하였다.
 
 ---
 
@@ -78,6 +92,22 @@
 
 ---
 
-## 5. 빌드 및 검증 기록
+## 5. 빌드 및 검증 기록 (2026-11-21)
 
-*(4단계 완료 후 실제 `npm run verify`, `npx cap sync ios`, `xcodebuild`, `.app` 번들 `Info.plist`/`PrivacyInfo.xcprivacy` 검증 결과를 기록한다.)*
+- **`npm run verify`**: 종료 코드 `0`
+  - `tsc --noEmit`: 통과
+  - `vitest run`: Test Files `27 passed (27)`, Tests `400 passed (400)` (`tests/ios.test.ts` 11개 추가)
+  - `assets:check`: 97개 에셋 키 통과
+  - `vite build`: 통과 (`dist/privacy.html`, `dist/support.html` 출력 확인)
+- **`npx cap sync ios`**: 종료 코드 `0` — 3개 플러그인(`app`, `haptics`, `preferences`)만 동기화, `Package.swift` 및 `capacitor.config.json` 내 `admob` 0건
+- **`xcodebuild` 시뮬레이터 빌드**:
+  - 명령: `xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination "id=8349CC07-74C9-4B6C-9491-11FE7811B469" -derivedDataPath /tmp/defcon2-ios-dd build`
+  - 결과: `** BUILD SUCCEEDED **` (종료 코드 `0`, iOS 27.2 Simulator SDK)
+  - 번들 경로: `/tmp/defcon2-ios-dd/Build/Products/Debug-iphonesimulator/App.app`
+  - `PrivacyInfo.xcprivacy` 번들 포함 및 `plutil -lint` `OK` (`NSPrivacyTracking=false`, `NSPrivacyCollectedDataTypes=[]`, `NSPrivacyAccessedAPICategoryUserDefaults` 사유 `CA92.1`)
+  - `Info.plist` 검증 (`PlistBuddy`):
+    - `CFBundleIdentifier`: `io.github.kidariseok.defcon2`
+    - `CFBundleDisplayName`: `데프콘 2: 화스트 페이스`
+    - `UISupportedInterfaceOrientations`: `["UIInterfaceOrientationPortrait"]`
+    - `UIDeviceFamily`: `[1]` (iPhone 전용)
+    - `UISupportedInterfaceOrientations~ipad`: 미존재 확인
