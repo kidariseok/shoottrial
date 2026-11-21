@@ -1,6 +1,7 @@
 // docs/TECH.md §2·§4·§11 — Capacitor 플러그인(@capacitor/*)과 앱인토스 SDK(@apps-in-toss/*, T-123)를 import하는 유일한 파일
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
 import { Preferences } from '@capacitor/preferences'
 import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob'
 
@@ -27,6 +28,10 @@ export function isNative(): boolean {
   return Capacitor.isNativePlatform()
 }
 
+export function isIos(): boolean {
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+}
+
 // ── 앱인토스 (T-123) ──
 // 출처: 앱인토스 개발자센터(게임 출시 가이드·스토리지·Safe Area·인앱 광고)와 설치한 SDK 3.9.0의 dist/index.d.ts.
 // SDK는 `vite --mode toss` 빌드에서만 동적으로 불러와 웹·안드로이드 번들에는 들어가지 않는다.
@@ -47,9 +52,51 @@ export function isToss(): boolean {
   return ait !== null
 }
 
-// 실제 보상형 광고를 쓸 수 있는 환경(안드로이드 앱 또는 토스 미니앱). 웹 체험판은 false.
+// 실제 보상형 광고를 쓸 수 있는 환경(안드로이드 앱 또는 토스 미니앱). iOS(1단계 무광고)와 웹 체험판은 false.
 export function hasAds(): boolean {
+  if (isIos()) return false
   return Capacitor.isNativePlatform() || ait !== null
+}
+
+// ── 햅틱 피드백 (iOS/Android 네이티브, T-125) ──
+export type HapticImpactPattern = 'light' | 'medium' | 'heavy'
+export type HapticNotificationPattern = 'success' | 'warning' | 'error'
+
+export async function hapticImpact(pattern: HapticImpactPattern = 'light'): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    const styleMap: Record<HapticImpactPattern, ImpactStyle> = {
+      light: ImpactStyle.Light,
+      medium: ImpactStyle.Medium,
+      heavy: ImpactStyle.Heavy,
+    }
+    await Haptics.impact({ style: styleMap[pattern] })
+  } catch {
+    // 햅틱 하드웨어 미지원 기기 무시
+  }
+}
+
+export async function hapticNotification(type: HapticNotificationPattern = 'success'): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    const typeMap: Record<HapticNotificationPattern, NotificationType> = {
+      success: NotificationType.Success,
+      warning: NotificationType.Warning,
+      error: NotificationType.Error,
+    }
+    await Haptics.notification({ type: typeMap[type] })
+  } catch {
+    // 햅틱 하드웨어 미지원 기기 무시
+  }
+}
+
+export async function hapticSelection(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    await Haptics.selectionChanged()
+  } catch {
+    // 햅틱 하드웨어 미지원 기기 무시
+  }
 }
 
 export function userKey(): string | null {
@@ -297,7 +344,7 @@ let adsReady = false
 
 // ponytail: UMP 동의 폼은 한국 한정 출시라 생략, 해외 출시 시 추가
 export async function initAds(): Promise<void> {
-  if (!Capacitor.isNativePlatform() || adsReady) return
+  if (!Capacitor.isNativePlatform() || isIos() || adsReady) return
   try {
     await AdMob.initialize({ initializeForTesting: adsTesting })
     adsReady = true
@@ -365,8 +412,8 @@ function showTossRewarded(sdk: AitSdk): Promise<AdResult> {
 
 export async function showRewarded(): Promise<AdResult> {
   if (ait) return showTossRewarded(ait)
-  if (!Capacitor.isNativePlatform()) {
-    // 웹 체험 보상은 ads.ts의 명시적 확인으로만 처리한다. 광고 API 자체는 보상하지 않는다.
+  if (!Capacitor.isNativePlatform() || isIos()) {
+    // 무광고 환경(iOS 1단계·웹 체험판)은 ads.ts의 확인 모달로만 처리한다. 광고 SDK를 호출하지 않는다.
     return 'failed'
   }
   let rewarded = false

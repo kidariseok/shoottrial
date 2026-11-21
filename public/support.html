@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>데프콘 2: 화스트 페이스 - 고객 지원</title>
+  <style>
+    :root {
+      --bg: #121417;
+      --card: #1c2024;
+      --text: #e6edf3;
+      --sub: #8b949e;
+      --accent: #e8c35a;
+      --border: #30363d;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      margin: 0;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--card);
+      padding: 32px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 24px;
+      margin-top: 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    h2 {
+      font-size: 18px;
+      margin-top: 24px;
+      color: var(--accent);
+    }
+    .q-box {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .q {
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .a {
+      color: #c9d1d9;
+      font-size: 14px;
+    }
+    .contact-card {
+      background: #21262d;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+    }
+    code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--sub);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>고객 지원 및 도움말</h1>
+    <p>《데프콘 2: 화스트 페이스》를 이용해 주셔서 감사합니다. 게임 이용 중 자주 묻는 질문과 개발자 문의 안내를 확인하실 수 있습니다.</p>
+
+    <h2>자주 묻는 질문 (FAQ)</h2>
+
+    <div class="q-box">
+      <div class="q">Q. 지원 기기 및 요구 사양이 어떻게 되나요?</div>
+      <div class="a">A. iOS 15.0 이상이 설치된 iPhone 기기(세로 화면 전용)를 지원합니다. 현재 iPad는 공식 지원하지 않습니다.</div>
+    </div>
+
+    <div class="q-box">
+      <div class="q">Q. 게임 진행 기록이 사라졌어요. 복구할 수 있나요?</div>
+      <div class="a">A. 본 게임은 개인정보 보호를 위해 서버 계정이나 클라우드 동기화 없이 기기 내부에만 진행 기록을 저장합니다. 앱을 삭제하시면 진행 기록이 초기화되며 복구가 어렵습니다.</div>
+    </div>
+
+    <div class="q-box">
+      <div class="q">Q. 소리가 나지 않거나 진동이 울리지 않아요.</div>
+      <div class="a">A. iPhone 측면의 무음 스위치가 켜져 있는지 확인하시고, 게임 내 생활관 행정반(설정) 메뉴에서 BGM·효과음·진동 토글이 켜져 있는지 확인해 주세요.</div>
+    </div>
+
+    <div class="q-box">
+      <div class="q">Q. 이 게임은 실제 국가나 부대를 배경으로 하나요?</div>
+      <div class="a">A. 아닙니다. 본 게임은 순수 창작된 가상 전쟁극이며, 등장하는 부대와 적 세력("북방연합군")은 모두 가상의 설정입니다. 일부 그래픽은 생성형 AI로 제작되었습니다.</div>
+    </div>
+
+    <h2>개발자 문의처</h2>
+    <div class="contact-card">
+      <p>버그 제보, 개선 제안, 기타 문의사항은 아래 이메일로 연락해 주시면 확인 후 답변드리겠습니다.</p>
+      <!-- TODO: 실제 지원 이메일로 교체 -->
+      <p><strong>이메일 문의</strong>: <code>[실제 지원 이메일로 교체 필요 — 예: support@example.com]</code></p>
+      <p style="font-size: 13px; color: var(--sub);">문의 시 사용 중인 iPhone 기기 모델과 iOS 버전, 발생 상황을 함께 적어 주시면 빠르게 확인하는 데 도움이 됩니다.</p>
+      <p style="font-size: 13px;"><a href="./privacy.html">개인정보 처리방침 보기 →</a></p>
+    </div>
+
+    <div class="footer">
+      <p>개발자: 오진석 (kidariseok)</p>
+    </div>
+  </div>
+</body>
+</html>

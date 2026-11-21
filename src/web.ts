@@ -1,8 +1,9 @@
-import { hasAds } from './platform'
+import { hasAds, isNative } from './platform'
 
 // ponytail: 온라인 웹 체험판. 오프라인 저장 캐시는 배포 후 갱신 정책을 정할 때 추가한다.
 export async function startWeb(onRotate: (blocked: boolean) => void): Promise<void> {
-  if (hasAds()) return
+  // 네이티브 앱(iOS 무광고 포함·Android)이거나 토스 미니앱이면 웹 체험 레이어를 띄우지 않는다.
+  if (isNative() || hasAds()) return
   const rotate = document.createElement('div')
   rotate.className = 'web-rotate hidden'
   rotate.setAttribute('role', 'status')
