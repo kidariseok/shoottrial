@@ -93,14 +93,15 @@
 - [x] 2단계: `@capacitor/ios@8.5.3`, `@capacitor/haptics@8.0.2` 설치, `capacitor.config.ts`의 `ios.includePlugins`로 iOS AdMob 완전 제외 + Android AdMob 유지 검증, `npx cap add ios`(SPM), iPhone 전용(`TARGETED_DEVICE_FAMILY = "1"`), 세로 고정, `PrivacyInfo.xcprivacy` 등록
 - [x] 3단계: `src/platform.ts`, `src/web.ts`, `src/ads.ts`, `src/audio.ts`, `src/ui/lobby.ts`, `src/ui/screens.ts`, `src/ui/style.css`, `tests/ads.test.ts`, `tests/ios.test.ts` 구현
 - [x] 4단계: `npm run verify`(27파일 400테스트·97에셋·빌드 EXIT 0), `npx cap sync ios`(3플러그인·AdMob 미포함), `xcodebuild` 시뮬레이터 빌드 성공 및 `.app` 번들 `Info.plist`/`PrivacyInfo.xcprivacy` 검증 완료
-- [x] 5단계: 최종 커밋·푸시 및 `main` 대상 PR 생성(병합 전 대기)
+- [x] 5단계: 최종 커밋·푸시 및 `main` 대상 PR #57 생성
+- [x] 6단계: 사장님 확정 지원 이메일(`kidariworking@gmail.com`) 반영, `npm run verify`·`npx cap sync ios` 재검증, PR #57 `main` 병합 및 프로덕션 URL 검증
 
 ## 결과 보고
 
 - 바뀐 파일: `package.json`, `package-lock.json`, `capacitor.config.ts`, `src/platform.ts`, `src/ads.ts`, `src/web.ts`, `src/audio.ts`, `src/ui/lobby.ts`, `src/ui/screens.ts`, `src/ui/style.css`, `public/privacy.html`, `public/support.html`, `ios/`, `android/app/capacitor.build.gradle`, `android/capacitor.settings.gradle`, `tests/ads.test.ts`, `tests/ios.test.ts`, `docs/research/ios-launch.md`, `docs/tickets/T-125-ios-launch.md`
 - 검증 결과:
   - `npm run verify`: EXIT 0 (`tsc --noEmit` 통과, Vitest 27파일 400테스트 통과, `assets:check` 97키 통과, `vite build` 통과)
-  - `npx cap sync ios`: EXIT 0 (`@capacitor/app@8.1.2`, `@capacitor/haptics@8.0.2`, `@capacitor/preferences@8.0.1` 3종만 동기화, AdMob 미포함)
+  - `npx cap sync ios`: EXIT 0 (`@capacitor/app@8.1.2`, `@capacitor/haptics@8.0.2`, `@capacitor/preferences@8.0.1` 3종만 동기화, AdMob 미포함, `privacy.html`·`support.html` `kidariworking@gmail.com` 반영 확인)
   - `xcodebuild` 시뮬레이터 빌드(iPhone 18 Pro `8349CC07-74C9-4B6C-9491-11FE7811B469`): `** BUILD SUCCEEDED **` (EXIT 0), `.app` 번들 내 `PrivacyInfo.xcprivacy` `plutil -lint` OK 및 `Info.plist` (`io.github.kidariseok.defcon2`, `데프콘 2: 화스트 페이스`, `UIInterfaceOrientationPortrait`, `UIDeviceFamily=[1]`, iPad 오리엔테이션 미존재) 검증 통과
-- 확인하지 못한 점: 실기기 테스트(검은 전장 재현 여부·실물 햅틱·무음 스위치), App Store Connect 등록, 실제 지원 이메일 교체, 1024×1024 알파 없는 앱 아이콘 제작(사장님 직접 작업)
-- 다음 제안: 워커 4의 시뮬레이터 3종(iPhone 17e / 18 Pro / 18 Pro Max) `?safe=1` 스크린샷 캡처 및 코드 리뷰 진행
+- 확인하지 못한 점: 실기기 테스트(검은 전장 재현 여부·실물 햅틱·무음 스위치), App Store Connect 등록, 1024×1024 알파 없는 앱 아이콘 제작(사장님 직접 작업)
+- 다음 제안: 2단계(아이폰 실기기 확인·1024px 아이콘·App Store Connect 제출) 진행
