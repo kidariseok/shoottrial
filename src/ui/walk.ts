@@ -3,6 +3,7 @@
 import { BlendModes, Scene, type GameObjects, type Input, type Types } from 'phaser'
 import { playSfx } from '../audio'
 import { hasArt, loadArt, setupArt } from '../battle/art'
+import { computeCanvasSafeInsets, readEffectiveSafeArea } from '../device'
 import { facingFor, turnToward, walkDirection } from './walk-motion'
 import { deploy, getLobbySave, isPanelOpen, openPanel, type PanelKind } from './lobby'
 import {
@@ -125,6 +126,9 @@ const HUD_H = 84
 
 export class WalkScene extends Scene {
   private offY = 0
+  private safeTop = 0
+  private safeBottom = 0
+  private hudBottom = HUD_H
   private pos: Vec = { x: 0, y: 0 }
   private player!: GameObjects.Container
   private rookie!: Actor
@@ -172,6 +176,7 @@ export class WalkScene extends Scene {
     this.talking = null
     this.stride = 's'
     this.offY = Math.max(0, (this.scale.height - MAP_H) / 2)
+    this.syncSafeInsets()
     const px = (nx: number): number => nx * W
     const py = (ny: number): number => ny * MAP_H + this.offY
     const rect = (r: Rect): Rect => ({ x: px(r.x), y: py(r.y), w: r.w * W, h: r.h * MAP_H })
@@ -200,7 +205,7 @@ export class WalkScene extends Scene {
     this.keys = this.input.keyboard?.createCursorKeys() ?? null
     this.wasd = (this.input.keyboard?.addKeys('W,A,S,D') as Record<string, Input.Keyboard.Key> | undefined) ?? null
     this.input.on('pointerdown', (p: Input.Pointer, over: unknown[]) => {
-      if (isPanelOpen() || over.length > 0 || p.y < HUD_H) return
+      if (isPanelOpen() || over.length > 0 || p.y < this.hudBottom) return
       this.stickOrigin = { x: p.x, y: p.y }
     })
     this.input.on('pointermove', (p: Input.Pointer) => {
@@ -275,10 +280,35 @@ export class WalkScene extends Scene {
     return len > 1 ? { x: x / len, y: y / len } : { x, y }
   }
 
+  private syncSafeInsets(): void {
+    const safe = readEffectiveSafeArea()
+    const canvas = this.game?.canvas
+    if (canvas && typeof window !== 'undefined') {
+      const rect = canvas.getBoundingClientRect()
+      if (rect.width > 0) {
+        const insets = computeCanvasSafeInsets(
+          safe,
+          rect,
+          { width: window.innerWidth, height: window.innerHeight },
+          W
+        )
+        this.safeTop = Math.min(160, Math.max(0, insets.top))
+        this.safeBottom = Math.min(120, Math.max(0, insets.bottom))
+        this.hudBottom = this.safeTop + HUD_H
+        return
+      }
+    }
+    this.safeTop = 0
+    this.safeBottom = 0
+    this.hudBottom = HUD_H
+  }
+
   // ---- 그리기 ----
 
   private drawMap(): void {
-    this.add.rectangle(0, 0, W, this.scale.height, 0x0b0d12).setOrigin(0, 0).setDepth(-20)
+    const H = this.scale.height
+    this.add.rectangle(0, 0, W, H, 0x10151b).setOrigin(0, 0).setDepth(-20)
+    this.drawVerticalTrim(H)
     if (hasArt('bg_barracks')) {
       this.add.image(0, this.offY, 'bg_barracks').setOrigin(0, 0).setDepth(-10)
     } else {
@@ -292,6 +322,67 @@ export class WalkScene extends Scene {
       const x = marker ? marker.x * W : z.x
       const y = marker ? marker.y * MAP_H + this.offY : z.y
       this.add.text(x, y, z.spot.title, { fontFamily: FONT, fontSize: '20px', color: '#f5dda0', backgroundColor: '#12191eee', padding: { x: 10, y: 5 } }).setOrigin(0.5).setDepth(20)
+    }
+  }
+
+  // T-126: 19.5:9 등 세로가 긴 화면에서 720×1280 생활관 위·아래 검은 공백을 군용 천장/복도 바닥으로 마감한다.
+  private drawVerticalTrim(H: number): void {
+    const g = this.add.graphics().setDepth(-12)
+
+    // 상단 여백(0 ~ offY): 어두운 군용 벽면·천장 구조 프레임 + 은은한 배관·리벳 마감
+    if (this.offY > 0) {
+      g.fillStyle(0x141a21, 1).fillRect(0, 0, W, this.offY)
+      g.fillStyle(0x1b222b, 1).fillRect(16, 0, W - 32, Math.max(0, this.offY - 6))
+      g.lineStyle(2, 0x28323e, 0.85)
+      for (let y = 28; y < this.offY; y += 32) {
+        g.lineBetween(16, y, W - 16, y)
+      }
+      // 좌우 세로 기둥과 상단 경계 몰딩
+      g.fillStyle(0x10151b, 1).fillRect(0, 0, 16, this.offY).fillRect(W - 16, 0, 16, this.offY)
+      g.fillStyle(0x2d3743, 0.9).fillRect(16, this.offY - 8, W - 32, 8)
+      g.lineStyle(2, 0x0b0e12, 0.95).lineBetween(0, this.offY, W, this.offY)
+      // 은은한 비상등 반사 띠
+      g.fillStyle(0xc9a24a, 0.14).fillRect(24, this.offY - 12, W - 48, 2)
+    }
+
+    // 하단 여백(offY + MAP_H ~ H): 출입구 아래 복도 타일 바닥 연장 + 전술 도크 마감
+    const bottomY = this.offY + MAP_H
+    const bottomH = H - bottomY
+    if (bottomH > 0) {
+      // 기본 복도 콘크리트/타일 톤
+      g.fillStyle(0x1d2329, 1).fillRect(0, bottomY, W, bottomH)
+      // 좌우 외벽 스커트(생활관 하단 외벽 라인과 이어짐)
+      g.fillStyle(0x12171d, 1).fillRect(0, bottomY, 22, bottomH).fillRect(W - 22, bottomY, 22, bottomH)
+      g.lineStyle(2, 0x2a333d, 0.7).lineBetween(22, bottomY, 22, H).lineBetween(W - 22, bottomY, W - 22, H)
+
+      // 복도 타일 격자(48px 간격, 생활관 타일과 자연스럽게 연결)
+      const tile = 48
+      g.lineStyle(2, 0x13181e, 0.75)
+      for (let x = 24; x < W - 24; x += tile) {
+        g.lineBetween(x, bottomY, x, H)
+      }
+      for (let y = bottomY + tile; y < H; y += tile) {
+        g.lineBetween(22, y, W - 22, y)
+      }
+
+      // 중앙 출입구 통로(x=276..444) 타일 밝기 강조 및 붉은 문턱 잔광 연장
+      g.fillStyle(0x283037, 0.65).fillRect(276, bottomY, 168, bottomH)
+      g.fillStyle(0x3a2020, 0.42).fillRect(284, bottomY, 152, Math.min(44, bottomH))
+      g.fillStyle(0x522522, 0.25).fillRect(306, bottomY, 108, Math.min(24, bottomH))
+      // 출입구 좌우 문틀 연장
+      g.fillStyle(0x171d24, 1).fillRect(234, bottomY, 42, Math.min(30, bottomH)).fillRect(444, bottomY, 42, Math.min(30, bottomH))
+      g.lineStyle(2, 0x323b46, 0.75).strokeRect(234, bottomY, 42, Math.min(30, bottomH)).strokeRect(444, bottomY, 42, Math.min(30, bottomH))
+
+      // 하단 어두운 비네팅 & 전술 패널 베이스(버튼이 허공에 뜨지 않게 안착)
+      const bands = 4
+      for (let i = 0; i < bands; i++) {
+        const y0 = bottomY + (bottomH * i) / bands
+        const h0 = bottomH / bands + 1
+        g.fillStyle(0x0b0e12, 0.1 + i * 0.14).fillRect(0, y0, W, h0)
+      }
+      const dockTop = Math.max(bottomY + 6, H - this.safeBottom - 108)
+      g.fillStyle(0x0e1319, 0.78).fillRect(16, dockTop, W - 32, H - dockTop)
+      g.lineStyle(2, 0xc9a24a, 0.32).lineBetween(20, dockTop, W - 20, dockTop)
     }
   }
 
@@ -327,15 +418,16 @@ export class WalkScene extends Scene {
 
   private makeHud(): void {
     const save = getLobbySave()
-    this.add.rectangle(0, 0, W, HUD_H, 0x0b0e12, 0.92).setOrigin(0, 0).setDepth(900)
-    this.add.rectangle(0, HUD_H - 3, W, 3, 0xc9a24a).setOrigin(0, 0).setDepth(901)
+    const top = this.safeTop
+    this.add.rectangle(0, 0, W, top + HUD_H, 0x0b0e12, 0.94).setOrigin(0, 0).setDepth(900)
+    this.add.rectangle(0, top + HUD_H - 3, W, 3, 0xc9a24a).setOrigin(0, 0).setDepth(901)
     this.add
-      .text(24, 12, `${getRankName(1)} ${sanitizeRookieName(save.name)}`, { fontFamily: FONT, fontSize: '30px', fontStyle: 'bold', color: '#ece6d3' })
+      .text(24, top + 12, `${getRankName(1)} ${sanitizeRookieName(save.name)}`, { fontFamily: FONT, fontSize: '30px', fontStyle: 'bold', color: '#ece6d3' })
       .setDepth(902)
     this.add
-      .text(24, 50, `제77보병사단 · 생활관 · 최고 웨이브 ${save.bestWave}`, { fontFamily: FONT, fontSize: '18px', color: '#9a9484' })
+      .text(24, top + 50, `제77보병사단 · 생활관 · 최고 웨이브 ${save.bestWave}`, { fontFamily: FONT, fontSize: '18px', color: '#9a9484' })
       .setDepth(902)
-    const gear = this.add.container(W - 52, HUD_H / 2 - 2).setDepth(903)
+    const gear = this.add.container(W - 52, top + HUD_H / 2 - 2).setDepth(903)
     gear.add(this.add.circle(0, 0, 28, 0x1b2229).setStrokeStyle(3, 0xc9a24a))
     gear.add(this.add.text(0, 0, '설정', { fontFamily: FONT, fontSize: '18px', color: '#e8c35a' }).setOrigin(0.5))
     gear.setSize(60, 60).setInteractive({ useHandCursor: true }).on('pointerup', () => !isPanelOpen() && openPanel('admin'))
@@ -352,16 +444,28 @@ export class WalkScene extends Scene {
     bg.setInteractive({ useHandCursor: true }).on('pointerup', () => this.activate())
   }
 
-  // 오른쪽 아래: "열기" 원 버튼(구역 앞에서만) + "전투 투입" 큰 버튼(어디서나)
+  // 오른쪽 아래: "열기" 원 버튼(구역 앞에서만) + "전투 투입" 큰 버튼(어디서나, Safe Area 준수)
   private makeButtons(): void {
     const H = this.scale.height
-    this.actBtn = this.add.container(W - 70, H - 200).setDepth(960).setVisible(false)
+    const bottomBase = H - this.safeBottom
+    if (H > this.offY + MAP_H + 20) {
+      this.add
+        .text(32, bottomBase - 56, '화면을 드래그해 생활관 이동', {
+          fontFamily: FONT,
+          fontSize: '19px',
+          color: '#a8a28f',
+        })
+        .setOrigin(0, 0.5)
+        .setDepth(905)
+    }
+
+    this.actBtn = this.add.container(W - 70, bottomBase - 180).setDepth(960).setVisible(false)
     this.actBtn.add(this.add.circle(0, 0, 46, 0xc9a24a).setStrokeStyle(4, 0x0b0e12))
     this.actLabel = this.add.text(0, 0, '열기', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#1a1608' }).setOrigin(0.5)
     this.actBtn.add(this.actLabel)
     this.actBtn.setSize(92, 92).setInteractive({ useHandCursor: true }).on('pointerup', () => this.activate())
 
-    const go = this.add.container(W - 110, H - 70).setDepth(960)
+    const go = this.add.container(W - 110, bottomBase - 56).setDepth(960)
     go.add(this.add.rectangle(0, 0, 190, 84, 0x4a5a22).setStrokeStyle(4, 0xc9a24a))
     go.add(this.add.text(0, -12, '전투 투입', { fontFamily: FONT, fontSize: '30px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5))
     go.add(this.add.text(0, 22, '위병소 방어선으로', { fontFamily: FONT, fontSize: '16px', color: '#e2e6c4' }).setOrigin(0.5))
@@ -422,15 +526,16 @@ export class WalkScene extends Scene {
   // ---- 비상 연출(붉은 비상등 + 방송 자막) ----
 
   private makeAlarm(): void {
+    const barGap = this.offY < 40 ? 4 : 8
     this.tint = this.add.rectangle(0, 0, W, this.scale.height, 0xff1e1e, 0).setOrigin(0, 0).setDepth(800)
     for (const x of [34, W - 34]) {
-      this.lamps.push(this.add.circle(x, HUD_H + 70, 62, 0xff2a1a, 0).setDepth(801).setBlendMode(BlendModes.ADD))
-      this.add.circle(x, HUD_H + 70, 12, 0xff3b2a).setDepth(802).setStrokeStyle(3, 0x3a1410)
+      this.lamps.push(this.add.circle(x, this.hudBottom + 66, 62, 0xff2a1a, 0).setDepth(801).setBlendMode(BlendModes.ADD))
+      this.add.circle(x, this.hudBottom + 66, 12, 0xff3b2a).setDepth(802).setStrokeStyle(3, 0x3a1410)
     }
-    const bar = this.add.container(0, HUD_H + 8).setDepth(920)
-    bar.add(this.add.rectangle(0, 0, W, 48, 0x10151a, 0.88).setOrigin(0, 0))
-    bar.add(this.add.rectangle(0, 0, 6, 48, 0xe0412f).setOrigin(0, 0))
-    this.bcastText = this.add.text(20, 24, BROADCAST[0], { fontFamily: FONT, fontSize: '22px', color: '#ffb3a6' }).setOrigin(0, 0.5)
+    const bar = this.add.container(0, this.hudBottom + barGap).setDepth(920)
+    bar.add(this.add.rectangle(0, 0, W, 44, 0x10151a, 0.88).setOrigin(0, 0))
+    bar.add(this.add.rectangle(0, 0, 6, 44, 0xe0412f).setOrigin(0, 0))
+    this.bcastText = this.add.text(20, 22, BROADCAST[0], { fontFamily: FONT, fontSize: '21px', color: '#ffb3a6' }).setOrigin(0, 0.5)
     bar.add(this.bcastText)
     this.bcastIdx = 0
     this.bcastAt = 0

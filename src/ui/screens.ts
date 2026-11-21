@@ -3,16 +3,18 @@ import { watchAd } from '../ads'
 import { fetchAvailableAssets } from '../assets'
 import { playSfx } from '../audio'
 import { hapticImpact, hapticNotification, hasAds, isNative } from '../platform'
-import { BATTLE, SPECIALTIES, type CardKey } from '../data'
+import { BATTLE, CARDS, SPECIALTIES, type CardKey } from '../data'
 import {
   canFireSupport,
   cloneHud,
   getCardInitial,
   getCardName,
+  getCardRoleMeta,
   getCharacterName,
   getCharacterIntro,
   getRankBars,
   getRankName,
+  getShopCardInfoRows,
   isSameHud,
   sortSynergies,
 } from './helpers'
@@ -53,6 +55,17 @@ function triggerHaptic(action: () => Promise<void>): void {
   }
 }
 
+function emitShopVisibility(open: boolean): void {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return
+  if (typeof CustomEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('d2:shop-visibility', { detail: { open } }))
+  }
+}
+
+function isKnownCardKey(card: string): card is CardKey {
+  return Object.prototype.hasOwnProperty.call(CARDS, card)
+}
+
 interface UiRefs {
   root: HTMLElement
   hudEl: HTMLElement
@@ -67,6 +80,7 @@ interface UiRefs {
   supportBtn: HTMLButtonElement
   synergyRail: HTMLElement
   shopEl: HTMLElement
+  shopSupplyBadge: HTMLElement
   shopCards: HTMLElement
   rerollBtn: HTMLButtonElement
   freeRerollBtn: HTMLButtonElement
@@ -214,15 +228,19 @@ function ensureRefs(): UiRefs | null {
   const synergyRail = document.createElement('div')
   synergyRail.className = 'ui-synergy-rail'
 
-  // 하단 상점 패널
+  // 하단 상점 패널 (T-126: 2단 분리형 카드 데크 — 1단 조작바 + 2단 5장 카드 풀폭)
   const shopEl = document.createElement('div')
   shopEl.className = 'ui-shop closed'
 
-  const shopCards = document.createElement('div')
-  shopCards.className = 'shop-cards'
-
   const shopActions = document.createElement('div')
   shopActions.className = 'shop-actions'
+
+  const shopActionsLeft = document.createElement('div')
+  shopActionsLeft.className = 'shop-actions-left'
+
+  const shopSupplyBadge = document.createElement('span')
+  shopSupplyBadge.className = 'shop-supply-badge'
+  shopSupplyBadge.textContent = '보급 0'
 
   const rerollBtn = document.createElement('button')
   rerollBtn.type = 'button'
@@ -245,13 +263,19 @@ function ensureRefs(): UiRefs | null {
     })
   })
 
+  shopActionsLeft.append(shopSupplyBadge, rerollBtn, freeRerollBtn)
+
   const goBtn = document.createElement('button')
   goBtn.type = 'button'
   goBtn.className = 'mil-btn action-go shop-btn-go'
   goBtn.textContent = '전투 투입!'
 
-  shopActions.append(rerollBtn, freeRerollBtn, goBtn)
-  shopEl.append(shopCards, shopActions)
+  shopActions.append(shopActionsLeft, goBtn)
+
+  const shopCards = document.createElement('div')
+  shopCards.className = 'shop-cards'
+
+  shopEl.append(shopActions, shopCards)
 
   // 카드 정보 시트
   const cardInfoBackdrop = document.createElement('div')
@@ -315,6 +339,7 @@ function ensureRefs(): UiRefs | null {
     supportBtn,
     synergyRail,
     shopEl,
+    shopSupplyBadge,
     shopCards,
     rerollBtn,
     freeRerollBtn,
@@ -471,6 +496,9 @@ export function shop(
   if (!r) return
 
   r.shopEl.classList.toggle('closed', !open)
+  r.shopSupplyBadge.textContent = `보급 ${supply}`
+  emitShopVisibility(open)
+
   r.rerollBtn.onclick = () => {
     triggerHaptic(() => hapticImpact('light'))
     onReroll()
@@ -483,39 +511,111 @@ export function shop(
   r.shopCards.innerHTML = ''
   for (let i = 0; i < 5; i++) {
     const offer = offers[i] ?? null
-    const btn = document.createElement('button')
-    btn.type = 'button'
+    const cardEl = document.createElement('div')
 
     if (!offer) {
-      btn.className = 'shop-card empty'
-      btn.disabled = true
-      btn.textContent = '—'
+      cardEl.className = 'shop-card empty'
+      cardEl.setAttribute('aria-disabled', 'true')
+      cardEl.textContent = '—'
     } else {
       const insufficient = offer.cost > supply
-      const art = artKeys.has(`card_${offer.card}`)
-      btn.className = `shop-card${insufficient ? ' insufficient' : ''}${art ? ' has-art' : ''}`
-      if (art) btn.style.backgroundImage = `url('/assets/card_${offer.card}.png')`
+      const roleMeta = getCardRoleMeta(offer.card)
+      const cardName = getCardName(offer.card)
+      const knownArt = artKeys.size === 0 ? isKnownCardKey(offer.card) : artKeys.has(`card_${offer.card}`)
+      cardEl.className = `shop-card role-${roleMeta.tone}${insufficient ? ' insufficient' : ''}${knownArt ? ' has-art' : ''}`
+      cardEl.setAttribute('role', 'button')
+      cardEl.setAttribute('tabindex', '0')
+      cardEl.setAttribute('data-card', offer.card)
+      cardEl.setAttribute('aria-label', `${cardName} ${roleMeta.role} ${roleMeta.summary} 보급 ${offer.cost}`)
+
+      // 상단 오버레이: 좌상단 보급 비용 + 우상단 상세 정보(i) 버튼
+      const topBar = document.createElement('div')
+      topBar.className = 'shop-card-top'
+
+      const costEl = document.createElement('span')
+      costEl.className = 'shop-card-cost'
+      costEl.textContent = `보급 ${offer.cost}`
+
+      const infoBtn = document.createElement('button')
+      infoBtn.type = 'button'
+      infoBtn.className = 'shop-card-info-btn'
+      infoBtn.textContent = 'i'
+      infoBtn.setAttribute('aria-label', `${cardName} 상세 정보`)
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        triggerHaptic(() => hapticImpact('light'))
+        if (isKnownCardKey(offer.card)) {
+          cardInfoDetail(offer.card, 1, {
+            name: offer.card === 'rifle' ? getLobbySave().name : undefined,
+            rows: getShopCardInfoRows(offer.card),
+          })
+        } else {
+          cardInfo(offer.card, 1)
+        }
+      })
+
+      topBar.append(costEl, infoBtn)
+
+      // 중앙 초상화 영역 (얼굴이 보급/정보 태그에 가리지 않도록 하단 정렬 + 역할 배지)
+      const artWrap = document.createElement('div')
+      artWrap.className = 'shop-card-art'
 
       const initialEl = document.createElement('div')
       initialEl.className = 'shop-card-initial'
       initialEl.textContent = getCardInitial(offer.card)
+      artWrap.appendChild(initialEl)
+
+      if (knownArt) {
+        const img = document.createElement('img')
+        img.className = 'shop-card-portrait'
+        img.src = `/assets/card_${offer.card}.png`
+        img.alt = ''
+        img.addEventListener(
+          'error',
+          () => {
+            img.remove()
+            cardEl.classList.remove('has-art')
+          },
+          { once: true }
+        )
+        artWrap.appendChild(img)
+      }
+
+      const roleEl = document.createElement('span')
+      roleEl.className = `shop-card-role role-${roleMeta.tone}`
+      roleEl.textContent = roleMeta.role
+      artWrap.appendChild(roleEl)
+
+      // 하단 이름 + 핵심 기능 1줄 요약
+      const footer = document.createElement('div')
+      footer.className = 'shop-card-footer'
 
       const nameEl = document.createElement('div')
       nameEl.className = 'shop-card-name'
-      nameEl.textContent = getCardName(offer.card)
+      nameEl.textContent = cardName
 
-      const costEl = document.createElement('div')
-      costEl.className = 'shop-card-cost'
-      costEl.textContent = `보급 ${offer.cost}`
+      const summaryEl = document.createElement('div')
+      summaryEl.className = 'shop-card-summary'
+      summaryEl.textContent = roleMeta.summary
 
-      btn.append(initialEl, nameEl, costEl)
-      btn.addEventListener('click', () => {
+      footer.append(nameEl, summaryEl)
+
+      cardEl.append(topBar, artWrap, footer)
+
+      const triggerBuy = (): void => {
         triggerHaptic(() => hapticImpact('light'))
         onBuy(i)
+      }
+      cardEl.addEventListener('click', triggerBuy)
+      cardEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          triggerBuy()
+        }
       })
     }
 
-    r.shopCards.appendChild(btn)
+    r.shopCards.appendChild(cardEl)
   }
 }
 
@@ -557,6 +657,15 @@ export function cardInfoDetail(card: string | null, rank?: number, detail?: Card
   title.textContent = getCardName(card)
   titleWrap.append(bars, title)
 
+  const knownCard = isKnownCardKey(card)
+  const roleMeta = knownCard ? getCardRoleMeta(card) : null
+  if (roleMeta) {
+    const roleBadge = document.createElement('span')
+    roleBadge.className = `card-sheet-role role-${roleMeta.tone}`
+    roleBadge.textContent = roleMeta.role
+    titleWrap.appendChild(roleBadge)
+  }
+
   const closeBtn = document.createElement('button')
   closeBtn.type = 'button'
   closeBtn.className = 'mil-btn'
@@ -570,6 +679,12 @@ export function cardInfoDetail(card: string | null, rank?: number, detail?: Card
 
   const rows: [string, string][] = [
     ['인물', getCharacterName(card, rank, detail?.name)],
+    ...(roleMeta
+      ? ([
+          ['역할', `${roleMeta.role} · ${roleMeta.summary}`],
+          ['핵심 활용', roleMeta.tip],
+        ] as [string, string][])
+      : []),
     ['소개', getCharacterIntro(card)],
     ['보직명', getCardName(card)],
     ['계급(짬)', getRankName(rank)],
@@ -812,6 +927,7 @@ export function lobby(): void {
     r.hudEl.classList.add('hidden')
     r.synergyRail.innerHTML = ''
     r.shopEl.classList.add('closed')
+    emitShopVisibility(false)
     r.cardInfoBackdrop.classList.add('hidden')
     r.bannerEl.classList.add('hidden')
     r.defconFlashEl.classList.remove('active')
@@ -873,7 +989,7 @@ export function confirmExit(onYes: () => void, onNo: () => void): void {
 }
 
 export function handleBack(onExit: () => void): void {
-  if (!currentCtl && refs && !refs.cardInfoBackdrop.classList.contains('hidden')) {
+  if (refs && !refs.cardInfoBackdrop.classList.contains('hidden')) {
     cardInfo(null)
     return
   }

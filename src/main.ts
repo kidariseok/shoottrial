@@ -2,7 +2,12 @@ import { Game, Scale, Scene, AUTO, type Types } from 'phaser'
 import { initAudio } from './audio'
 import { BattleScene } from './battle/BattleScene'
 import { debug, initDebugOverlays } from './debug'
-import { calculateLogicalHeight, computeCanvasLayout, startDeviceScene } from './device'
+import {
+  calculateLogicalHeight,
+  computeBattleShopScrollY,
+  computeCanvasLayout,
+  startDeviceScene,
+} from './device'
 import { GalleryScene } from './gallery'
 import { exitApp, init as initPlatform, isNative, onBack, safeRect } from './platform'
 import { load as loadSave } from './save'
@@ -57,6 +62,80 @@ const config: Types.Core.GameConfig = {
 export const game: Game | null =
   typeof window === 'undefined' || isDomOnly ? null : new Game(config)
 
+let battleShopOpen = false
+let battleCameraRaf: number | null = null
+let battleScrollInitialized = false
+
+function setBattleCameraScrollY(targetY: number, immediate: boolean): void {
+  if (!game) return
+  const battle = game.scene.getScene('battle') as (Scene & { logOnly?: boolean }) | null
+  if (!battle || !battle.scene.isActive() || !battle.cameras?.main || battle.logOnly) return
+  const cam = battle.cameras.main
+
+  if (battleCameraRaf !== null && typeof cancelAnimationFrame !== 'undefined') {
+    cancelAnimationFrame(battleCameraRaf)
+    battleCameraRaf = null
+  }
+
+  const startY = cam.scrollY
+  if (immediate || Math.abs(targetY - startY) < 1 || typeof requestAnimationFrame === 'undefined') {
+    cam.scrollY = targetY
+    return
+  }
+
+  const startAt = performance.now()
+  const durationMs = 180
+  const tick = (now: number): void => {
+    if (!battle.scene.isActive() || !battle.cameras?.main) {
+      battleCameraRaf = null
+      return
+    }
+    const t = Math.min(1, (now - startAt) / durationMs)
+    const eased = 1 - (1 - t) * (1 - t)
+    battle.cameras.main.scrollY = startY + (targetY - startY) * eased
+    if (t < 1) {
+      battleCameraRaf = requestAnimationFrame(tick)
+    } else {
+      battle.cameras.main.scrollY = targetY
+      battleCameraRaf = null
+    }
+  }
+  battleCameraRaf = requestAnimationFrame(tick)
+}
+
+export function syncBattleCameraForShop(open = battleShopOpen, immediate = false): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined' || !game) return
+  const battle = game.scene.getScene('battle') as (Scene & { logOnly?: boolean }) | null
+  if (!battle || !battle.scene.isActive() || !battle.cameras?.main || battle.logOnly) return
+
+  if (!open) {
+    setBattleCameraScrollY(0, immediate)
+    return
+  }
+
+  const canvas = game.canvas ?? document.getElementById('game')?.querySelector('canvas') ?? null
+  const shopEl = document.querySelector<HTMLElement>('.ui-shop')
+  if (!canvas || !shopEl) return
+
+  const canvasRect = canvas.getBoundingClientRect()
+  if (canvasRect.height <= 0) return
+
+  const shopCs = window.getComputedStyle(shopEl)
+  const bottomPx = Number.parseFloat(shopCs.bottom) || 0
+  const shopHeight = shopEl.offsetHeight || Number.parseFloat(shopCs.height) || 0
+  if (shopHeight <= 0) return
+
+  const shopTopCss = window.innerHeight - bottomPx - shopHeight
+  const targetY = computeBattleShopScrollY({
+    canvasTop: canvasRect.top,
+    canvasHeight: canvasRect.height,
+    logicalHeight: battle.scale.height,
+    shopTopCss,
+    shopOpen: true,
+  })
+  setBattleCameraScrollY(targetY, immediate)
+}
+
 export function syncGameScale(): void {
   if (typeof document === 'undefined' || typeof window === 'undefined') return
   const rootStyle = document.documentElement.style
@@ -82,14 +161,27 @@ export function syncGameScale(): void {
       rootStyle.setProperty('--canvas-bottom-gap', `${bottomGap}px`)
       rootStyle.setProperty('--canvas-left-gap', `${leftGap}px`)
       rootStyle.setProperty('--canvas-right-gap', `${rightGap}px`)
+      syncBattleCameraForShop(battleShopOpen, true)
       return
     }
   }
 
+  const gameRect = gameEl ? gameEl.getBoundingClientRect() : null
   const safe = safeRect()
-  const logicalH = calculateLogicalHeight(safe.width, safe.height)
-  const scale =
-    safe.width > 0 && safe.height > 0 ? Math.min(safe.width / 720, safe.height / logicalH) : 1
+  const areaW =
+    gameRect && gameRect.width > 0
+      ? gameRect.width
+      : window.innerWidth > 0
+        ? window.innerWidth
+        : safe.width
+  const areaH =
+    gameRect && gameRect.height > 0
+      ? gameRect.height
+      : window.innerHeight > 0
+        ? window.innerHeight
+        : safe.height
+  const logicalH = calculateLogicalHeight(areaW, areaH)
+  const scale = areaW > 0 && areaH > 0 ? Math.min(areaW / 720, areaH / logicalH) : 1
   rootStyle.setProperty('--game-scale', String(scale))
   rootStyle.setProperty('--canvas-bottom-gap', '0px')
   rootStyle.setProperty('--canvas-left-gap', '0px')
@@ -111,6 +203,13 @@ if (typeof window !== 'undefined') {
   window.addEventListener('resize', () => {
     game?.scale.refresh()
     syncGameScale()
+  })
+  window.addEventListener('d2:shop-visibility', (ev: Event) => {
+    const open = Boolean((ev as CustomEvent<{ open?: boolean }>).detail?.open)
+    const firstSync = !battleScrollInitialized
+    battleShopOpen = open
+    battleScrollInitialized = true
+    window.requestAnimationFrame(() => syncBattleCameraForShop(open, firstSync))
   })
 
   if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
@@ -166,6 +265,8 @@ async function boot(): Promise<void> {
 
   bindDeploy(() => {
     if (!game) return
+    battleShopOpen = false
+    battleScrollInitialized = false
     game.scene.stop('idle')
     game.scene.stop('walk')
     game.scene.start('battle')
@@ -174,6 +275,8 @@ async function boot(): Promise<void> {
   // 생활관(걷는 화면)으로: 전투가 돌고 있으면 멈추고 걷는 씬을 시작한다(결과 화면 "생활관"도 이 길로 온다)
   bindWalk(() => {
     if (!game) return
+    battleShopOpen = false
+    battleScrollInitialized = false
     game.scene.stop('idle')
     game.scene.stop('battle')
     if (!game.scene.isActive('walk')) game.scene.start('walk')

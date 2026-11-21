@@ -26,13 +26,13 @@
   --alert-red: #d32f2f;
   --alert-red-bright: #ff3b30;
 
-  /* 논리 좌표(720x1280) 대비 레이아웃 변수 */
-  --game-scale: calc((100vw - var(--sa-left) - var(--sa-right)) / 720);
+  /* 논리 좌표(720x1280) 대비 레이아웃 변수 (T-126: Edge-to-Edge + 2단 카드 데크) */
+  --game-scale: calc(100vw / 720);
   --canvas-bottom-gap: 0px;
   --canvas-left-gap: 0px;
   --canvas-right-gap: 0px;
   --hud-height: calc(var(--game-scale) * 96px);
-  --shop-max-height: calc(var(--game-scale) * 120px);
+  --shop-max-height: clamp(124px, calc(var(--game-scale) * 244px), 136px);
   --panel-radius: 6px;
   --panel-border: 2px solid var(--outline-dark);
   --inner-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
