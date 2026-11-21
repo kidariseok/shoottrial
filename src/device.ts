@@ -25,15 +25,15 @@ export function calculateLogicalHeight(areaWidth?: number, areaHeight?: number):
   const w =
     gameRect && gameRect.width > 0
       ? gameRect.width
-      : safe.width > 0
-        ? safe.width
-        : window.innerWidth
+      : window.innerWidth > 0
+        ? window.innerWidth
+        : safe.width
   const h =
     gameRect && gameRect.height > 0
       ? gameRect.height
-      : safe.height > 0
-        ? safe.height
-        : window.innerHeight
+      : window.innerHeight > 0
+        ? window.innerHeight
+        : safe.height
   if (w <= 0 || h <= 0) return 1280
   const calculated = Math.round(targetWidth * (h / w))
   return Math.min(1560, Math.max(1280, calculated))
@@ -43,11 +43,56 @@ export function computeCanvasLayout(
   canvasRect: { left: number; right: number; bottom: number; width: number },
   areaRect: { left: number; right: number; bottom: number; width: number; height: number }
 ): { scale: number; bottomGap: number; leftGap: number; rightGap: number } {
+  const clampGap = (v: number): number => (v <= 1e-9 ? 0 : v)
   const scale = canvasRect.width > 0 ? canvasRect.width / 720 : 1
-  const bottomGap = Math.max(0, areaRect.bottom - canvasRect.bottom)
-  const leftGap = Math.max(0, canvasRect.left - areaRect.left)
-  const rightGap = Math.max(0, areaRect.right - canvasRect.right)
+  const bottomGap = clampGap(areaRect.bottom - canvasRect.bottom)
+  const leftGap = clampGap(canvasRect.left - areaRect.left)
+  const rightGap = clampGap(areaRect.right - canvasRect.right)
   return { scale, bottomGap, leftGap, rightGap }
+}
+
+// Edge-to-Edge 캔버스 안에서 Safe Area(노치·홈바) 여백을 Phaser 논리 좌표(720×H)로 환산한다.
+export function computeCanvasSafeInsets(
+  safe: { top: number; right: number; bottom: number; left: number },
+  canvasRect: { top: number; left: number; right: number; bottom: number; width: number },
+  viewport: { width: number; height: number },
+  logicalWidth = 720
+): { top: number; right: number; bottom: number; left: number } {
+  const scale = canvasRect.width > 0 ? canvasRect.width / logicalWidth : 1
+  if (scale <= 0) return { top: 0, right: 0, bottom: 0, left: 0 }
+  const topCss = Math.max(0, safe.top - canvasRect.top)
+  const bottomGap = Math.max(0, viewport.height - canvasRect.bottom)
+  const bottomCss = Math.max(0, safe.bottom - bottomGap)
+  const leftCss = Math.max(0, safe.left - canvasRect.left)
+  const rightGap = Math.max(0, viewport.width - canvasRect.right)
+  const rightCss = Math.max(0, safe.right - rightGap)
+  return {
+    top: Math.round(topCss / scale),
+    right: Math.round(rightCss / scale),
+    bottom: Math.round(bottomCss / scale),
+    left: Math.round(leftCss / scale),
+  }
+}
+
+// 준비 단계에서 확대된 2단 상점이 대기석·판매·위병소 방어선을 가리지 않도록 전투 카메라 scrollY를 계산한다.
+// 보드 대기석·판매 하단은 월드 좌표상 항상 (logicalHeight - 120)에 위치한다.
+export function computeBattleShopScrollY(opts: {
+  canvasTop: number
+  canvasHeight: number
+  logicalHeight: number
+  shopTopCss: number
+  shopOpen: boolean
+  marginCss?: number
+  maxScrollY?: number
+}): number {
+  if (!opts.shopOpen || opts.canvasHeight <= 0 || opts.logicalHeight <= 0) return 0
+  const scale = opts.canvasHeight / opts.logicalHeight
+  if (scale <= 0) return 0
+  const marginCss = opts.marginCss ?? 4
+  const maxScrollY = opts.maxScrollY ?? 220
+  const benchBottomCss = opts.canvasTop + (opts.logicalHeight - 120) * scale
+  const neededCss = Math.max(0, benchBottomCss - (opts.shopTopCss - marginCss))
+  return Math.min(maxScrollY, Math.max(0, Math.round(neededCss / scale)))
 }
 
 export function readEffectiveSafeArea(targetEl?: HTMLElement | null): SafeRect {

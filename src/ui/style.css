@@ -26,13 +26,13 @@
   --alert-red: #d32f2f;
   --alert-red-bright: #ff3b30;
 
-  /* 논리 좌표(720x1280) 대비 레이아웃 변수 */
-  --game-scale: calc((100vw - var(--sa-left) - var(--sa-right)) / 720);
+  /* 논리 좌표(720x1280) 대비 레이아웃 변수 (T-126: Edge-to-Edge + 2단 카드 데크) */
+  --game-scale: calc(100vw / 720);
   --canvas-bottom-gap: 0px;
   --canvas-left-gap: 0px;
   --canvas-right-gap: 0px;
   --hud-height: calc(var(--game-scale) * 96px);
-  --shop-max-height: calc(var(--game-scale) * 120px);
+  --shop-max-height: clamp(124px, calc(var(--game-scale) * 244px), 136px);
   --panel-radius: 6px;
   --panel-border: 2px solid var(--outline-dark);
   --inner-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
@@ -101,12 +101,9 @@ body { height: 100dvh; }
 
 #game {
   position: absolute;
-  top: var(--sa-top);
-  right: var(--sa-right);
-  bottom: var(--sa-bottom);
-  left: var(--sa-left);
-  width: calc(100% - var(--sa-left) - var(--sa-right));
-  height: calc(100% - var(--sa-top) - var(--sa-bottom));
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
 }
 
@@ -429,91 +426,354 @@ body { height: 100dvh; }
   color: #fff6d1;
 }
 
-/* 2. 하단 상점 패널 (GDD §3 y=1160~1280 비율 높이 이하) */
+/* 2. 하단 상점 패널 (T-126: 2단 분리형 카드 데크 — 1단 조작바 + 2단 5장 풀폭 카드 행) */
 .ui-shop {
   position: absolute;
-  left: calc(var(--sa-left) + var(--canvas-left-gap, 0px));
-  right: calc(var(--sa-right) + var(--canvas-right-gap, 0px));
-  bottom: calc(var(--sa-bottom) + var(--canvas-bottom-gap, 0px));
+  left: max(var(--sa-left), var(--canvas-left-gap, 0px));
+  right: max(var(--sa-right), var(--canvas-right-gap, 0px));
+  bottom: max(var(--sa-bottom), var(--canvas-bottom-gap, 0px));
   height: var(--shop-max-height);
   max-height: var(--shop-max-height);
-  background: linear-gradient(180deg, var(--olive-panel) 0%, var(--olive-bg-dark) 100%);
-  border-top: 2px solid var(--outline-dark);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.6), var(--inner-bevel);
-  padding: 4px 6px;
+  background: linear-gradient(180deg, #161d24 0%, #0b0e12 100%);
+  border-top: 2px solid var(--gold);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.68), var(--inner-bevel);
+  padding: 4px 6px 5px;
   display: flex;
+  flex-direction: column;
   align-items: stretch;
   justify-content: space-between;
-  gap: 5px;
+  gap: 4px;
   z-index: 25;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+/* 홈 인디케이터 Safe Area 아래까지 어두운 도크 바닥을 자연스럽게 연장 */
+.ui-shop::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--sa-bottom);
+  background: #0b0e12;
+  pointer-events: none;
+}
+
 .ui-shop.closed {
-  transform: translateY(110%);
+  transform: translateY(calc(110% + var(--sa-bottom)));
   opacity: 0;
   pointer-events: none;
 }
 
+/* 1단: 상단 조작바 */
+.shop-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.shop-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.shop-supply-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--olive-bg-dark);
+  border: 1.5px solid rgba(201, 162, 74, 0.72);
+  color: var(--accent-supply);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.shop-btn-reroll,
+.shop-btn-free-reroll {
+  height: 28px;
+  font-size: 11px;
+  padding: 0 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.shop-btn-go {
+  height: 28px;
+  min-width: 94px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--outline-dark), 0 0 10px rgba(143, 174, 58, 0.42), var(--inner-bevel);
+}
+
+/* 2단: 하단 5장 카드 풀폭 행 */
 .shop-cards {
   flex: 1;
+  min-height: 0;
   min-width: 0;
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 3px;
-  height: 100%;
+  gap: 4px;
 }
 
 .shop-card {
-  background: var(--khaki-surface);
-  border: 1.5px solid var(--outline-dark);
-  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #25303b 0%, #151c23 100%);
+  border: 1.5px solid rgba(201, 162, 74, 0.62);
+  border-radius: 7px;
   box-shadow: var(--inner-bevel);
-  padding: 2px 1px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   cursor: pointer;
   color: var(--text-cream);
   min-width: 0;
   height: 100%;
+  touch-action: manipulation;
 }
 
 .shop-card:active {
   transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.shop-card:not(.insufficient):not(.empty) {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 6px rgba(232, 195, 90, 0.35), var(--inner-bevel);
 }
 
 .shop-card.insufficient {
-  filter: brightness(0.55) saturate(0.6);
-  opacity: 0.72;
+  filter: brightness(0.58) saturate(0.65);
+  opacity: 0.78;
 }
 
 .shop-card.empty {
-  background: rgba(25, 30, 18, 0.55);
+  background: rgba(20, 26, 32, 0.58);
   border-style: dashed;
+  border-color: rgba(154, 148, 132, 0.35);
   color: var(--text-dim);
   cursor: default;
+  align-items: center;
   justify-content: center;
 }
 
+.shop-card-top {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.shop-card-cost {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #161105;
+  background: var(--gold-bright);
+  border: 1px solid var(--outline-dark);
+  border-radius: 4px;
+  padding: 1px 4px;
+  line-height: 1.15;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+.shop-card-info-btn {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  background: rgba(11, 14, 18, 0.9);
+  color: #fff4c7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+}
+
+.shop-card-info-btn:active {
+  transform: scale(0.92);
+  background: var(--gold);
+  color: #141006;
+}
+
+.shop-card-art {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: 6px;
+}
+
+.shop-card-portrait {
+  height: 100%;
+  width: auto;
+  max-width: 96%;
+  object-fit: contain;
+  object-position: center bottom;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .shop-card-initial {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+  border-radius: 5px;
   background: var(--olive-bg-dark);
-  border: 1px solid var(--khaki-border);
+  border: 1.5px solid var(--khaki-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   line-height: 1;
 }
 
+.shop-card.has-art .shop-card-initial {
+  display: none;
+}
+
+.shop-card-role,
+.card-sheet-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.shop-card-role {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  z-index: 3;
+  font-size: 7.5px;
+  line-height: 1.15;
+  padding: 1px 4px;
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.card-sheet-role {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border: 1px solid rgba(0, 0, 0, 0.65);
+  vertical-align: middle;
+}
+
+/* 병과 역할 5~6종 통일 색상 계열 (ART §2: 적 붉은색 계열 제외) */
+.shop-card-role.role-dps,
+.card-sheet-role.role-dps {
+  background: #27663a;
+  color: #e2ffe9;
+}
+
+.shop-card-role.role-ranged,
+.card-sheet-role.role-ranged {
+  background: #1a6778;
+  color: #d8f9ff;
+}
+
+.shop-card-role.role-tank,
+.card-sheet-role.role-tank {
+  background: #23508a;
+  color: #dcecff;
+}
+
+.shop-card-role.role-support,
+.card-sheet-role.role-support {
+  background: #7b6218;
+  color: #fff4c2;
+}
+
+.shop-card-role.role-blast,
+.card-sheet-role.role-blast {
+  background: #7d4f17;
+  color: #ffe8c7;
+}
+
+.shop-card-role.role-heavy,
+.card-sheet-role.role-heavy {
+  background: #5b3b88;
+  color: #efe2ff;
+}
+
+.shop-card-footer {
+  flex-shrink: 0;
+  width: 100%;
+  background: rgba(11, 15, 20, 0.96);
+  border-top: 1.5px solid rgba(201, 162, 74, 0.45);
+  padding: 2px 2px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  z-index: 3;
+}
+
+.shop-card.role-dps .shop-card-footer { border-top-color: #4eb86a; }
+.shop-card.role-ranged .shop-card-footer { border-top-color: #42b8d1; }
+.shop-card.role-tank .shop-card-footer { border-top-color: #5496eb; }
+.shop-card.role-support .shop-card-footer { border-top-color: #e8c35a; }
+.shop-card.role-blast .shop-card-footer { border-top-color: #e09c44; }
+.shop-card.role-heavy .shop-card-footer { border-top-color: #a87ef0; }
+
 .shop-card-name {
-  font-size: 9.5px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-cream);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.1;
+  letter-spacing: -0.35px;
+}
+
+.shop-card-summary {
+  font-size: 8.5px;
   font-weight: 700;
+  color: #bac7d4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -522,38 +782,74 @@ body { height: 100dvh; }
   letter-spacing: -0.3px;
 }
 
-.shop-card-cost {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: var(--accent-supply);
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 3px;
-  padding: 1px 3px;
-  line-height: 1;
-}
+/* 짧은 화면(iPhone SE 375×667 등) 컴팩트 모드: 방어선·대기석·판매와 겹치지 않게 축소 */
+@media (max-height: 700px) {
+  :root {
+    --shop-max-height: 98px;
+  }
 
-.shop-actions {
-  display: grid;
-  grid-template-columns: auto auto;
-  grid-template-rows: 1fr 1fr;
-  gap: 3px;
-  height: 100%;
-  flex-shrink: 0;
-}
+  .ui-shop {
+    padding: 3px 5px 4px;
+    gap: 3px;
+  }
 
-.shop-btn-reroll,
-.shop-btn-free-reroll {
-  font-size: 10px;
-  padding: 2px 5px;
-  white-space: nowrap;
-}
+  .shop-actions {
+    height: 25px;
+  }
 
-.shop-btn-go {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  padding: 2px 7px;
-  font-size: 12px;
-  white-space: nowrap;
+  .shop-supply-badge {
+    height: 24px;
+    padding: 0 5px;
+    font-size: 10px;
+  }
+
+  .shop-btn-reroll,
+  .shop-btn-free-reroll {
+    height: 24px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  .shop-btn-go {
+    height: 24px;
+    min-width: 82px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .shop-card-cost {
+    font-size: 7.5px;
+    padding: 1px 3px;
+  }
+
+  .shop-card-info-btn {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    font-size: 10px;
+  }
+
+  .shop-card-art {
+    padding-top: 3px;
+  }
+
+  .shop-card-role {
+    font-size: 7px;
+    padding: 0 3px;
+  }
+
+  .shop-card-footer {
+    padding: 1px 2px 2px;
+    gap: 0;
+  }
+
+  .shop-card-name {
+    font-size: 9px;
+  }
+
+  .shop-card-summary {
+    font-size: 7.5px;
+  }
 }
 
 /* 3. 카드 정보 시트 (cardInfo) */
@@ -1536,55 +1832,8 @@ body { height: 100dvh; }
 }
 
 .ui-shop {
-  background: linear-gradient(180deg, #141a20 0%, #0b0e12 100%);
+  background: linear-gradient(180deg, #161d24 0%, #0b0e12 100%);
   border-top: 2px solid var(--gold);
-}
-
-.shop-card {
-  border: 2px solid rgba(201, 162, 74, 0.55);
-  border-radius: 8px;
-}
-
-.shop-card:not(.insufficient):not(.empty) {
-  border-color: var(--gold-bright);
-  box-shadow: 0 0 6px rgba(232, 195, 90, 0.45), var(--inner-bevel);
-}
-
-.shop-card.has-art {
-  position: relative;
-  background-color: #10151a;
-  background-size: cover;
-  background-position: center 18%;
-  background-repeat: no-repeat;
-  justify-content: flex-end;
-  overflow: hidden;
-}
-
-.shop-card.has-art .shop-card-initial {
-  display: none;
-}
-
-.shop-card.has-art .shop-card-name {
-  width: 100%;
-  padding-top: 8px;
-  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85));
-  text-shadow: 0 1px 2px #000;
-  text-align: center;
-}
-
-.shop-card.has-art .shop-card-cost {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: var(--gold);
-  color: #1a1608;
-}
-
-.shop-btn-go {
-  white-space: normal;
-  line-height: 1.15;
-  text-align: center;
-  min-width: 54px;
 }
 
 /* 특기 선택은 일시정지 아래, 전투 입력 위에 둔다. */

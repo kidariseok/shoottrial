@@ -1,4 +1,4 @@
-import { CARDS, CARD_KEYS, CHARACTERS, RANK_VISUAL, ROOKIE, type CardKey } from '../data'
+import { CARDS, CARD_KEYS, CHARACTERS, RANK_VISUAL, ROOKIE, SPECIALTIES, type CardKey } from '../data'
 import { unitInfoRows } from '../rules'
 import type { Hud, Phase } from './screens'
 
@@ -217,4 +217,98 @@ export function getCharacterName(card: string, rank?: number, name?: string): st
 
 export function getCharacterIntro(card: string): string {
   return CHARACTERS[card as CardKey]?.intro ?? '—'
+}
+
+// T-126: 10종 병과 역할 배지·색상 계열·핵심 기능 1줄 요약·추천 활용 안내 (레인 A data.ts 무변경)
+export type CardRoleTone = 'dps' | 'ranged' | 'tank' | 'support' | 'blast' | 'heavy'
+export interface CardRoleMeta {
+  role: string
+  tone: CardRoleTone
+  summary: string
+  tip: string
+}
+
+export const CARD_ROLE_META: Record<CardKey, CardRoleMeta> = {
+  rifle: {
+    role: '딜러',
+    tone: 'dps',
+    summary: '안정 화력',
+    tip: '초반 보병 방어와 빠른 진급(짬) 확보에 적합한 기본 주력 보병.',
+  },
+  sniper: {
+    role: '원거리',
+    tone: 'ranged',
+    summary: '전열 관통',
+    tip: '전장 전체 사거리. RPG병·지정사수 등 원거리 적을 선제 제거.',
+  },
+  blower: {
+    role: '탱커',
+    tone: 'tank',
+    summary: '넉백·도발',
+    tip: '최전열 메인 탱커. 군견·돌격병을 밀어내어 후열을 보호하고 지뢰 연계 유도.',
+  },
+  cook: {
+    role: '지원',
+    tone: 'support',
+    summary: '아군 치료',
+    tip: '인접 8칸 아군을 지속 치료. 제설병 뒤 배치로 전열 유지력 극대화.',
+  },
+  miner: {
+    role: '함정',
+    tone: 'blast',
+    summary: '범위 폭발',
+    tip: '매 준비 단계 지뢰를 매설해 밀집 보병을 일망타진. 제설병 밀치기와 시너지.',
+  },
+  chem: {
+    role: '제독',
+    tone: 'support',
+    summary: '가스 제독',
+    tip: 'W7 이후 화학탄 가스를 정화해 아군 피해·감속을 막는 필수 카운터.',
+  },
+  medic: {
+    role: '소생',
+    tone: 'support',
+    summary: '긴급 소생',
+    tip: '쓰러진 아군을 소생시켜 전선 붕괴 방지. 취사병과 함께 후열 안정화.',
+  },
+  mortar: {
+    role: '광역',
+    tone: 'blast',
+    summary: '광역 포격',
+    tip: '최소 사거리 2칸 밖 밀집 적군에게 81mm 광역 포격으로 대량 피해.',
+  },
+  antitank: {
+    role: '결전',
+    tone: 'heavy',
+    summary: '장갑 ×3',
+    tip: '방패병과 보스 장갑차(W5·W10)를 관통 파괴하는 대장갑 결전 병기.',
+  },
+  signal: {
+    role: '버프',
+    tone: 'support',
+    summary: '공속 버프',
+    tip: '인접 아군 공격 간격 단축 + 화력 지원 포격 강화. 고화력 병과 옆 배치 추천.',
+  },
+}
+
+const FALLBACK_ROLE_META: CardRoleMeta = {
+  role: '병과',
+  tone: 'dps',
+  summary: '전술 배치',
+  tip: '상황에 맞게 전열과 후열을 조합해 위병소를 방어하세요.',
+}
+
+export function getCardRoleMeta(card: string): CardRoleMeta {
+  return CARD_ROLE_META[card as CardKey] ?? FALLBACK_ROLE_META
+}
+
+export function getShopCardInfoRows(card: CardKey): [string, string][] {
+  const base = CARDS[card]
+  const spec = SPECIALTIES[card]
+  return [
+    ['보급 비용', `${base.cost} 보급`],
+    ...getCodexRows(card),
+    ['특기 A', `${spec.A.name} — ${spec.A.description}`],
+    ['특기 B', `${spec.B.name} — ${spec.B.description}`],
+  ]
 }
