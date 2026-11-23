@@ -295,7 +295,6 @@ export const FX = {
   autoLowGraceSec: 3, // 판 시작 직후 로딩 끊김은 세지 않는다
   lowScale: 0.5, // ?fx=low 일 때 개수 배율
   lowValue: 'low',
-  highValue: 'high', // ?fx=high 는 폰에서도 전체 연출(기본은 폰이면 저사양)
   lowMaxParticles: 200, // 저사양일 때 동시 파티클 상한
   hitStopSec: 0.05, // 큰 사건 때 전투가 멈추는 실제 시간
   depthOver: 51, // 파티클 깊이(그림 이펙트 fxDepth 위)

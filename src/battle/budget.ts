@@ -4,9 +4,6 @@
 export const lowFpsStreak = (streak: number, fps: number, realSec: number, floor: number): number =>
   fps > 0 && fps < floor ? streak + realSec : 0
 
-// 폰(아이폰 Safari·안드로이드)이면 true. 처음부터 저사양 연출로 시작한다. iPad는 Mac으로 보고하므로 걸리지 않는다
-export const isMobileUa = (ua: string): boolean => /iPhone|iPod|Android/i.test(ua)
-
 // 숫자·글자를 새로 띄워도 되는가(켜져 있고 상한 아래일 때)
 export const textAllowed = (live: number, max: number, enabled: boolean): boolean => enabled && live < max
 
